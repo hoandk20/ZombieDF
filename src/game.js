@@ -5,7 +5,7 @@ import {
 } from './config.js';
 import { SURVIVORS, NIGHT_TITLES, hasPerk } from './story.js';
 import { Zombie, roundRect } from './zombie.js';
-import { makeBackground, drawBarricade, drawPerson, drawHero } from './render.js';
+import { makeBackground, drawBarricade, drawHero, drawCharacter, CHARACTERS } from './render.js';
 import { sfx, initAudio, setMood, heartbeat } from './audio.js';
 import { saveGame } from './save.js';
 
@@ -776,7 +776,7 @@ export class Game {
 
     // nhân vật + hàng rào
     for (const s of this.survivorState) {
-      drawPerson(ctx, s.x, PLAYER_FOOT - 4, s.ang, s.def.look, s.id === 'tu' ? 38 : 26, s.recoil);
+      drawCharacter(ctx, s.x, PLAYER_FOOT - 4, s.ang, s.def.weapon, WEAPONS[s.def.weapon].len, s.recoil, this.time, CHARACTERS[s.id]);
     }
     const aim = inGame ? this.aim : this.demoAim;
     const wid = inGame ? this.data.current : (this.data ? 'rifle' : 'pistol');

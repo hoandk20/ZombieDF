@@ -6,25 +6,13 @@ import {
 import { INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO, hasPerk } from './story.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
-import { weaponIcon, drawPerson, heroPortrait } from './render.js';
+import { weaponIcon, heroPortrait, characterPortrait } from './render.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const ri = (a, b) => Math.floor(rand(a, b + 1));
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-const portraitCache = {};
-function portrait(sv) {
-  if (portraitCache[sv.id]) return portraitCache[sv.id];
-  const c = document.createElement('canvas');
-  c.width = 96; c.height = 96;
-  const g = c.getContext('2d');
-  g.fillStyle = '#1d1a22';
-  g.fillRect(0, 0, 96, 96);
-  g.scale(2.2, 2.2);
-  drawPerson(g, 20, 120, 0.5, sv.look, 26, 0);
-  portraitCache[sv.id] = c.toDataURL();
-  return portraitCache[sv.id];
-}
+const portrait = (sv) => characterPortrait(sv.id, sv.weapon);
 
 export class UI {
   constructor(root, game) {

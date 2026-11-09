@@ -18,7 +18,7 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
   tàu số 3 chờ tàu sơ tán *Bình Minh*. Bản đồ bến cảng với biển đêm, cần cẩu, container và hải đăng.
   Đêm 15 có Kẻ Khổng Lồ thứ hai, đêm 20 có trùm cuối **Quái Vật Cảng** biết gọi đàn.
 - Phim mở đầu, chuyển chương và kết thúc; tin radio và nhật ký mỗi bình minh.
-- 4 người sống sót có tên và kỹ năng riêng: **Lan** (y tá, sửa rào giỏi), **Ông Tư** (thợ săn,
+- 4 người sống sót có tên, ngoại hình và kỹ năng riêng: **Lan** (y tá, sửa rào giỏi), **Ông Tư** (thợ săn,
   bắn chính xác), **Bảo** (thợ máy, hàng rào tự hồi phục), **Mai** (sinh viên, lục lọi được nhiều hơn).
 - Thắng chiến dịch sẽ mở **chế độ vô tận** (cứ 5 đêm lại có một con trùm).
 
