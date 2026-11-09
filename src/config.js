@@ -17,7 +17,10 @@ export const SURVIVOR_SLOTS = [86, 54, 144, 24];
 
 export const HEADSHOT_MUL = 2.5;
 export const DAY_HOURS = 10;
-export const CAMPAIGN_NIGHTS = 10;
+export const CAMPAIGN_NIGHTS = 20;
+export const ACT_LENGTH = 10;
+export const actFor = (n) => (n <= ACT_LENGTH ? 1 : 2);
+export const ACT_NAMES = { 1: 'Bến Sương', 2: 'Cảng Vọng Hải' };
 
 export const WEAPONS = {
   pistol: {
@@ -50,28 +53,44 @@ export const WEAPONS = {
     price: 4800, ammoPrice: 320, ammoPack: 160, shake: 2, len: 42,
     desc: 'Băng 80 viên, xuyên 2. Nạp đạn rất lâu.',
   },
+  flamer: {
+    id: 'flamer', name: 'Súng phun lửa', dmg: 7, rate: 0.05, mag: 120, reload: 3.2,
+    pellets: 1, spread: 0.1, pierce: 4, auto: true, flame: true, range: 330, burn: 16,
+    price: 5200, ammoPrice: 260, ammoPack: 120, shake: 0.6, len: 40, act: 2,
+    desc: 'Phun lửa tầm gần, đốt cháy cả đám. Xuyên giáp.',
+  },
+  launcher: {
+    id: 'launcher', name: 'Súng phóng lựu', dmg: 210, rate: 1.0, mag: 4, reload: 3.0,
+    pellets: 1, spread: 0.01, pierce: 1, auto: false, explosive: true, radius: 105,
+    price: 6800, ammoPrice: 300, ammoPack: 8, shake: 5, len: 38, act: 2,
+    desc: 'Bắn đạn nổ vào điểm ngắm. Dọn sạch bầy đàn.',
+  },
 };
-export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg'];
+export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher'];
 
 export const GRENADE = { dmg: 280, radius: 125, price: 90, max: 6, fuse: 0.75 };
 
 // kind: 'upright' (đứng) hoặc 'crawl' (bò)
 export const ZOMBIES = {
-  walker:  { name: 'Xác sống', hp: 60,  speed: 26, dmg: 6,  atkRate: 1.2, h: 104, w: 30, reward: 10, skin: '#7f9a5c', shirt: '#5a4a3a', pants: '#2f3440', kind: 'upright' },
-  runner:  { name: 'Kẻ chạy', hp: 42,  speed: 66, dmg: 4,  atkRate: 0.7, h: 98,  w: 26, reward: 15, skin: '#9db06a', shirt: '#3d4f6b', pants: '#3a2f2a', kind: 'upright' },
-  crawler: { name: 'Kẻ bò', hp: 45,  speed: 18, dmg: 5,  atkRate: 1.0, h: 40,  w: 58, reward: 15, skin: '#86a066', shirt: '#4c3b4f', pants: '#2b2b2b', kind: 'crawl' },
-  brute:   { name: 'Gã khổng lồ', hp: 440, speed: 13, dmg: 22, atkRate: 1.6, h: 142, w: 50, reward: 60, skin: '#5f7f48', shirt: '#6b2e2e', pants: '#24262e', kind: 'upright', heavy: true },
-  spitter: { name: 'Kẻ phun axit', hp: 90,  speed: 24, dmg: 11, atkRate: 3.2, h: 108, w: 38, reward: 35, skin: '#a8b04a', shirt: '#4f5a2a', pants: '#2c2f22', kind: 'upright', ranged: true },
-  titan:   { name: 'Kẻ Khổng Lồ', hp: 3200, speed: 9, dmg: 60, atkRate: 2.2, h: 220, w: 86, reward: 600, skin: '#4d6a3c', shirt: '#3a1f1f', pants: '#1c1d22', kind: 'upright', heavy: true, boss: true },
+  walker:  { name: 'Xác sống', hp: 60,  speed: 26, dmg: 6,  atkRate: 1.2, h: 104, w: 30, reward: 10, skin: '#9a8a66', shirt: '#4e3d27', pants: '#3b3122', kind: 'upright' },
+  runner:  { name: 'Kẻ chạy', hp: 42,  speed: 66, dmg: 4,  atkRate: 0.7, h: 98,  w: 26, reward: 15, skin: '#a39470', shirt: '#3c4350', pants: '#352b20', kind: 'upright' },
+  crawler: { name: 'Kẻ bò', hp: 45,  speed: 18, dmg: 5,  atkRate: 1.0, h: 40,  w: 58, reward: 15, skin: '#8f8060', shirt: '#4a3a2c', pants: '#2e281f', kind: 'crawl' },
+  brute:   { name: 'Gã khổng lồ', hp: 440, speed: 13, dmg: 22, atkRate: 1.6, h: 142, w: 50, reward: 60, skin: '#7d6f52', shirt: '#5a2c22', pants: '#2a251d', kind: 'upright', heavy: true },
+  spitter: { name: 'Kẻ phun axit', hp: 90,  speed: 24, dmg: 11, atkRate: 3.2, h: 108, w: 38, reward: 35, skin: '#a49a5c', shirt: '#4a4a26', pants: '#2c2a1e', kind: 'upright', ranged: true },
+  riot:    { name: 'Cảnh sát bọc giáp', hp: 150, speed: 21, dmg: 9, atkRate: 1.3, h: 108, w: 34, reward: 40, skin: '#94866a', shirt: '#26324a', pants: '#1c2232', kind: 'upright', armored: true, helmet: 70 },
+  bloater: { name: 'Kẻ trương phình', hp: 120, speed: 15, dmg: 55, atkRate: 0.5, h: 112, w: 56, reward: 30, skin: '#9c9460', shirt: '#55502c', pants: '#2c2a20', kind: 'upright', bomber: true },
+  colossus:{ name: 'Quái Vật Cảng', hp: 6500, speed: 8, dmg: 80, atkRate: 2.4, h: 250, w: 98, reward: 1500, skin: '#6a5e48', shirt: '#2a2018', pants: '#1a1612', kind: 'upright', heavy: true, boss: true, summoner: true },
+  titan:   { name: 'Kẻ Khổng Lồ', hp: 3200, speed: 9, dmg: 60, atkRate: 2.2, h: 220, w: 86, reward: 600, skin: '#74664a', shirt: '#3a2418', pants: '#1f1b16', kind: 'upright', heavy: true, boss: true },
 };
 
 export function isBossNight(n) {
-  return n === CAMPAIGN_NIGHTS || (n > CAMPAIGN_NIGHTS && n % 5 === 0);
+  return n === 10 || n === 15 || n === 20 || (n > CAMPAIGN_NIGHTS && n % 5 === 0);
 }
+export const bossTypeFor = (n) => (n === 20 || (n > CAMPAIGN_NIGHTS && n % 10 === 0) ? 'colossus' : 'titan');
 
 export function waveFor(n) {
   return {
-    total: Math.round(10 + n * 5 + n * n * 0.45),
+    total: Math.round(10 + n * 5 + Math.min(n, 12) ** 2 * 0.45),
     interval: Math.max(0.3, 2.2 - n * 0.16),
     hpMul: 1 + (n - 1) * 0.09,
     boss: isBossNight(n),
@@ -81,15 +100,17 @@ export function waveFor(n) {
       crawler: n >= 3 ? 0.18 : 0,
       brute: n >= 4 ? Math.min(0.03 + 0.012 * n, 0.14) : 0,
       spitter: n >= 6 ? Math.min(0.08 + 0.01 * n, 0.18) : 0,
+      riot: n >= 11 ? Math.min(0.12 + 0.015 * (n - 11), 0.28) : 0,
+      bloater: n >= 12 ? Math.min(0.08 + 0.01 * (n - 12), 0.16) : 0,
     },
   };
 }
 
 export function weatherFor(n) {
   return {
-    rain: n >= 7 || (n > CAMPAIGN_NIGHTS && n % 3 === 0),
-    lightning: n >= 7,
-    fog: Math.min(0.08 + n * 0.02, 0.3),
+    rain: (n >= 7 && n <= 10) || n === 16 || n === 17 || n === 19 || (n > CAMPAIGN_NIGHTS && n % 3 === 0),
+    lightning: (n >= 7 && n <= 10) || n === 16 || n === 17,
+    fog: n > 10 ? Math.min(0.2 + (n - 10) * 0.02, 0.38) : Math.min(0.08 + n * 0.02, 0.3),
     bloodMoon: isBossNight(n),
   };
 }
@@ -100,3 +121,6 @@ export const reloadMul = (lvl) => Math.pow(0.88, lvl);
 export const reloadUpgradePrice = (lvl) => 500 * (lvl + 1);
 export const MAX_RELOAD_LVL = 4;
 export const repairKitPrice = (night) => 120 + night * 20;
+export const dmgMul = (lvl) => 1 + 0.12 * lvl;
+export const dmgUpgradePrice = (lvl) => 700 * (lvl + 1);
+export const MAX_DMG_LVL = 5;

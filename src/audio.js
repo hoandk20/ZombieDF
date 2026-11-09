@@ -165,6 +165,8 @@ export const sfx = {
   smg() { if (throttle('smg', 50)) return; noise(0.09, 3200, 0.38); tone(160, 70, 0.05, 0.12); },
   rifle() { noise(0.45, 1700, 0.95); tone(230, 45, 0.28, 0.4, 'sawtooth'); },
   lmg() { if (throttle('lmg', 60)) return; noise(0.12, 2100, 0.5); tone(140, 50, 0.07, 0.18); },
+  flamer() { if (throttle('flame', 90)) return; noise(0.18, 900, 0.22, 'bandpass', 0.6); },
+  launcher() { noise(0.25, 600, 0.6); tone(140, 60, 0.18, 0.4, 'sine'); },
   ally() { if (throttle('ally', 80)) return; noise(0.12, 1800, 0.3); tone(170, 60, 0.07, 0.1); },
   reload() { tone(900, 650, 0.05, 0.12); tone(500, 420, 0.06, 0.12, 'square', 0.18); },
   reloadDone() { tone(1200, 900, 0.05, 0.12, 'square'); },

@@ -1,6 +1,6 @@
 # Barricade Nights 🧟
 
-Game thủ thành chống zombie 2D (thể loại *barricade defense*): đứng sau hàng rào, ngắm bắn
+Game thủ thành chống zombie 2D (thể loại *barricade defense*), chiến dịch 2 chương 20 đêm: đứng sau hàng rào, ngắm bắn
 từng đợt zombie mỗi đêm, ban ngày thì sửa rào, đi lục lọi, tìm người sống sót và mua súng mới.
 
 Viết bằng **HTML5 Canvas + JavaScript thuần** (không dùng engine), đóng gói bằng **Vite** cho web
@@ -9,14 +9,18 @@ cần file tài nguyên nào.
 
 ## Cốt truyện
 
-Dịch bệnh tràn qua thị trấn ven biển **Bến Sương**. Radio khẩn cấp báo tin: trực thăng cứu hộ sẽ hạ
-cánh trên đồi Cao Vọng sau **10 đêm**. Bạn cố thủ trong căn nhà cũ của ông ngoại dưới chân đồi.
+Nhân vật chính là **Phong**, kỹ thuật viên trạm phát thanh thị trấn Bến Sương: tóc đen dựng, luôn đeo
+tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng phát, và radio là sợi dây hy vọng cuối cùng.
 
-- Phim mở đầu và kết thúc, tin radio và nhật ký vào mỗi bình minh.
+- **Chương 1 · Bến Sương (đêm 1–10):** cố thủ trong nhà ông ngoại dưới chân đồi chờ trực thăng.
+  Đêm 10 có trăng máu và trùm **Kẻ Khổng Lồ**.
+- **Chương 2 · Cảng Vọng Hải (đêm 11–20):** trực thăng chỉ đưa được nhóm tới bến cảng; phải giữ cầu
+  tàu số 3 chờ tàu sơ tán *Bình Minh*. Bản đồ bến cảng với biển đêm, cần cẩu, container và hải đăng.
+  Đêm 15 có Kẻ Khổng Lồ thứ hai, đêm 20 có trùm cuối **Quái Vật Cảng** biết gọi đàn.
+- Phim mở đầu, chuyển chương và kết thúc; tin radio và nhật ký mỗi bình minh.
 - 4 người sống sót có tên và kỹ năng riêng: **Lan** (y tá, sửa rào giỏi), **Ông Tư** (thợ săn,
   bắn chính xác), **Bảo** (thợ máy, hàng rào tự hồi phục), **Mai** (sinh viên, lục lọi được nhiều hơn).
-- Đêm 10 có trăng máu và trùm **Kẻ Khổng Lồ**. Thắng chiến dịch sẽ mở **chế độ vô tận**
-  (cứ 5 đêm lại có một Kẻ Khổng Lồ).
+- Thắng chiến dịch sẽ mở **chế độ vô tận** (cứ 5 đêm lại có một con trùm).
 
 ## Lối chơi
 
@@ -24,12 +28,12 @@ cánh trên đồi Cao Vọng sau **10 đêm**. Bạn cố thủ trong căn nhà
 |---|---|
 | **Ban đêm** | Zombie kéo đến từ bên phải. Chuột / chạm để ngắm & bắn. Bắn vào **đầu** gây x2.5 sát thương và thưởng thêm tiền. Độ bền hàng rào về 0 là thua. |
 | **Ban ngày** | Chia 10 giờ cho: 🔨 sửa hàng rào, 🎒 lục lọi (tiền, đạn, đôi khi nhặt được súng), 🔦 tìm người sống sót (tối đa 4 người, tự động bắn hỗ trợ). Sau đó mua sắm ở cửa hàng. |
-| **Vũ khí** | Súng lục (đạn vô hạn), Shotgun (nhiều viên, mạnh ở gần), Tiểu liên (tự động), Súng trường (xuyên 4 mục tiêu), Súng máy. |
-| **Zombie** | Thường, chạy nhanh (từ đêm 2), bò (từ đêm 3, khó bắn đầu), gã khổng lồ (từ đêm 4), kẻ phun axit (từ đêm 6, phá rào từ xa), trùm Kẻ Khổng Lồ (đêm 10). |
+| **Vũ khí** | Súng lục (đạn vô hạn), Shotgun (nhiều viên, mạnh ở gần), Tiểu liên (tự động), Súng trường (xuyên 4 mục tiêu), Súng máy. Chương 2 mở thêm Súng phun lửa (đốt cháy, xuyên giáp) và Súng phóng lựu (đạn nổ). |
+| **Zombie** | Thường, chạy nhanh (từ đêm 2), bò (từ đêm 3, khó bắn đầu), gã khổng lồ (từ đêm 4), kẻ phun axit (từ đêm 6, phá rào từ xa), cảnh sát bọc giáp (từ đêm 11, mũ chặn headshot cho tới khi vỡ), kẻ trương phình (từ đêm 12, phát nổ khi chết), trùm Kẻ Khổng Lồ (đêm 10, 15) và Quái Vật Cảng (đêm 20). |
 | **Lựu đạn** | Nổ diện rộng. Phím `G`/`Space` ném vào vị trí con trỏ; trên điện thoại chạm nút lựu đạn rồi chạm vào chỗ muốn ném. |
-| **Nâng cấp** | Gia cố hàng rào (tăng độ bền tối đa), luyện nạp đạn nhanh hơn, bộ sửa chữa. |
+| **Nâng cấp** | Gia cố hàng rào (tăng độ bền tối đa), luyện nạp đạn nhanh hơn, đạn xuyên giáp (+12% sát thương mỗi cấp), bộ sửa chữa. |
 
-**Điều khiển:** chuột/chạm để bắn (súng tự động: giữ), `R` nạp đạn, `G` lựu đạn, `1–5` / `Q` `E` / con lăn để đổi
+**Điều khiển:** chuột/chạm để bắn (súng tự động: giữ), `R` nạp đạn, `G` lựu đạn, `1–7` / `Q` `E` / con lăn để đổi
 súng, `P` hoặc `Esc` tạm dừng. Trên điện thoại có nút nạp đạn và nút đổi súng ở bên trái màn hình.
 
 Tiến trình tự lưu (localStorage) vào mỗi buổi sáng và đầu mỗi đêm; thua thì có thể chơi lại đúng đêm đó.

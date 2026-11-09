@@ -1,11 +1,12 @@
 import {
-  WEAPONS, WEAPON_ORDER, DAY_HOURS, MAX_RELOAD_LVL, GRENADE, CAMPAIGN_NIGHTS,
-  barricadeMax, barricadeUpgradePrice, reloadUpgradePrice, repairKitPrice, isBossNight,
+  WEAPONS, WEAPON_ORDER, DAY_HOURS, MAX_RELOAD_LVL, GRENADE, CAMPAIGN_NIGHTS, ACT_LENGTH, ACT_NAMES,
+  barricadeMax, barricadeUpgradePrice, reloadUpgradePrice, repairKitPrice, isBossNight, bossTypeFor, actFor,
+  ZOMBIES, dmgUpgradePrice, MAX_DMG_LVL,
 } from './config.js';
-import { INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, hasPerk } from './story.js';
+import { INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO, hasPerk } from './story.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
-import { weaponIcon, drawPerson } from './render.js';
+import { weaponIcon, drawPerson, heroPortrait } from './render.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const ri = (a, b) => Math.floor(rand(a, b + 1));
@@ -69,6 +70,7 @@ export class UI {
     else if (s === 'day') this.afterNight(info);
     else if (s === 'gameover') this.showGameOver(info);
     else if (s === 'victory') this.showVictoryStory(info);
+    else if (s === 'interlude') this.showInterlude(info);
   }
 
   act(a, arg, el) {
@@ -87,6 +89,7 @@ export class UI {
         g.data = d;
         sfx.click();
         if (d.night > CAMPAIGN_NIGHTS && !d.endless) this.showVictory(null);
+        else if (d.night > ACT_LENGTH && !d.seenAct2 && !d.endless) this.playAct2Intro(null);
         else this.showDay(null);
         break;
       }
@@ -151,9 +154,9 @@ export class UI {
     this.root.innerHTML = `
       <div class="screen menu fade-in">
         <div class="menu-left">
-          <div class="eyebrow">Bến Sương · 10 đêm chờ cứu hộ</div>
+          <div class="eyebrow">2 chương · 20 đêm · Bến Sương → Cảng Vọng Hải</div>
           <h1 class="title"><span class="t1">BARRICADE</span><span class="t2">NIGHTS</span></h1>
-          <p class="tagline">Giữ vững hàng rào. Sống sót cho đến khi trực thăng tới.</p>
+          <p class="tagline">Phong, người giữ trạm phát thanh cuối cùng. Giữ vững hàng rào cho đến khi được cứu.</p>
           <div class="menu-buttons">
             ${save ? `<button class="primary" data-act="continue">${contLabel}</button>` : ''}
             <button class="${save ? '' : 'primary'}" data-act="new">Chiến dịch mới</button>
@@ -192,7 +195,14 @@ export class UI {
     this.root.innerHTML = `
       <div class="screen panel-screen fade-in">
         <div class="panel help">
-          <h2>Cách sống sót</h2>
+          <div class="help-head">
+            <img class="hero-card" src="${heroPortrait()}" alt="Phong">
+            <div>
+              <div class="eyebrow">Nhân vật chính</div>
+              <h2>Phong · kỹ thuật viên trạm phát thanh</h2>
+              <p class="story-line">Không bao giờ tháo tai nghe. Chừng nào radio còn phát, chừng đó Phong còn chiến đấu.</p>
+            </div>
+          </div>
           <div class="help-grid">
             <div><h4>Ban đêm</h4>
               <p>Zombie kéo đến từ bên phải để phá hàng rào. Ngắm và bắn bằng chuột hoặc chạm vào màn hình. Súng tự động thì giữ để xả đạn.</p>
@@ -200,14 +210,14 @@ export class UI {
             </div>
             <div><h4>Ban ngày</h4>
               <p>Chia ${DAY_HOURS} giờ cho sửa rào, lục lọi tiền và đạn, hoặc tìm người sống sót. Mỗi người có một kỹ năng riêng và sẽ bắn hỗ trợ bạn.</p>
-              <p>Mua súng, đạn, lựu đạn và nâng cấp ở cửa hàng.</p>
+              <p>Mua súng, đạn, lựu đạn và nâng cấp ở cửa hàng. Chương 2 mở thêm súng phun lửa và súng phóng lựu.</p>
             </div>
             <div><h4>Điều khiển</h4>
               <table class="keys">
                 <tr><td>Bắn</td><td>Click / chạm</td></tr>
                 <tr><td>Nạp đạn</td><td>R · nút ⟳</td></tr>
                 <tr><td>Lựu đạn</td><td>G hoặc Space · nút lựu đạn rồi chạm</td></tr>
-                <tr><td>Đổi súng</td><td>1–5 · Q/E · con lăn</td></tr>
+                <tr><td>Đổi súng</td><td>1–7 · Q/E · con lăn</td></tr>
                 <tr><td>Tạm dừng</td><td>P · Esc</td></tr>
               </table>
             </div>
@@ -305,12 +315,12 @@ export class UI {
       .map((id) => `${id}:${d.weapons[id].mag}:${d.weapons[id].reserve}`).join('|') + d.current + (g.reloadT > 0) + d.grenades + g.grenadeArmed;
     if (key === this.lastHud) return;
     this.lastHud = key;
-    this.weaponBar.innerHTML = WEAPON_ORDER.filter((id) => d.weapons[id]).map((id, i) => {
+    this.weaponBar.innerHTML = WEAPON_ORDER.filter((id) => d.weapons[id]).map((id) => {
       const w = WEAPONS[id], st = d.weapons[id];
       const active = id === d.current;
       const empty = st.mag === 0 ? ' empty' : '';
       return `<button class="weapon-slot${active ? ' active' : ''}${empty}" data-hud="weapon" data-arg="${id}">
-        <span class="slot-key">${i + 1}</span>
+        <span class="slot-key">${WEAPON_ORDER.indexOf(id) + 1}</span>
         <img class="slot-icon" src="${weaponIcon(id)}" alt="">
         <span class="slot-ammo">${active && g.reloadT > 0 ? '···' : st.mag}<small>/${w.infinite ? '∞' : st.reserve}</small></span>
       </button>`;
@@ -352,8 +362,24 @@ export class UI {
       </div>`;
   }
 
+  // Hết chương 1: trực thăng → bến cảng → chương 2
+  showInterlude(info) {
+    setTimeout(() => this.playCutscene(ACT1_END, () => this.playAct2Intro(info), 'Hết chương 1 · Bình minh thứ mười'), 600);
+  }
+
+  playAct2Intro(info) {
+    const g = this.game;
+    g.setScene('harbor');
+    g.state = 'day';
+    this.playCutscene(ACT2_INTRO, () => {
+      g.data.seenAct2 = true;
+      saveGame(g.data);
+      this.showDay(info);
+    }, `Chương 2 · ${ACT_NAMES[2]}`);
+  }
+
   showVictoryStory(info) {
-    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Bình minh thứ mười'), 600);
+    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Kết thúc · Bình minh thứ hai mươi'), 600);
   }
 
   showVictory() {
@@ -364,7 +390,7 @@ export class UI {
         <div class="panel small victory">
           <div class="eyebrow">Chiến dịch hoàn thành</div>
           <h2 class="big-title gold">BẠN ĐÃ SỐNG SÓT</h2>
-          <p class="story-line">Mười đêm ở Bến Sương. Trực thăng Hải Âu đã đưa bạn${d.crew.length ? ` và ${d.crew.length} người đồng hành` : ''} rời khỏi đồi Cao Vọng.</p>
+          <p class="story-line">Hai mươi đêm, từ Bến Sương tới Cảng Vọng Hải. Tàu Bình Minh đã đưa Phong${d.crew.length ? ` và ${d.crew.length} người đồng hành` : ''} ra khơi an toàn.</p>
           <div class="stat-row">
             <div><b>${d.totalKills}</b><span>zombie đã hạ</span></div>
             <div><b>${d.headshots || 0}</b><span>headshot</span></div>
@@ -387,6 +413,7 @@ export class UI {
   showDay(info) {
     const g = this.game;
     g.state = 'day';
+    g.scene = actFor(g.data.night) === 1 ? 'town' : 'harbor';
     setMood('day');
     this.dayInfo = info;
     this.alloc = { repair: 0, scav: 0, search: 0 };
@@ -491,10 +518,11 @@ export class UI {
     const d = this.game.data;
     const max = barricadeMax(d.barricadeLevel);
     if (this.shopTab === 'weapons') {
-      return WEAPON_ORDER.filter((id) => !WEAPONS[id].infinite).map((id) => {
+      const act = d.endless ? 2 : actFor(d.night);
+      return WEAPON_ORDER.filter((id) => !WEAPONS[id].infinite && ((WEAPONS[id].act || 1) <= act || d.weapons[id])).map((id) => {
         const w = WEAPONS[id];
         const stats = `ST ${w.dmg}${w.pellets > 1 ? '×' + w.pellets : ''} · băng ${w.mag}${w.auto ? ' · tự động' : ''}${w.pierce > 1 ? ' · xuyên ' + w.pierce : ''}`;
-        if (!d.weapons[id]) return { id: 'w:' + id, icon: id, title: w.name, desc: w.desc, stats, price: w.price, tag: 'MỚI' };
+        if (!d.weapons[id]) return { id: 'w:' + id, icon: id, title: w.name, desc: w.desc, stats, price: w.price, tag: w.act === 2 ? 'KHO CẢNG' : 'MỚI' };
         return { id: 'a:' + id, icon: id, title: `Đạn ${w.name} +${w.ammoPack}`, desc: `Đang có ${d.weapons[id].reserve + d.weapons[id].mag} viên`, stats, price: w.ammoPrice, owned: true };
       });
     }
@@ -503,6 +531,10 @@ export class UI {
       { id: 'repair', title: 'Bộ sửa chữa', desc: `+25% độ bền ngay lập tức (${Math.ceil(d.hp)}/${max})`, price: repairKitPrice(d.night), disabled: d.hp >= max },
       { id: 'barricade', title: `Gia cố hàng rào · cấp ${d.barricadeLevel + 1}`, desc: `Độ bền tối đa ${max} → ${barricadeMax(d.barricadeLevel + 1)}`, price: barricadeUpgradePrice(d.barricadeLevel) },
     ];
+    const dl = d.dmgLevel || 0;
+    if (dl < MAX_DMG_LVL) {
+      items.push({ id: 'dmgUp', title: `Đạn xuyên giáp · cấp ${dl + 1}/${MAX_DMG_LVL}`, desc: 'Mọi vũ khí của bạn gây thêm 12% sát thương', price: dmgUpgradePrice(dl) });
+    }
     if (d.reloadLevel < MAX_RELOAD_LVL) {
       items.push({ id: 'reloadUp', title: `Luyện nạp đạn · cấp ${d.reloadLevel + 1}/${MAX_RELOAD_LVL}`, desc: 'Nạp đạn mọi loại súng nhanh hơn 12%', price: reloadUpgradePrice(d.reloadLevel) });
     }
@@ -521,6 +553,7 @@ export class UI {
       d.barricadeLevel++;
       d.hp += barricadeMax(d.barricadeLevel) - max; // phần tăng thêm được đầy
     } else if (id === 'reloadUp') d.reloadLevel++;
+    else if (id === 'dmgUp') d.dmgLevel = (d.dmgLevel || 0) + 1;
     else if (id.startsWith('w:')) {
       const w = id.slice(2);
       d.weapons[w] = { mag: WEAPONS[w].mag, reserve: WEAPONS[w].mag * 2 };
@@ -539,15 +572,19 @@ export class UI {
     const campaign = !d.endless && d.night <= CAMPAIGN_NIGHTS;
     const scroll = this.root.querySelector('.shop-list')?.scrollTop || 0;
 
-    const dots = campaign ? `<div class="night-track">${Array.from({ length: CAMPAIGN_NIGHTS }, (_, i) => {
-      const n = i + 1;
+    const act = actFor(d.night);
+    const actStart = (act - 1) * ACT_LENGTH;
+    const dots = campaign ? `<div class="night-track">${Array.from({ length: ACT_LENGTH }, (_, i) => {
+      const n = actStart + i + 1;
       const cls = n < d.night ? 'done' : n === d.night ? 'next' : '';
-      return `<span class="${cls}${n === CAMPAIGN_NIGHTS ? ' boss' : ''}" title="Đêm ${n}"></span>`;
-    }).join('')}<em>🚁</em></div>` : '';
+      return `<span class="${cls}${isBossNight(n) ? ' boss' : ''}" title="Đêm ${n}"></span>`;
+    }).join('')}<em>${act === 1 ? '🚁' : '🚢'}</em></div>` : '';
 
     const radioLines = DAWN_LOG[d.night - 1];
     const radio = radioLines && !d.endless ? radioLines[radioLines.length - 1] : null;
-    const warn = isBossNight(d.night) ? '<div class="warn">⚠ Đêm nay có trăng máu: Kẻ Khổng Lồ sẽ xuất hiện.</div>' : '';
+    const newFoe = { 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater' }[d.night];
+    const warn = (isBossNight(d.night) ? `<div class="warn">⚠ Đêm nay có trăng máu: ${ZOMBIES[bossTypeFor(d.night)].name} sẽ xuất hiện.</div>` : '')
+      + (newFoe && !d.endless ? `<div class="warn soft">Loại mới đêm nay: ${ZOMBIES[newFoe].name}.</div>` : '');
 
     const row = (k, label, hint) => `
       <div class="hour-row">
@@ -579,7 +616,7 @@ export class UI {
     } else {
       shopBody = this.shopItems().map((it) => `
         <button class="shop-item${it.owned ? ' owned' : ''}" data-act="buy" data-arg="${it.id}" ${it.disabled || d.cash < it.price ? 'disabled' : ''}>
-          ${it.icon ? `<img class="si-icon" src="${weaponIcon(it.icon)}" alt="">` : '<span class="si-icon si-glyph">' + (it.id === 'repair' ? '✚' : it.id === 'barricade' ? '▦' : '⟳') + '</span>'}
+          ${it.icon ? `<img class="si-icon" src="${weaponIcon(it.icon)}" alt="">` : '<span class="si-icon si-glyph">' + ({ repair: '✚', barricade: '▦', dmgUp: '◆' }[it.id] || '⟳') + '</span>'}
           <span class="si-main">
             <span class="si-title">${it.title}${it.tag ? ` <em>${it.tag}</em>` : ''}</span>
             <span class="si-desc">${it.desc}</span>
@@ -593,7 +630,7 @@ export class UI {
       <div class="screen day ${this.fadeDay === false ? '' : 'fade-in'}">
         <header class="day-header">
           <div class="day-title">
-            <div class="eyebrow">${campaign ? `Ban ngày · còn ${CAMPAIGN_NIGHTS - d.night + 1} đêm` : 'Ban ngày · chế độ vô tận'}</div>
+            <div class="eyebrow">${campaign ? `Chương ${act} · ${ACT_NAMES[act]} · còn ${act * ACT_LENGTH - d.night + 1} đêm` : 'Ban ngày · chế độ vô tận'}</div>
             <h2>Chuẩn bị cho Đêm ${d.night}</h2>
             ${dots}
           </div>

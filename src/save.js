@@ -11,6 +11,9 @@ export function newSave() {
     hp: barricadeMax(0),
     barricadeLevel: 0,
     reloadLevel: 0,
+    dmgLevel: 0,
+    seenAct2: false,
+    v: 2,
     crew: [],
     grenades: 2,
     totalKills: 0,
@@ -36,6 +39,8 @@ export function loadGame() {
     // bản lưu cũ chỉ có số người sống sót
     if (!Array.isArray(d.crew)) out.crew = SURVIVORS.slice(0, d.survivors || 0).map((s) => s.id);
     delete out.survivors;
+    // bản lưu cũ (chiến dịch 10 đêm): người đã thắng tiếp tục sang chương 2 thay vì vô tận
+    if (!d.v) { if (out.endless && out.night <= 21) out.endless = false; out.v = 2; }
     return out;
   } catch { return null; }
 }
