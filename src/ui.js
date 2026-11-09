@@ -1,9 +1,13 @@
 import {
   WEAPONS, WEAPON_ORDER, DAY_HOURS, MAX_RELOAD_LVL, GRENADE, CAMPAIGN_NIGHTS, ACT_LENGTH, ACT_NAMES,
   barricadeMax, barricadeUpgradePrice, reloadUpgradePrice, repairKitPrice, isBossNight, bossTypeFor, actFor,
-  ZOMBIES, dmgUpgradePrice, MAX_DMG_LVL,
+  ZOMBIES, dmgUpgradePrice, MAX_DMG_LVL, stageFor, STAGE_LENGTH, STAGE_NAMES, SCENES, MAX_SQUAD,
+  modsFor, MOD_INFO, mateLevel, MATE_XP, CAMP_INCOME,
 } from './config.js';
-import { INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO, hasPerk } from './story.js';
+import {
+  INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO,
+  STAGE1_END, STAGE2_INTRO, ACT3_END, ACT4_INTRO, hasPerk,
+} from './story.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
 import { weaponIcon, heroPortrait, characterPortrait } from './render.js';
@@ -77,7 +81,7 @@ export class UI {
         g.data = d;
         sfx.click();
         if (d.night > CAMPAIGN_NIGHTS && !d.endless) this.showVictory(null);
-        else if (d.night > ACT_LENGTH && !d.seenAct2 && !d.endless) this.playAct2Intro(null);
+        else if (actFor(d.night) > (d.seenAct || 1) && !d.endless) this.playActIntro(actFor(d.night), null);
         else this.showDay(null);
         break;
       }
@@ -113,6 +117,7 @@ export class UI {
       case 'doDay': this.doDay(); break;
       case 'buy': this.buy(arg); break;
       case 'tab': this.shopTab = arg; sfx.click(); this.renderDay(); break;
+      case 'squad': this.toggleSquad(arg); break;
       case 'startNight': saveGame(g.data); sfx.click(); g.startNight(); break;
       case 'endless':
         g.data.endless = true;
@@ -142,7 +147,7 @@ export class UI {
     this.root.innerHTML = `
       <div class="screen menu fade-in">
         <div class="menu-left">
-          <div class="eyebrow">2 chương · 20 đêm · Bến Sương → Cảng Vọng Hải</div>
+          <div class="eyebrow">2 màn · 40 đêm · Bến Sương → Hồng Sơn</div>
           <h1 class="title"><span class="t1">BARRICADE</span><span class="t2">NIGHTS</span></h1>
           <p class="tagline">Phong, người giữ trạm phát thanh cuối cùng. Giữ vững hàng rào cho đến khi được cứu.</p>
           <div class="menu-buttons">
@@ -198,14 +203,15 @@ export class UI {
             </div>
             <div><h4>Ban ngày</h4>
               <p>Chia ${DAY_HOURS} giờ cho sửa rào, lục lọi tiền và đạn, hoặc tìm người sống sót. Mỗi người có một kỹ năng riêng và sẽ bắn hỗ trợ bạn.</p>
-              <p>Mua súng, đạn, lựu đạn và nâng cấp ở cửa hàng. Chương 2 mở thêm súng phun lửa và súng phóng lựu.</p>
+              <p>Chỉ 4 người được đứng trên rào, người còn lại ở trại kiếm thêm tiền. Đồng đội lên cấp khi hạ zombie và có thể bị thương khi rào sắp vỡ: hãy đưa người khác lên thay.</p>
+              <p>Mỗi màn có 20 đêm. Chú ý <b>dự báo đêm nay</b>: mất điện, thả dù tiếp tế, kẻ mang hòm…</p>
             </div>
             <div><h4>Điều khiển</h4>
               <table class="keys">
                 <tr><td>Bắn</td><td>Click / chạm</td></tr>
                 <tr><td>Nạp đạn</td><td>R · nút ⟳</td></tr>
                 <tr><td>Lựu đạn</td><td>G hoặc Space · nút lựu đạn rồi chạm</td></tr>
-                <tr><td>Đổi súng</td><td>1–7 · Q/E · con lăn</td></tr>
+                <tr><td>Đổi súng</td><td>1–9 · Q/E · con lăn</td></tr>
                 <tr><td>Tạm dừng</td><td>P · Esc</td></tr>
               </table>
             </div>
@@ -303,6 +309,8 @@ export class UI {
       .map((id) => `${id}:${d.weapons[id].mag}:${d.weapons[id].reserve}`).join('|') + d.current + (g.reloadT > 0) + d.grenades + g.grenadeArmed;
     if (key === this.lastHud) return;
     this.lastHud = key;
+    const ownedCount = WEAPON_ORDER.filter((id) => d.weapons[id]).length;
+    this.weaponBar.classList.toggle('two-col', ownedCount > 6);
     this.weaponBar.innerHTML = WEAPON_ORDER.filter((id) => d.weapons[id]).map((id) => {
       const w = WEAPONS[id], st = d.weapons[id];
       const active = id === d.current;
@@ -350,24 +358,28 @@ export class UI {
       </div>`;
   }
 
-  // Hết chương 1: trực thăng → bến cảng → chương 2
+  // Chuyển chương / chuyển màn
   showInterlude(info) {
-    setTimeout(() => this.playCutscene(ACT1_END, () => this.playAct2Intro(info), 'Hết chương 1 · Bình minh thứ mười'), 600);
+    const n = info.transition;
+    const end = { 10: [ACT1_END, 'Hết chương 1 · Bình minh thứ mười'], 20: [STAGE1_END, 'Hết màn 1 · Bình minh thứ hai mươi'], 30: [ACT3_END, 'Hết chương 3 · Bình minh thứ ba mươi'] }[n];
+    setTimeout(() => this.playCutscene(end[0], () => this.playActIntro(actFor(n + 1), info), end[1]), 600);
   }
 
-  playAct2Intro(info) {
+  playActIntro(act, info) {
     const g = this.game;
-    g.setScene('harbor');
+    g.setScene(SCENES[act]);
     g.state = 'day';
-    this.playCutscene(ACT2_INTRO, () => {
-      g.data.seenAct2 = true;
+    const lines = { 2: ACT2_INTRO, 3: STAGE2_INTRO, 4: ACT4_INTRO }[act] || [];
+    const title = act === 3 ? `Màn 2 · ${STAGE_NAMES[2]} · Chương 3 · ${ACT_NAMES[3]}` : `Chương ${act} · ${ACT_NAMES[act]}`;
+    this.playCutscene(lines, () => {
+      g.data.seenAct = Math.max(g.data.seenAct || 1, act);
       saveGame(g.data);
       this.showDay(info);
-    }, `Chương 2 · ${ACT_NAMES[2]}`);
+    }, title);
   }
 
   showVictoryStory(info) {
-    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Kết thúc · Bình minh thứ hai mươi'), 600);
+    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Kết thúc · Bình minh thứ bốn mươi'), 600);
   }
 
   showVictory() {
@@ -378,11 +390,11 @@ export class UI {
         <div class="panel small victory">
           <div class="eyebrow">Chiến dịch hoàn thành</div>
           <h2 class="big-title gold">BẠN ĐÃ SỐNG SÓT</h2>
-          <p class="story-line">Hai mươi đêm, từ Bến Sương tới Cảng Vọng Hải. Tàu Bình Minh đã đưa Phong${d.crew.length ? ` và ${d.crew.length} người đồng hành` : ''} ra khơi an toàn.</p>
+          <p class="story-line">Bốn mươi đêm, từ Bến Sương tới Hồng Sơn. Phong${d.crew.length ? ` cùng ${d.crew.length} người đồng hành` : ''} đã giữ trạm sống sót đủ lâu để vắc-xin được phát đi khắp đất nước.</p>
           <div class="stat-row">
             <div><b>${d.totalKills}</b><span>zombie đã hạ</span></div>
             <div><b>${d.headshots || 0}</b><span>headshot</span></div>
-            <div><b>${d.crew.length}/${SURVIVORS.length}</b><span>người được cứu</span></div>
+            <div><b>${d.crew.length}/${SURVIVORS.length}</b><span>đồng đội</span></div>
           </div>
           <button class="primary" data-act="endless">Ở lại chiến đấu · Chế độ vô tận</button>
           <button class="ghost" data-act="menu">Menu chính</button>
@@ -401,7 +413,7 @@ export class UI {
   showDay(info) {
     const g = this.game;
     g.state = 'day';
-    g.scene = actFor(g.data.night) === 1 ? 'town' : 'harbor';
+    g.scene = SCENES[actFor(g.data.night)];
     setMood('day');
     this.dayInfo = info;
     this.alloc = { repair: 0, scav: 0, search: 0 };
@@ -462,18 +474,20 @@ export class UI {
 
     const found = [];
     for (let i = 0; i < this.alloc.search; i++) {
-      const next = SURVIVORS.find((s) => !d.crew.includes(s.id));
+      const next = this.availableRecruits()[0];
       if (!next) break;
       d.searchPity = (d.searchPity || 0) + 1;
       if (Math.random() < 0.14 + Math.min(d.night * 0.012, 0.12) || d.searchPity >= 7) {
         d.crew.push(next.id);
+        d.mates[next.id] = { xp: 0, injured: 0 };
+        if (d.squad.length < MAX_SQUAD) d.squad.push(next.id);
         d.searchPity = 0;
         found.push(next);
       }
     }
     if (this.alloc.search) {
       if (found.length) found.forEach((s) => log.push({ icon: '🧍', text: `${s.name} (${s.role}) đã gia nhập nhóm!` }));
-      else log.push({ icon: '🔦', text: d.crew.length >= SURVIVORS.length ? 'Nơi trú ẩn đã đủ người.' : 'Không tìm thấy ai còn sống… nhưng bạn đã đi được xa hơn.' });
+      else log.push({ icon: '🔦', text: !this.availableRecruits().length ? 'Quanh đây không còn ai để tìm nữa.' : 'Không tìm thấy ai còn sống… nhưng bạn đã đi được xa hơn.' });
     }
     if (!log.length) log.push({ icon: '·', text: 'Bạn nghỉ ngơi cả ngày.' });
     this.dayLog = log;
@@ -486,6 +500,24 @@ export class UI {
     this.renderDay();
     this.modalQueue = found.map((s) => this.survivorCard(s));
     if (this.modalQueue.length) this.modal(this.modalQueue.shift());
+  }
+
+  availableRecruits() {
+    const d = this.game.data;
+    const stage = d.endless ? 2 : stageFor(d.night);
+    return SURVIVORS.filter((s) => !d.crew.includes(s.id) && (s.stage || 1) <= stage);
+  }
+
+  // Đưa đồng đội lên hàng rào hoặc cho về trại
+  toggleSquad(id) {
+    const d = this.game.data;
+    if (d.squad.includes(id)) d.squad = d.squad.filter((x) => x !== id);
+    else if (d.mates[id]?.injured > 0) { sfx.deny(); return; }
+    else if (d.squad.length >= MAX_SQUAD) { sfx.deny(); return; }
+    else d.squad.push(id);
+    sfx.click();
+    saveGame(d);
+    this.renderDay();
   }
 
   survivorCard(s) {
@@ -566,11 +598,19 @@ export class UI {
       const n = actStart + i + 1;
       const cls = n < d.night ? 'done' : n === d.night ? 'next' : '';
       return `<span class="${cls}${isBossNight(n) ? ' boss' : ''}" title="Đêm ${n}"></span>`;
-    }).join('')}<em>${act === 1 ? '🚁' : '🚢'}</em></div>` : '';
+    }).join('')}<em>${['', '🚁', '🚢', '🏔', '📡'][act]}</em></div>` : '';
 
     const radioLines = DAWN_LOG[d.night - 1];
     const radio = radioLines && !d.endless ? radioLines[radioLines.length - 1] : null;
-    const newFoe = { 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater' }[d.night];
+    const newFoe = { 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater', 22: 'dog', 24: 'screamer', 27: 'reviver' }[d.night];
+    const mods = modsFor(d.night);
+    const modList = Object.keys(MOD_INFO).filter((k) => mods[k]);
+    const forecast = modList.length ? `<div class="forecast"><span class="radio-tag">DỰ BÁO ĐÊM NAY</span>${modList.map((k) => `<div><b>${MOD_INFO[k].icon} ${MOD_INFO[k].name}${k === 'airdrops' ? ` ×${mods.airdrops}` : ''}</b> ${MOD_INFO[k].desc}</div>`).join('')}</div>` : '';
+    const hurtSquad = d.squad.filter((id) => d.mates[id]?.injured > 0);
+    const openSlots = MAX_SQUAD - d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length;
+    const bench = d.crew.filter((id) => !d.squad.includes(id) && !(d.mates[id]?.injured > 0));
+    const squadWarn = hurtSquad.length && bench.length && openSlots > 0
+      ? `<div class="warn">🩹 ${hurtSquad.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} đang bị thương. Mở tab Đồng đội để đưa người khác lên thay.</div>` : '';
     const warn = (isBossNight(d.night) ? `<div class="warn">⚠ Đêm nay có trăng máu: ${ZOMBIES[bossTypeFor(d.night)].name} sẽ xuất hiện.</div>` : '')
       + (newFoe && !d.endless ? `<div class="warn soft">Loại mới đêm nay: ${ZOMBIES[newFoe].name}.</div>` : '');
 
@@ -593,12 +633,29 @@ export class UI {
 
     let shopBody;
     if (this.shopTab === 'crew') {
-      shopBody = SURVIVORS.map((s) => {
+      const onWall = d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length;
+      const stage = d.endless ? 2 : stageFor(d.night);
+      shopBody = `<div class="squad-head">Trên hàng rào: <b>${onWall}/${MAX_SQUAD}</b> · Người ở trại kiếm thêm ~$${Math.round(CAMP_INCOME * (1 + d.night * 0.04))} mỗi sáng · Bị thương phải nghỉ vài đêm</div>`
+      + SURVIVORS.filter((s) => (s.stage || 1) <= stage || d.crew.includes(s.id)).map((s) => {
         const has = d.crew.includes(s.id);
-        return `<div class="crew-card ${has ? '' : 'unknown'}">
-          ${has ? `<img src="${portrait(s)}" alt="">` : '<div class="crew-unknown">?</div>'}
-          <div><b>${has ? `${s.name} · ${s.role}` : 'Chưa tìm thấy'}</b>
-          <span>${has ? s.perk : 'Dành thời gian tìm người sống sót vào ban ngày.'}</span></div>
+        if (!has) {
+          return `<div class="crew-card unknown"><div class="crew-unknown">?</div>
+            <div><b>Chưa tìm thấy</b><span>Dành thời gian tìm người sống sót vào ban ngày.</span></div></div>`;
+        }
+        const m = d.mates[s.id] || { xp: 0, injured: 0 };
+        const lv = mateLevel(m.xp);
+        const nextXp = MATE_XP[lv] ?? null;
+        const inSquad = d.squad.includes(s.id);
+        const hurt = m.injured > 0;
+        const status = hurt ? `<em class="st hurt">Bị thương · nghỉ ${m.injured} đêm</em>` : inSquad ? '<em class="st wall">Trên hàng rào</em>' : '<em class="st camp">Ở trại</em>';
+        return `<div class="crew-card${hurt ? ' hurt' : ''}">
+          <img src="${portrait(s)}" alt="">
+          <div class="crew-main">
+            <b>${s.name} · ${s.role} <i class="stars">${'★'.repeat(lv)}<span class="off">${'★'.repeat(3 - lv)}</span></i></b>
+            <span>${s.perk}</span>
+            <small>${status} · ${WEAPONS[s.weapon].name} · ${nextXp ? `${m.xp}/${nextXp} XP` : 'cấp tối đa'}</small>
+          </div>
+          <button class="squad-btn${inSquad ? ' on' : ''}" data-act="squad" data-arg="${s.id}" ${hurt && !inSquad ? 'disabled' : ''}>${inSquad ? 'Về trại' : 'Ra trận'}</button>
         </div>`;
       }).join('');
     } else {
@@ -618,35 +675,35 @@ export class UI {
       <div class="screen day ${this.fadeDay === false ? '' : 'fade-in'}">
         <header class="day-header">
           <div class="day-title">
-            <div class="eyebrow">${campaign ? `Chương ${act} · ${ACT_NAMES[act]} · còn ${act * ACT_LENGTH - d.night + 1} đêm` : 'Ban ngày · chế độ vô tận'}</div>
-            <h2>Chuẩn bị cho Đêm ${d.night}</h2>
+            <div class="eyebrow">${campaign ? `Màn ${stageFor(d.night)} · Chương ${act} · ${ACT_NAMES[act]} · còn ${act * ACT_LENGTH - d.night + 1} đêm` : 'Ban ngày · chế độ vô tận'}</div>
+            <h2>${campaign ? `Chuẩn bị cho Đêm ${d.night - (stageFor(d.night) - 1) * STAGE_LENGTH}/${STAGE_LENGTH}` : `Chuẩn bị cho Đêm ${d.night}`}</h2>
             ${dots}
           </div>
           <div class="stats">
             <div class="stat cash"><b>$${d.cash}</b><span>tiền</span></div>
             <div class="stat"><b>${Math.ceil(d.hp)}<i>/${max}</i></b><span>hàng rào</span></div>
-            <div class="stat"><b>${d.crew.length}<i>/${SURVIVORS.length}</i></b><span>đồng đội</span></div>
+            <div class="stat"><b>${d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length}<i>/${MAX_SQUAD}</i></b><span>trên rào · ${d.crew.length} người</span></div>
           </div>
         </header>
         <div class="day-body">
           <section class="panel plan">
-            ${info ? `<div class="recap">Đêm ${info.night}: hạ <b>${info.kills}</b> zombie (${info.headshots} headshot), chuỗi dài nhất <b>${info.bestStreak}</b>, kiếm <b>$${info.earned}</b> + thưởng sống sót <b>$${info.bonus}</b>.</div>` : ''}
+            ${info ? `<div class="recap">Đêm ${info.night}: hạ <b>${info.kills}</b> zombie (${info.headshots} headshot), chuỗi dài nhất <b>${info.bestStreak}</b>, kiếm <b>$${info.earned}</b> + thưởng sống sót <b>$${info.bonus}</b>${info.campIncome ? ` + trại <b>$${info.campIncome}</b>` : ''}${info.crates ? `, mở <b>${info.crates}</b> thùng tiếp tế` : ''}${info.extraGrenade ? ', Hùng nhặt thêm 1 lựu đạn' : ''}.${info.injured?.length ? ` <span class="hurt-txt">${info.injured.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} bị thương.</span>` : ''}</div>` : ''}
             ${radio ? `<div class="radio-card"><span class="radio-tag">${radio.who}</span>${esc(radio.text)}</div>` : ''}
-            ${warn}
+            ${warn}${squadWarn}${forecast}
             <h3>${this.dayDone ? 'Kết quả trong ngày' : 'Kế hoạch ban ngày'} <small>${this.dayDone ? 'Đã hết giờ' : `${DAY_HOURS - used} giờ còn lại`}</small></h3>
             <div class="hour-dots">${hourDots}</div>
             ${this.dayDone
               ? `<ul class="day-log${this.animateLog ? ' animate' : ''}">${this.dayLog.map((l) => `<li><span>${l.icon}</span>${l.text}</li>`).join('')}</ul>`
               : `${row('repair', '🔨 Sửa hàng rào', `+${Math.round(this.repairRate() * 100)}% độ bền mỗi giờ`)}
             ${row('scav', '🎒 Lục lọi', 'Tiền, đạn, lựu đạn, may mắn có súng')}
-            ${row('search', '🔦 Tìm người sống sót', d.crew.length >= SURVIVORS.length ? 'Đã đủ người' : 'Có thể không tìm thấy ai')}
+            ${row('search', '🔦 Tìm người sống sót', this.availableRecruits().length ? 'Có thể không tìm thấy ai' : 'Quanh đây không còn ai')}
               <button class="primary wide" data-act="doDay" ${used ? '' : 'disabled'}>${used ? `Thực hiện kế hoạch (${used} giờ)` : 'Phân bổ ít nhất 1 giờ'}</button>`}
           </section>
           <section class="panel shop">
             <div class="tabs">
               <button class="${this.shopTab === 'weapons' ? 'active' : ''}" data-act="tab" data-arg="weapons">Vũ khí</button>
               <button class="${this.shopTab === 'gear' ? 'active' : ''}" data-act="tab" data-arg="gear">Trang bị</button>
-              <button class="${this.shopTab === 'crew' ? 'active' : ''}" data-act="tab" data-arg="crew">Đồng đội ${d.crew.length}/${SURVIVORS.length}</button>
+              <button class="${this.shopTab === 'crew' ? 'active' : ''}" data-act="tab" data-arg="crew">Đồng đội ${d.crew.length}${hurtSquad.length ? ' 🩹' : ''}</button>
             </div>
             <div class="shop-list">${shopBody}</div>
           </section>

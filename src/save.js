@@ -12,9 +12,11 @@ export function newSave() {
     barricadeLevel: 0,
     reloadLevel: 0,
     dmgLevel: 0,
-    seenAct2: false,
-    v: 2,
+    seenAct: 1,
+    v: 3,
     crew: [],
+    squad: [],
+    mates: {},
     grenades: 2,
     totalKills: 0,
     headshots: 0,
@@ -40,7 +42,17 @@ export function loadGame() {
     if (!Array.isArray(d.crew)) out.crew = SURVIVORS.slice(0, d.survivors || 0).map((s) => s.id);
     delete out.survivors;
     // bản lưu cũ (chiến dịch 10 đêm): người đã thắng tiếp tục sang chương 2 thay vì vô tận
-    if (!d.v) { if (out.endless && out.night <= 21) out.endless = false; out.v = 2; }
+    if (!d.v) { if (out.endless && out.night <= 21) out.endless = false; }
+    // bản 40 đêm: thêm đội hình, cấp độ và thương tích của đồng đội
+    if ((d.v || 0) < 3) {
+      if (out.endless && out.night <= 41) out.endless = false;
+      out.seenAct = d.seenAct2 ? 2 : 1;
+      if (out.night > 20 && out.seenAct < 2) out.seenAct = 2;
+    }
+    out.v = 3;
+    if (!Array.isArray(out.squad)) out.squad = out.crew.slice(0, 4);
+    out.mates = out.mates || {};
+    for (const id of out.crew) out.mates[id] = { xp: 0, injured: 0, ...(out.mates[id] || {}) };
     return out;
   } catch { return null; }
 }

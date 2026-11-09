@@ -45,6 +45,8 @@ export function makeBackground(bloodMoon = false, variant = 'town') {
   g.beginPath(); g.arc(mx + 12, my + 10, 5, 0, Math.PI * 2); g.fill();
 
   if (variant === 'harbor') drawHarbor(g, rnd);
+  else if (variant === 'dam') drawDam(g, rnd);
+  else if (variant === 'base') drawBase(g, rnd);
   else {
   // thành phố đổ nát phía xa
   let x = 240;
@@ -203,6 +205,105 @@ function drawHarbor(g, rnd) {
   g.fillText('03', 26, 290);
 }
 
+function mountains(g, rnd, cols, base) {
+  cols.forEach((col, k) => {
+    g.fillStyle = col;
+    g.beginPath(); g.moveTo(0, HORIZON);
+    let x = 0;
+    while (x <= W + 40) { g.lineTo(x, base + k * 28 - rnd() * (90 - k * 20)); x += 40 + rnd() * 50; }
+    g.lineTo(W, HORIZON); g.fill();
+  });
+}
+
+function drawDam(g, rnd) {
+  mountains(g, rnd, ['#151b2c', '#111727', '#0d1220'], 250);
+  // rừng thông
+  g.fillStyle = '#0a0f18';
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * W, y = 330 + rnd() * 50, h = 22 + rnd() * 30;
+    g.beginPath(); g.moveTo(x, y - h); g.lineTo(x - h * 0.3, y); g.lineTo(x + h * 0.3, y); g.fill();
+  }
+  // thân đập bê tông
+  g.fillStyle = '#2a2d36';
+  g.beginPath(); g.moveTo(290, HORIZON); g.lineTo(320, 296); g.lineTo(W, 296); g.lineTo(W, HORIZON); g.fill();
+  g.fillStyle = 'rgba(0,0,0,0.25)';
+  for (let x = 340; x < W; x += 56) g.fillRect(x, 300, 2, HORIZON - 300);
+  // cửa xả lũ + dòng nước
+  for (let i = 0; i < 4; i++) {
+    const gx = 420 + i * 130;
+    g.fillStyle = '#16181e'; g.fillRect(gx, 312, 40, 26);
+    for (let k = 0; k < 9; k++) {
+      g.fillStyle = `rgba(150,180,220,${0.08 + rnd() * 0.12})`;
+      g.fillRect(gx + 2 + rnd() * 34, 338, 2, HORIZON - 338);
+    }
+  }
+  // lan can + đèn trên đỉnh đập
+  g.fillStyle = '#1b1d24'; g.fillRect(318, 290, W - 318, 6);
+  for (let x = 330; x < W; x += 70) { g.fillRect(x, 270, 3, 22); g.fillStyle = 'rgba(255,210,120,0.85)'; g.fillRect(x - 2, 266, 7, 4); g.fillStyle = '#1b1d24'; }
+  // đường đất
+  const ground = g.createLinearGradient(0, HORIZON, 0, H);
+  ground.addColorStop(0, '#2f2b25');
+  ground.addColorStop(1, '#16140f');
+  g.fillStyle = ground;
+  g.fillRect(0, HORIZON, W, H - HORIZON);
+  g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(240, 462); g.lineTo(W, 458); g.moveTo(240, 492); g.lineTo(W, 496); g.stroke();
+  for (let i = 0; i < 50; i++) {
+    g.fillStyle = `rgba(80,90,50,${0.2 + rnd() * 0.3})`;
+    g.fillRect(rnd() * W, HORIZON + 4 + rnd() * (H - HORIZON), 1.5, 4 + rnd() * 4);
+  }
+  // chốt gác sau lưng người chơi
+  g.fillStyle = '#24262c'; g.fillRect(0, 280, 74, 210);
+  g.fillStyle = '#1a1b20'; g.fillRect(-4, 272, 84, 12);
+  g.fillStyle = 'rgba(255,200,110,0.5)'; g.fillRect(14, 312, 30, 20);
+  g.fillStyle = '#d0b050'; g.font = 'bold 9px sans-serif'; g.fillText('HỒNG SƠN', 10, 300);
+}
+
+function drawBase(g, rnd) {
+  mountains(g, rnd, ['#141a2a', '#10162a'], 260);
+  // tòa nhà phòng thí nghiệm
+  g.fillStyle = '#1b1f2c'; g.fillRect(500, 300, 290, HORIZON - 300);
+  g.fillStyle = '#161a26'; g.fillRect(560, 270, 170, 32);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 9; c++) {
+    if (rnd() < 0.7) { g.fillStyle = rnd() < 0.8 ? 'rgba(140,220,230,0.55)' : 'rgba(255,210,120,0.6)'; g.fillRect(512 + c * 31, 312 + r * 24, 16, 10); }
+  }
+  g.fillStyle = '#e0b030'; g.beginPath(); g.arc(645, 286, 9, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#1b1f2c'; g.font = 'bold 12px sans-serif'; g.fillText('☣', 639, 291);
+  // cột ăng-ten phát sóng
+  g.strokeStyle = '#1a1d28'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(850, HORIZON); g.lineTo(870, 150); g.lineTo(890, HORIZON); g.stroke();
+  g.lineWidth = 1.5;
+  for (let y = HORIZON; y > 160; y -= 18) { const k = (HORIZON - y) / (HORIZON - 150); g.beginPath(); g.moveTo(850 + k * 20, y); g.lineTo(890 - k * 20, y - 18); g.stroke(); }
+  // tháp canh
+  g.fillStyle = '#191c26';
+  g.fillRect(330, 300, 4, 120); g.fillRect(370, 300, 4, 120);
+  g.fillRect(318, 272, 68, 30); g.fillRect(312, 266, 80, 7);
+  g.fillStyle = 'rgba(255,230,160,0.7)'; g.fillRect(326, 280, 50, 10);
+  // hàng rào lưới thép gai
+  g.strokeStyle = '#222634'; g.lineWidth = 3;
+  for (let x = 250; x < W; x += 44) { g.beginPath(); g.moveTo(x, HORIZON); g.lineTo(x, 368); g.stroke(); }
+  g.strokeStyle = 'rgba(120,130,150,0.18)'; g.lineWidth = 1;
+  for (let x = 250; x < W; x += 8) { g.beginPath(); g.moveTo(x, 370); g.lineTo(x + 30, HORIZON); g.moveTo(x + 30, 370); g.lineTo(x, HORIZON); g.stroke(); }
+  g.strokeStyle = 'rgba(160,170,190,0.5)';
+  g.beginPath(); for (let x = 250; x < W; x += 6) g.lineTo(x, 366 + Math.sin(x * 0.5) * 3); g.stroke();
+  // sân bê tông + bãi đáp
+  const ground = g.createLinearGradient(0, HORIZON, 0, H);
+  ground.addColorStop(0, '#2c2e33');
+  ground.addColorStop(1, '#141518');
+  g.fillStyle = ground;
+  g.fillRect(0, HORIZON, W, H - HORIZON);
+  g.strokeStyle = 'rgba(230,200,60,0.35)'; g.lineWidth = 3;
+  g.beginPath(); g.ellipse(660, 478, 90, 22, 0, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = 'rgba(230,200,60,0.35)'; g.font = 'bold 30px sans-serif'; g.fillText('H', 648, 490);
+  g.fillStyle = 'rgba(230,200,60,0.3)';
+  for (let x = 240; x < W; x += 60) g.fillRect(x, 440, 30, 3);
+  // boong-ke sau lưng người chơi
+  g.fillStyle = '#262a32'; g.fillRect(0, 290, 76, 200);
+  g.fillStyle = '#1c1f26'; for (let y = 300; y < 480; y += 22) g.fillRect(4, y, 66, 3);
+  g.fillStyle = '#c94030'; g.fillRect(8, 300, 60, 6);
+  g.fillStyle = '#e8c040'; for (let x = 8; x < 68; x += 12) g.fillRect(x, 300, 6, 6);
+}
+
 export function drawBarricade(ctx, ratio, variant = 'town') {
   const x0 = BARRICADE_BACK, x1 = BARRICADE_X, top = BARRICADE_TOP, bottom = LANE_MAX + 10;
   // bao cát
@@ -231,9 +332,12 @@ export function drawBarricade(ctx, ratio, variant = 'town') {
     ctx.save();
     ctx.translate((x0 + x1) / 2 + 2, p.y);
     ctx.rotate(p.a);
-    ctx.fillStyle = variant === 'harbor' ? (i % 2 ? '#56636b' : '#6b5a46') : '#6b4a2b';
+    const plank = { harbor: i % 2 ? '#56636b' : '#6b5a46', dam: i % 2 ? '#7d7f7a' : '#6e706b', base: i % 2 ? '#4a5560' : '#566270' }[variant] || '#6b4a2b';
+    ctx.fillStyle = plank;
     ctx.fillRect(-44, -7, 88, 14);
     if (variant === 'harbor') { ctx.fillStyle = 'rgba(0,0,0,0.25)'; for (let r = -40; r < 44; r += 8) ctx.fillRect(r, -7, 2, 14); }
+    if (variant === 'base') { ctx.fillStyle = '#e8c040'; for (let r = -40; r < 40; r += 14) { ctx.beginPath(); ctx.moveTo(r, 7); ctx.lineTo(r + 6, -7); ctx.lineTo(r + 10, -7); ctx.lineTo(r + 4, 7); ctx.fill(); } }
+    if (variant === 'dam') { ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(-44, -1, 88, 2); }
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.fillRect(-44, 4, 88, 3);
     ctx.fillStyle = '#c9c9c9';
@@ -277,6 +381,8 @@ const GUN_SHAPES = {
   lmg: [[0, 12, 22, 10], [20, 9, 54, 12], [72, 12, 26, 5], [34, 21, 18, 12], [46, 4, 8, 6], [80, 17, 3, 12]],
   flamer: [[0, 12, 30, 12], [28, 14, 52, 6], [78, 11, 12, 10], [30, 22, 8, 12], [6, 24, 16, 10], [56, 8, 4, 6]],
   launcher: [[0, 10, 24, 14], [22, 8, 58, 16], [80, 10, 10, 12], [30, 24, 8, 12], [50, 3, 12, 5]],
+  sniper: [[0, 13, 24, 9], [22, 12, 76, 5], [32, 3, 30, 6], [38, 9, 3, 4], [54, 9, 3, 4], [28, 17, 8, 11], [92, 11, 6, 7]],
+  tesla: [[0, 11, 28, 12], [26, 8, 40, 18], [64, 13, 22, 8], [84, 9, 8, 16], [32, 26, 8, 10], [42, 3, 4, 6], [52, 3, 4, 6]],
 };
 export function weaponIcon(id) {
   if (iconCache[id]) return iconCache[id];
@@ -312,6 +418,7 @@ export function drawGun(ctx, id, len) {
   ctx.fillStyle = 'rgba(255,255,255,0.12)';
   for (const [x, y, w] of shapes) ctx.fillRect(x, y, w, 1.6);
   if (id === 'flamer') { ctx.fillStyle = '#b8471e'; ctx.fillRect(6, 24, 16, 10); }
+  if (id === 'tesla') { ctx.fillStyle = '#6ad0ff'; ctx.fillRect(30, 12, 32, 4); ctx.fillRect(84, 14, 8, 6); }
   ctx.restore();
 }
 
@@ -343,6 +450,26 @@ export const CHARACTERS = {
     outfit: 'jacket', top: '#f4f1ec', topShade: '#dcd6cc', accent: '#5b7fae',
     pants: '#1d1d24', skirt: '#8a3a4a', shoes: '#f0e6e0', lips: '#e0607a', eyes: '#4a2a18',
   },
+  hung: {
+    skin: '#d9a072', hair: 'short', hairColor: '#1a1410', head: 'bandana', stubble: true,
+    outfit: 'camo', top: '#5a6a40', topShade: '#48563a', accent: '#3d4a2a',
+    pants: '#4a5236', shoes: '#1e1a14', kneePads: true, gloves: '#2a2a2a',
+  },
+  linh: {
+    female: true, skin: '#f7d4b6', hair: 'longStraight', hairColor: '#0e0a0a', head: 'beret',
+    outfit: 'tactical', top: '#55603e', topShade: '#475234', accent: '#1e2024',
+    pants: '#2a2e30', shoes: '#141414', lips: '#c8485e', eyes: '#2a1a12', gloves: '#1e1e1e',
+  },
+  khoa: {
+    skin: '#f0c49a', hair: 'neat', hairColor: '#1c1612', head: 'glasses',
+    outfit: 'labcoat', top: '#f2f4f6', topShade: '#d6dadf', accent: '#4a6a9a',
+    pants: '#3a3f4a', shoes: '#2a2420',
+  },
+  vy: {
+    female: true, skin: '#f6d0ae', hair: 'buns', hairColor: '#2a1810', head: 'hardhat',
+    outfit: 'hivis', top: '#2e3a5a', topShade: '#26304a', accent: '#ff8a1e',
+    pants: '#3a4a6a', shoes: '#5a3a22', lips: '#e05a74', eyes: '#3a2214', gloves: '#e8c040',
+  },
 };
 
 // Vẽ một nhân vật nhìn nghiêng sang phải, cầm súng theo góc `ang`.
@@ -372,6 +499,16 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
     ctx.fill();
     ctx.fillStyle = C.accent; // dây buộc tóc
     ctx.beginPath(); ctx.arc(hx - 11, hy - 3, 2.4, 0, Math.PI * 2); ctx.fill();
+  } else if (C.hair === 'longStraight') {
+    const sway = Math.sin(t * 2 + x) * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(hx - 11, hy - 6);
+    ctx.quadraticCurveTo(hx - 16, hy + 14, hx - 14 + sway, hy + 34);
+    ctx.lineTo(hx - 4 + sway, hy + 32);
+    ctx.quadraticCurveTo(hx - 4, hy + 14, hx + 1, hy + 2);
+    ctx.fill();
+  } else if (C.hair === 'buns') {
+    ctx.beginPath(); ctx.arc(hx - 11, hy - 5, 4.6, 0, Math.PI * 2); ctx.arc(hx - 9, hy + 4, 4.2, 0, Math.PI * 2); ctx.fill();
   } else if (C.hair === 'bob') {
     ctx.beginPath();
     ctx.moveTo(hx - 12, hy - 4);
@@ -459,6 +596,34 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
     ctx.fillStyle = shade(C.accent, -15); roundRect(ctx, x - 5, top + 19, 10, 7, 1.5); ctx.fill();
     ctx.fillStyle = 'rgba(20,15,10,0.45)'; ctx.beginPath(); ctx.ellipse(x + 3, top + 33, 4, 2.5, 0.4, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#9aa0a8'; ctx.fillRect(x + 9, foot - 44, 3, 14); ctx.fillRect(x + 7.5, foot - 46, 6, 4); // cờ lê
+  } else if (C.outfit === 'camo') {
+    ctx.fillStyle = C.accent; // vằn rằn ri
+    for (let k = 0; k < 7; k++) { ctx.beginPath(); ctx.ellipse(bx + 4 + (k * 7) % bw, top + 6 + k * 6, 4, 2.4, k, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#6b4a2b'; ctx.fillRect(x - 13, top + 26, 26, 4); // dây đạn
+    ctx.fillStyle = '#d8b04a'; for (let k = 0; k < 6; k++) ctx.fillRect(x - 12 + k * 4.4, top + 25, 2, 6);
+    ctx.fillStyle = '#2a2a1e'; ctx.fillRect(bx, foot - 39, bw, 4);
+    ctx.fillStyle = '#c0c4c8'; ctx.fillRect(x + 1, top + 3, 3, 5); // thẻ bài
+  } else if (C.outfit === 'tactical') {
+    ctx.fillStyle = C.accent; // áo giáp chiến thuật
+    roundRect(ctx, bx - 1, top + 6, bw + 2, 30, 4); ctx.fill();
+    ctx.fillStyle = '#34383e'; for (let k = 0; k < 3; k++) roundRect(ctx, bx + 2 + k * 7, top + 16, 6, 9, 1.5), ctx.fill();
+    ctx.fillStyle = '#d8d8d8'; ctx.fillRect(x - 9, top + 9, 6, 2);
+    ctx.fillStyle = '#22252a'; ctx.fillRect(bx, foot - 39, bw, 3);
+  } else if (C.outfit === 'labcoat') {
+    ctx.fillStyle = C.top; // áo blouse dài quá hông
+    ctx.beginPath(); ctx.moveTo(bx, top + 4); ctx.lineTo(bx + bw, top + 4); ctx.lineTo(bx + bw + 3, foot - 22); ctx.lineTo(bx - 3, foot - 22); ctx.fill();
+    ctx.fillStyle = '#7aa2d8'; ctx.beginPath(); ctx.moveTo(x - 1, top + 1); ctx.lineTo(x + 6, top + 1); ctx.lineTo(x + 3, top + 14); ctx.fill(); // áo sơ mi xanh bên trong
+    ctx.fillStyle = C.accent; ctx.fillRect(x + 2, top + 4, 2.4, 12);
+    ctx.fillStyle = C.topShade; ctx.fillRect(x + 1, top + 20, 8, 6);
+    ctx.fillStyle = '#c03030'; ctx.fillRect(x + 6, top + 18, 1.5, 5);
+    ctx.fillStyle = 'rgba(140,20,20,0.5)'; ctx.beginPath(); ctx.ellipse(x - 5, top + 34, 3, 4, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2a6aa0'; roundRect(ctx, x - 8, top + 10, 6, 8, 1); ctx.fill(); // thẻ tên
+  } else if (C.outfit === 'hivis') {
+    ctx.fillStyle = C.accent; // áo phản quang cam
+    ctx.beginPath(); ctx.moveTo(bx, top + 3); ctx.lineTo(x - 2, top + 2); ctx.lineTo(x - 1, foot - 40); ctx.lineTo(bx, foot - 40); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x + 5, top + 2); ctx.lineTo(bx + bw, top + 3); ctx.lineTo(bx + bw, foot - 40); ctx.lineTo(x + 6, foot - 40); ctx.fill();
+    ctx.fillStyle = '#e8eef2'; ctx.fillRect(bx, top + 20, bw, 3); ctx.fillRect(bx, top + 30, bw, 3);
+    ctx.fillStyle = '#9aa0a8'; ctx.fillRect(x + 8, foot - 46, 3, 10); // tua vít
   } else if (C.outfit === 'jacket') {
     ctx.fillStyle = C.accent; // áo khoác jean mở
     ctx.beginPath(); ctx.moveTo(bx - 1, top + 2); ctx.lineTo(x - 2, top + 1); ctx.lineTo(x - 3, foot - 39); ctx.lineTo(bx - 1, foot - 39); ctx.fill();
@@ -520,6 +685,11 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
     ctx.beginPath(); ctx.moveTo(hx - 1, hy + 4); ctx.quadraticCurveTo(hx + 2, hy + 13, hx + 7, hy + 11); ctx.quadraticCurveTo(hx + 9, hy + 9, hx + 9, hy + 7); ctx.lineTo(hx + 3, hy + 7); ctx.fill();
   }
 
+  if (C.stubble) {
+    ctx.fillStyle = 'rgba(40,25,15,0.35)';
+    ctx.beginPath(); ctx.moveTo(hx, hy + 3); ctx.quadraticCurveTo(hx + 3, hy + 11, hx + 9, hy + 8); ctx.lineTo(hx + 9, hy + 5); ctx.quadraticCurveTo(hx + 4, hy + 7, hx + 2, hy + 3); ctx.fill();
+  }
+
   // ---- tóc phía trước ----
   ctx.fillStyle = C.hairColor;
   if (C.hair === 'spiky') {
@@ -557,6 +727,35 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
     ctx.lineTo(hx + 4, hy - 14); ctx.lineTo(hx + 7, hy - 11); ctx.lineTo(hx + 11, hy - 9); ctx.lineTo(hx + 10, hy - 5);
     ctx.lineTo(hx + 4, hy - 7); ctx.lineTo(hx - 3, hy - 5); ctx.lineTo(hx - 5, hy + 1); ctx.lineTo(hx - 8, hy + 4);
     ctx.fill();
+  } else if (C.hair === 'longStraight') {
+    ctx.beginPath(); // mái thẳng, tóc phủ hai bên
+    ctx.moveTo(hx - 11, hy + 6);
+    ctx.quadraticCurveTo(hx - 13, hy - 12, hx, hy - 12.5);
+    ctx.quadraticCurveTo(hx + 11, hy - 12, hx + 11, hy - 3);
+    ctx.lineTo(hx + 4, hy - 4); ctx.lineTo(hx + 2, hy - 7); ctx.lineTo(hx - 2, hy - 3);
+    ctx.lineTo(hx - 5, hy + 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(hx - 1, hy - 3, 8.5, Math.PI * 1.1, Math.PI * 1.6); ctx.stroke();
+  } else if (C.hair === 'buns') {
+    ctx.beginPath();
+    ctx.moveTo(hx - 11, hy + 4);
+    ctx.quadraticCurveTo(hx - 12, hy - 12, hx + 1, hy - 12);
+    ctx.quadraticCurveTo(hx + 11, hy - 11, hx + 11, hy - 4);
+    ctx.quadraticCurveTo(hx + 6, hy - 7, hx + 1, hy - 5);
+    ctx.quadraticCurveTo(hx - 3, hy - 3, hx - 5, hy + 2);
+    ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx + 9, hy - 3); ctx.quadraticCurveTo(hx + 11, hy + 2, hx + 9.5, hy + 6); ctx.lineTo(hx + 8.6, hy - 1); ctx.fill(); // lọn tóc mai
+  } else if (C.hair === 'neat') {
+    ctx.beginPath();
+    ctx.moveTo(hx - 11, hy + 3);
+    ctx.quadraticCurveTo(hx - 12, hy - 11, hx - 1, hy - 12);
+    ctx.quadraticCurveTo(hx + 9, hy - 12.5, hx + 11, hy - 6);
+    ctx.lineTo(hx + 2, hy - 7);
+    ctx.lineTo(hx - 4, hy - 4); ctx.lineTo(hx - 6, hy + 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(hx - 3, hy - 11); ctx.lineTo(hx + 1, hy - 7.5); ctx.stroke();
   } else if (C.hair === 'gray') {
     ctx.beginPath(); ctx.moveTo(hx - 11, hy + 4); ctx.quadraticCurveTo(hx - 12, hy - 6, hx - 5, hy - 8); ctx.lineTo(hx - 3, hy + 2); ctx.fill();
   }
@@ -583,6 +782,24 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
     ctx.beginPath(); ctx.arc(hx + 2, hy - 9, 3.6, 0, Math.PI * 2); ctx.arc(hx + 8.5, hy - 8.5, 3.6, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(120,200,120,0.75)';
     ctx.beginPath(); ctx.arc(hx + 2, hy - 9, 2.2, 0, Math.PI * 2); ctx.arc(hx + 8.5, hy - 8.5, 2.2, 0, Math.PI * 2); ctx.fill();
+  } else if (C.head === 'bandana') {
+    ctx.fillStyle = '#b83228';
+    ctx.beginPath(); ctx.moveTo(hx - 11, hy - 5); ctx.quadraticCurveTo(hx, hy - 10, hx + 11, hy - 6); ctx.lineTo(hx + 11, hy - 2.5); ctx.quadraticCurveTo(hx, hy - 6.5, hx - 11, hy - 1.5); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx - 11, hy - 4); ctx.lineTo(hx - 18, hy - 1 + Math.sin(t * 4 + x) * 1.5); ctx.lineTo(hx - 17, hy + 3); ctx.lineTo(hx - 10, hy - 1); ctx.fill();
+  } else if (C.head === 'beret') {
+    ctx.fillStyle = '#2e3a24';
+    ctx.beginPath(); ctx.ellipse(hx - 1, hy - 11, 11, 4.6, -0.25, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#d8b04a'; ctx.beginPath(); ctx.arc(hx + 4, hy - 12, 1.4, 0, Math.PI * 2); ctx.fill();
+  } else if (C.head === 'glasses') {
+    ctx.strokeStyle = '#1a1a1e'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(hx + 7, hy - 1, 3, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hx + 4, hy - 1.5); ctx.lineTo(hx - 3, hy - 0.5); ctx.stroke();
+    ctx.fillStyle = 'rgba(200,230,255,0.25)'; ctx.beginPath(); ctx.arc(hx + 7, hy - 1, 2.6, 0, Math.PI * 2); ctx.fill();
+  } else if (C.head === 'hardhat') {
+    ctx.fillStyle = '#f2c230';
+    ctx.beginPath(); ctx.moveTo(hx - 10, hy - 7); ctx.quadraticCurveTo(hx - 10, hy - 19, hx + 1, hy - 19); ctx.quadraticCurveTo(hx + 11, hy - 19, hx + 11, hy - 7); ctx.fill();
+    ctx.fillRect(hx - 11, hy - 8, 26, 3);
+    ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(hx - 1, hy - 19, 3, 11);
   } else if (C.head === 'clip') {
     ctx.fillStyle = '#ff8fb0'; ctx.fillRect(hx + 3, hy - 9.5, 5, 1.8);
     ctx.fillStyle = '#ffc0d4'; ctx.beginPath(); ctx.arc(hx + 8.5, hy - 8.6, 1.6, 0, Math.PI * 2); ctx.fill();

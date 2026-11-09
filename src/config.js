@@ -17,10 +17,17 @@ export const SURVIVOR_SLOTS = [86, 54, 144, 24];
 
 export const HEADSHOT_MUL = 2.5;
 export const DAY_HOURS = 10;
-export const CAMPAIGN_NIGHTS = 20;
+export const CAMPAIGN_NIGHTS = 40;
 export const ACT_LENGTH = 10;
-export const actFor = (n) => (n <= ACT_LENGTH ? 1 : 2);
-export const ACT_NAMES = { 1: 'Bến Sương', 2: 'Cảng Vọng Hải' };
+export const STAGE_LENGTH = 20; // 20 đêm = 1 màn
+export const actFor = (n) => Math.min(4, Math.max(1, Math.ceil(n / ACT_LENGTH)));
+export const stageFor = (n) => Math.min(2, Math.max(1, Math.ceil(n / STAGE_LENGTH)));
+export const ACT_NAMES = { 1: 'Bến Sương', 2: 'Cảng Vọng Hải', 3: 'Đập Hồng Sơn', 4: 'Căn cứ Hồng Sơn' };
+export const STAGE_NAMES = { 1: 'Đường ra biển', 2: 'Mật mã Hồng Sơn' };
+export const SCENES = { 1: 'town', 2: 'harbor', 3: 'dam', 4: 'base' };
+export const sceneFor = (n) => SCENES[actFor(n)];
+export const MAX_SQUAD = 4;
+export const CAMP_INCOME = 35;
 
 export const WEAPONS = {
   pistol: {
@@ -65,8 +72,20 @@ export const WEAPONS = {
     price: 6800, ammoPrice: 300, ammoPack: 8, shake: 5, len: 38, act: 2,
     desc: 'Bắn đạn nổ vào điểm ngắm. Dọn sạch bầy đàn.',
   },
+  sniper: {
+    id: 'sniper', name: 'Súng bắn tỉa', dmg: 280, rate: 1.25, mag: 5, reload: 2.6,
+    pellets: 1, spread: 0, pierce: 8, auto: false, heavyTracer: true,
+    price: 9000, ammoPrice: 380, ammoPack: 18, shake: 6, len: 50, act: 3,
+    desc: 'Xuyên 8 mục tiêu trên một đường thẳng. Một phát một hàng.',
+  },
+  tesla: {
+    id: 'tesla', name: 'Súng điện', dmg: 55, rate: 0.32, mag: 30, reload: 2.4,
+    pellets: 1, spread: 0.02, pierce: 1, auto: true, chain: 5, chainRange: 150,
+    price: 12500, ammoPrice: 420, ammoPack: 40, shake: 1.5, len: 40, act: 4,
+    desc: 'Tia sét nhảy sang 5 con gần nhau. Xuyên giáp.',
+  },
 };
-export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher'];
+export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher', 'sniper', 'tesla'];
 
 export const GRENADE = { dmg: 280, radius: 125, price: 90, max: 6, fuse: 0.75 };
 
@@ -80,20 +99,72 @@ export const ZOMBIES = {
   riot:    { name: 'Cảnh sát bọc giáp', hp: 150, speed: 21, dmg: 9, atkRate: 1.3, h: 108, w: 34, reward: 40, skin: '#94866a', shirt: '#26324a', pants: '#1c2232', kind: 'upright', armored: true, helmet: 70 },
   bloater: { name: 'Kẻ trương phình', hp: 120, speed: 15, dmg: 55, atkRate: 0.5, h: 112, w: 56, reward: 30, skin: '#9c9460', shirt: '#55502c', pants: '#2c2a20', kind: 'upright', bomber: true },
   colossus:{ name: 'Quái Vật Cảng', hp: 6500, speed: 8, dmg: 80, atkRate: 2.4, h: 250, w: 98, reward: 1500, skin: '#6a5e48', shirt: '#2a2018', pants: '#1a1612', kind: 'upright', heavy: true, boss: true, summoner: true },
+  dog:     { name: 'Chó nhiễm bệnh', hp: 50, speed: 92, dmg: 4, atkRate: 0.55, h: 46, w: 62, reward: 20, skin: '#6b5a44', shirt: '#4a3c2c', pants: '#2e261c', kind: 'dog' },
+  screamer:{ name: 'Kẻ rú', hp: 110, speed: 22, dmg: 0, atkRate: 4, h: 106, w: 30, reward: 45, skin: '#b8a88a', shirt: '#5a2a3a', pants: '#2a2228', kind: 'upright', screamer: true },
+  reviver: { name: 'Kẻ tái sinh', hp: 85, speed: 24, dmg: 7, atkRate: 1.2, h: 104, w: 32, reward: 30, skin: '#7a8a7a', shirt: '#2e3a3a', pants: '#22282a', kind: 'upright', revive: true },
+  bounty:  { name: 'Kẻ mang hòm', hp: 320, speed: 44, dmg: 0, atkRate: 9, h: 104, w: 36, reward: 600, skin: '#a8946a', shirt: '#6a5020', pants: '#3a2c18', kind: 'upright', bounty: true },
+  tyrant:  { name: 'Bạo Chúa Rừng', hp: 8500, speed: 9, dmg: 85, atkRate: 2.3, h: 240, w: 96, reward: 1800, skin: '#5e5a40', shirt: '#2a2a18', pants: '#1a1a12', kind: 'upright', heavy: true, boss: true, summoner: 'dog' },
+  zero:    { name: 'Mẫu Thể Số 0', hp: 14000, speed: 10, dmg: 95, atkRate: 2.0, h: 232, w: 90, reward: 4000, skin: '#c8c0b4', shirt: '#3a1820', pants: '#1a1014', kind: 'upright', heavy: true, boss: true, phases: true },
   titan:   { name: 'Kẻ Khổng Lồ', hp: 3200, speed: 9, dmg: 60, atkRate: 2.2, h: 220, w: 86, reward: 600, skin: '#74664a', shirt: '#3a2418', pants: '#1f1b16', kind: 'upright', heavy: true, boss: true },
 };
 
 export function isBossNight(n) {
-  return n === 10 || n === 15 || n === 20 || (n > CAMPAIGN_NIGHTS && n % 5 === 0);
+  return n >= 10 && n % 5 === 0;
 }
-export const bossTypeFor = (n) => (n === 20 || (n > CAMPAIGN_NIGHTS && n % 10 === 0) ? 'colossus' : 'titan');
+export function bossTypeFor(n) {
+  if (n === 20) return 'colossus';
+  if (n === 30) return 'tyrant';
+  if (n === 40) return 'zero';
+  if (n > CAMPAIGN_NIGHTS) return ['titan', 'colossus', 'tyrant', 'zero'][Math.floor(n / 5) % 4];
+  return 'titan';
+}
+export const bossCountFor = (n) => (n === 35 ? 2 : 1); // đêm 35: hai Kẻ Khổng Lồ
+
+// Mỗi đêm một "điểm nhấn" để người chơi không chán
+const MODS = {
+  5: { airdrops: 2 }, 9: { airdrops: 2 }, 14: { airdrops: 2 }, 18: { airdrops: 3 },
+  21: { airdrops: 2 },
+  22: { rush: true },
+  23: { blackout: true },
+  24: { airdrops: 2 },
+  26: { bounty: true, rush: true },
+  27: { airdrops: 1 },
+  28: { airdrops: 3 },
+  29: { horde: true },
+  31: { airdrops: 2 },
+  32: { blackout: true },
+  33: { bounty: true },
+  34: { airdrops: 3 },
+  36: { rush: true, airdrops: 1 },
+  37: { blackout: true, bounty: true },
+  38: { horde: true },
+  39: { airdrops: 3, bounty: true },
+};
+export function modsFor(n) {
+  if (n <= CAMPAIGN_NIGHTS) return { airdrops: 0, ...(MODS[n] || {}) };
+  return { airdrops: n % 3 === 0 ? 2 : 0, blackout: n % 4 === 0, bounty: n % 7 === 0, rush: n % 6 === 0, horde: n % 8 === 0 };
+}
+export const MOD_INFO = {
+  blackout: { icon: '🔦', name: 'Mất điện', desc: 'Tối đen như mực. Chỉ thấy quanh đèn pin, chớp súng và vụ nổ.' },
+  airdrops: { icon: '🪂', name: 'Thả dù tiếp tế', desc: 'Bắn trúng thùng hàng đang rơi để nhận đạn, tiền hoặc lựu đạn.' },
+  bounty: { icon: '💰', name: 'Kẻ mang hòm', desc: 'Một zombie mang của cải sẽ xuất hiện rồi bỏ chạy. Hạ nó để nhận thưởng lớn.' },
+  rush: { icon: '⚡', name: 'Đêm tốc độ', desc: 'Zombie di chuyển nhanh hơn 30%, nhưng ít hơn.' },
+  horde: { icon: '🌊', name: 'Đêm bầy đàn', desc: 'Số lượng zombie tăng mạnh và kéo đến dồn dập.' },
+};
 
 export function waveFor(n) {
+  const m = modsFor(n);
+  let total = 10 + Math.min(n, 20) * 5 + Math.min(n, 12) ** 2 * 0.45 + Math.max(0, n - 20) * 1.5;
+  let interval = Math.max(0.3, 2.2 - n * 0.16);
+  if (m.rush) total *= 0.8;
+  if (m.horde) { total *= 1.35; interval *= 0.65; }
   return {
-    total: Math.round(10 + n * 5 + Math.min(n, 12) ** 2 * 0.45),
-    interval: Math.max(0.3, 2.2 - n * 0.16),
-    hpMul: 1 + (n - 1) * 0.09,
+    total: Math.round(total),
+    interval,
+    hpMul: 1 + Math.min(n - 1, 19) * 0.09 + Math.max(0, n - 20) * 0.06,
+    speedMul: m.rush ? 1.3 : 1,
     boss: isBossNight(n),
+    mods: m,
     weights: {
       walker: 1,
       runner: n >= 2 ? Math.min(0.15 + 0.06 * n, 0.6) : 0,
@@ -102,15 +173,18 @@ export function waveFor(n) {
       spitter: n >= 6 ? Math.min(0.08 + 0.01 * n, 0.18) : 0,
       riot: n >= 11 ? Math.min(0.12 + 0.015 * (n - 11), 0.28) : 0,
       bloater: n >= 12 ? Math.min(0.08 + 0.01 * (n - 12), 0.16) : 0,
+      dog: n >= 22 ? (m.horde ? 0.35 : 0.2) : 0,
+      screamer: n >= 24 ? 0.07 : 0,
+      reviver: n >= 27 ? 0.16 : 0,
     },
   };
 }
 
 export function weatherFor(n) {
   return {
-    rain: (n >= 7 && n <= 10) || n === 16 || n === 17 || n === 19 || (n > CAMPAIGN_NIGHTS && n % 3 === 0),
-    lightning: (n >= 7 && n <= 10) || n === 16 || n === 17,
-    fog: n > 10 ? Math.min(0.2 + (n - 10) * 0.02, 0.38) : Math.min(0.08 + n * 0.02, 0.3),
+    rain: (n >= 7 && n <= 10) || [16, 17, 19, 25, 28, 34, 35].includes(n) || (n > CAMPAIGN_NIGHTS && n % 3 === 0),
+    lightning: (n >= 7 && n <= 10) || [16, 17, 28, 34, 35].includes(n),
+    fog: n > 30 ? 0.12 : n > 20 ? (n === 28 ? 0.4 : 0.22) : n > 10 ? Math.min(0.2 + (n - 10) * 0.02, 0.38) : Math.min(0.08 + n * 0.02, 0.3),
     bloodMoon: isBossNight(n),
   };
 }
@@ -123,4 +197,6 @@ export const MAX_RELOAD_LVL = 4;
 export const repairKitPrice = (night) => 120 + night * 20;
 export const dmgMul = (lvl) => 1 + 0.12 * lvl;
 export const dmgUpgradePrice = (lvl) => 700 * (lvl + 1);
-export const MAX_DMG_LVL = 5;
+export const MAX_DMG_LVL = 10;
+export const mateLevel = (xp) => (xp >= 60 ? 3 : xp >= 20 ? 2 : 1);
+export const MATE_XP = [0, 20, 60];

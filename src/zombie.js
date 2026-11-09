@@ -18,7 +18,12 @@ export class Zombie {
     this.foot = rand(LANE_MIN, LANE_MAX);
     this.x = W + 40 + rand(0, 60);
     this.demo = demo;
-    this.targetX = T.ranged ? rand(470, 640) : BARRICADE_X + this.w / 2 + rand(-2, 10);
+    this.targetX = T.ranged ? rand(470, 640) : T.screamer ? rand(540, 720) : T.bounty ? rand(360, 470) : BARRICADE_X + this.w / 2 + rand(-2, 10);
+    this.buffT = 0;
+    this.screamT = 0;
+    this.reviveT = 0;
+    this.revived = false;
+    this.fleeing = false;
     if (demo) this.speed *= 0.8;
     if (T.boss) { this.foot = (LANE_MIN + LANE_MAX) / 2 + 10; this.roarT = 2; }
     this.state = 'walk'; // walk | attack | dead
@@ -37,6 +42,14 @@ export class Zombie {
 
   // Hitbox trong toạ độ thế giới
   boxes() {
+    if (this.T.kind === 'dog') {
+      const r = this.h * 0.24;
+      return {
+        hx: this.x - this.w / 2 + r * 0.6, hy: this.foot - this.h * 0.74, hr: r,
+        bx0: this.x - this.w / 2 + r, by0: this.foot - this.h * 0.82,
+        bx1: this.x + this.w / 2, by1: this.foot,
+      };
+    }
     if (this.T.kind === 'crawl') {
       const r = this.h * 0.27;
       return {
@@ -90,7 +103,24 @@ export class Zombie {
 
   update(dt, game) {
     this.hitT = Math.max(0, this.hitT - dt);
-    if (this.state === 'dead') { this.deadT += dt; this.burnT = 0; return; }
+    if (this.state === 'dead') {
+      this.deadT += dt;
+      this.burnT = 0;
+      if (this.reviveT > 0) {
+        this.reviveT -= dt;
+        if (this.reviveT <= 0) { // đứng dậy lần nữa
+          this.state = 'walk';
+          this.hp = this.maxHp * 0.5;
+          this.revived = true;
+          this.deadT = 0;
+          this.hitT = 0.3;
+          game.onRevive(this);
+        }
+      }
+      return;
+    }
+    this.buffT = Math.max(0, this.buffT - dt);
+    this.screamT = Math.max(0, this.screamT - dt);
     if (this.burnT > 0) {
       this.burnT -= dt;
       game.burnTick(this, this.burnDps * dt);
@@ -101,18 +131,30 @@ export class Zombie {
       this.roarT -= dt;
       if (this.roarT <= 0) { this.roarT = rand(6, 9); game.bossRoar(this); }
     }
+    const spd = this.speed * (this.buffT > 0 ? 1.5 : 1);
+    if (this.fleeing) { // kẻ mang hòm bỏ chạy
+      this.x += spd * 1.15 * dt;
+      this.phase += dt * (2 + spd * 0.06);
+      if (this.x > W + 70) game.bountyEscaped(this);
+      return;
+    }
     if (this.state === 'walk') {
-      this.x -= this.speed * dt;
-      this.phase += dt * (2 + this.speed * 0.06);
-      if (this.x <= this.targetX) { this.x = this.targetX; this.state = 'attack'; }
+      this.x -= spd * dt;
+      this.phase += dt * (2 + spd * 0.06);
+      if (this.x <= this.targetX) {
+        this.x = this.targetX;
+        if (this.T.bounty) { this.fleeing = true; return; }
+        this.state = 'attack';
+      }
     } else if (this.state === 'attack') {
       if (this.x > this.targetX + 3) { this.state = 'walk'; return; }
-      this.atkT -= dt;
+      this.atkT -= dt * (this.buffT > 0 ? 1.4 : 1);
       this.swing = Math.max(0, this.swing - dt * 3);
       if (this.atkT <= 0) {
         this.atkT = this.T.atkRate * rand(0.85, 1.15);
         this.swing = 1;
-        if (this.T.ranged) game.spitAcid(this);
+        if (this.T.screamer) { this.screamT = 1; game.scream(this); }
+        else if (this.T.ranged) game.spitAcid(this);
         else if (this.T.bomber) { game.bloaterBurst(this, true); return; }
         else game.damageBarricade(this.T.dmg, this.foot);
       }
@@ -130,10 +172,17 @@ export class Zombie {
         if (this.helmet <= 0) result = 'helmet';
       } else if (!head) dmg *= 0.55;
     }
+    if (this.armorPhase && kind === 'bullet') dmg *= 0.4; // giai đoạn 3 của Mẫu Thể Số 0
     this.hp -= dmg;
     if (kind !== 'fire') this.hitT = 0.08; // cháy âm ỉ thì không chớp trắng
     const kb = (this.T.heavy ? 1.5 : 6) * Math.min(dmg / 30, 3);
     this.x = Math.min(this.x + kb, W + 100);
+    if (this.hp <= 0 && this.T.revive && !this.revived && !head && kind === 'bullet') {
+      this.state = 'dead';
+      this.deadT = 0;
+      this.reviveT = 2.4;
+      return 'revive';
+    }
     if (this.hp <= 0) {
       this.state = 'dead';
       this.headless = head && dmg > 30;
@@ -158,8 +207,17 @@ export class Zombie {
       ctx.ellipse(0, 0, this.w * 0.8, 5, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    if (this.T.kind === 'crawl') this.drawCrawl(ctx); else this.drawUpright(ctx);
+    if (this.reviveT > 0) ctx.translate(Math.sin(this.reviveT * 40) * 1.5, 0); // co giật trước khi đứng dậy
+    if (this.T.kind === 'crawl') this.drawCrawl(ctx); else if (this.T.kind === 'dog') this.drawDog(ctx); else this.drawUpright(ctx);
     ctx.restore();
+    if (this.alive && this.buffT > 0) { // bị kích động bởi tiếng rú
+      const b = this.boxes();
+      const g = ctx.createRadialGradient(b.hx, b.hy, 0, b.hx, b.hy, b.hr * 2.6);
+      g.addColorStop(0, 'rgba(255,40,40,0.35)');
+      g.addColorStop(1, 'rgba(255,40,40,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(b.hx - b.hr * 3, b.hy - b.hr * 3, b.hr * 6, b.hr * 6);
+    }
     if (this.burnT > 0 && this.alive) { // lửa bám trên người
       const fh = this.T.kind === 'crawl' ? this.h : this.h * 0.8;
       for (let i = 0; i < 3; i++) {
@@ -389,8 +447,79 @@ export class Zombie {
       ctx.beginPath(); ctx.ellipse(hx + r * 0.3, hy + r * 0.8, r * 0.55, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
     }
 
+    if (T.screamer && !this.headless) { // miệng há to khi rú
+      const open = 0.4 + this.screamT * 0.8;
+      ctx.fillStyle = '#1a0808';
+      ctx.beginPath(); ctx.ellipse(hx - r * 0.6, hy + r * 0.6, r * 0.35, r * 0.25 * (1 + open), 0.2, 0, Math.PI * 2); ctx.fill();
+    }
+    if (T.bounty) { // ba lô quân dụng phát sáng vàng
+      ctx.fillStyle = '#5a4a20';
+      roundRect(ctx, shX + tw * 0.6, shY + 2 * s, tw * 1.1, 30 * s, 4 * s); ctx.fill();
+      ctx.fillStyle = '#e8c040';
+      ctx.font = `bold ${12 * s}px sans-serif`; ctx.textAlign = 'center';
+      ctx.fillText('$', shX + tw * 1.15, shY + 22 * s);
+      ctx.strokeStyle = 'rgba(255,210,80,0.5)'; ctx.lineWidth = 2 * s;
+      ctx.strokeRect(shX + tw * 0.6, shY + 2 * s, tw * 1.1, 30 * s);
+    }
+    if (T.phases) { // gân đỏ phát sáng trên Mẫu Thể Số 0
+      ctx.strokeStyle = `rgba(255,40,40,${0.5 + Math.sin(this.phase * 3) * 0.2})`;
+      ctx.lineWidth = 1.6 * s;
+      ctx.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const t = k / 6, cx = shX + (hipX - shX) * t, cy = shY + (hipY - shY) * t;
+        ctx.moveTo(cx - tw * 0.6, cy); ctx.lineTo(cx - tw * 0.1, cy + 5 * s); ctx.lineTo(cx + tw * 0.5, cy - 2 * s);
+      }
+      ctx.stroke();
+      if (this.armorPhase) { // giáp xương mọc ra
+        ctx.fillStyle = '#e0d6c0';
+        for (let k = 0; k < 4; k++) roundRect(ctx, shX - tw * 0.9 + k * 2 * s, shY + 8 * s + k * 14 * s, tw * 1.6, 9 * s, 3 * s), ctx.fill();
+      }
+    }
+
     // ---- tay trước ----
     arm(-2 * s, this.phase, skin, shirt);
+  }
+
+  drawDog(ctx) {
+    const T = this.T, h = this.h, w = this.w, s = h / 46;
+    const flash = this.hitT > 0;
+    const fur = flash ? '#eee' : T.skin;
+    const furDark = flash ? '#ccc' : shade(T.skin, -28);
+    const run = this.state === 'walk' || this.fleeing ? this.phase * 1.6 : this.swing * 2;
+    const bodyY = -h * 0.55 + Math.sin(run * 2) * 1.5 * s;
+    ctx.lineCap = 'round';
+    // chân (2 sau, 2 trước)
+    const leg = (lx, ph, col) => {
+      ctx.strokeStyle = col; ctx.lineWidth = 4.5 * s;
+      const sw = Math.sin(run + ph) * 9 * s;
+      ctx.beginPath(); ctx.moveTo(lx, bodyY + 4 * s); ctx.lineTo(lx + sw * 0.5, -h * 0.25); ctx.lineTo(lx + sw, -1); ctx.stroke();
+    };
+    leg(w * 0.3, 0, furDark); leg(-w * 0.25, Math.PI, furDark);
+    // thân gầy trơ xương
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.ellipse(0, bodyY, w * 0.42, h * 0.2, -0.05, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(40,25,15,0.5)'; ctx.lineWidth = 1.2 * s;
+    for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.moveTo(-w * 0.15 + k * 5 * s, bodyY - 3 * s); ctx.lineTo(-w * 0.12 + k * 5 * s, bodyY + 6 * s); ctx.stroke(); }
+    ctx.fillStyle = 'rgba(120,20,15,0.6)';
+    ctx.beginPath(); ctx.ellipse(w * 0.1, bodyY + 2 * s, 5 * s, 3 * s, 0, 0, Math.PI * 2); ctx.fill();
+    // đuôi
+    ctx.strokeStyle = furDark; ctx.lineWidth = 3 * s;
+    ctx.beginPath(); ctx.moveTo(w * 0.4, bodyY - 2 * s); ctx.quadraticCurveTo(w * 0.55, bodyY - 10 * s, w * 0.6, bodyY - 4 * s + Math.sin(run) * 3 * s); ctx.stroke();
+    leg(w * 0.2, Math.PI * 0.6, fur); leg(-w * 0.32, Math.PI * 1.6, fur);
+    // cổ + đầu + mõm
+    const hx = -w / 2 + h * 0.24 * 0.6, hy = -h * 0.74;
+    ctx.strokeStyle = fur; ctx.lineWidth = 7 * s;
+    ctx.beginPath(); ctx.moveTo(-w * 0.3, bodyY); ctx.lineTo(hx + 4 * s, hy + 3 * s); ctx.stroke();
+    if (!this.headless) {
+      ctx.fillStyle = fur;
+      ctx.beginPath(); ctx.ellipse(hx + 2 * s, hy, 7 * s, 6 * s, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(hx - 2 * s, hy - 3 * s); ctx.lineTo(hx - 12 * s, hy + 1 * s); ctx.lineTo(hx - 11 * s, hy + 5 * s); ctx.lineTo(hx, hy + 5 * s); ctx.fill();
+      ctx.fillStyle = '#1a0e0a'; ctx.beginPath(); ctx.arc(hx - 12 * s, hy + 1.5 * s, 1.6 * s, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#e8dcc0'; for (let k = 0; k < 3; k++) ctx.fillRect(hx - 10 * s + k * 3 * s, hy + 4 * s, 1.4 * s, 2.2 * s);
+      ctx.fillStyle = furDark; // tai
+      ctx.beginPath(); ctx.moveTo(hx + 3 * s, hy - 4 * s); ctx.lineTo(hx + 7 * s, hy - 12 * s); ctx.lineTo(hx + 8 * s, hy - 3 * s); ctx.fill();
+      ctx.fillStyle = '#ff3b2f'; ctx.beginPath(); ctx.arc(hx - 2 * s, hy - 1.5 * s, 1.5 * s, 0, Math.PI * 2); ctx.fill();
+    }
   }
 
   drawCrawl(ctx) {
