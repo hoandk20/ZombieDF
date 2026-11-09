@@ -6,16 +6,22 @@ function seeded(seed) {
   return () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 }
 
-export function makeBackground() {
+export function makeBackground(bloodMoon = false) {
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const g = c.getContext('2d');
   const rnd = seeded(1337);
 
   const sky = g.createLinearGradient(0, 0, 0, HORIZON);
-  sky.addColorStop(0, '#070a17');
-  sky.addColorStop(0.6, '#1a1734');
-  sky.addColorStop(1, '#3a2742');
+  if (bloodMoon) {
+    sky.addColorStop(0, '#0f0508');
+    sky.addColorStop(0.6, '#2a0f18');
+    sky.addColorStop(1, '#5a1a1e');
+  } else {
+    sky.addColorStop(0, '#070a17');
+    sky.addColorStop(0.6, '#1a1734');
+    sky.addColorStop(1, '#3a2742');
+  }
   g.fillStyle = sky;
   g.fillRect(0, 0, W, HORIZON);
 
@@ -28,13 +34,13 @@ export function makeBackground() {
   // mặt trăng
   const mx = 790, my = 92;
   const glow = g.createRadialGradient(mx, my, 20, mx, my, 140);
-  glow.addColorStop(0, 'rgba(255,240,200,0.35)');
-  glow.addColorStop(1, 'rgba(255,240,200,0)');
+  glow.addColorStop(0, bloodMoon ? 'rgba(255,60,40,0.45)' : 'rgba(255,240,200,0.35)');
+  glow.addColorStop(1, 'rgba(255,60,40,0)');
   g.fillStyle = glow;
   g.fillRect(mx - 150, my - 150, 300, 300);
-  g.fillStyle = '#f3e9c8';
-  g.beginPath(); g.arc(mx, my, 36, 0, Math.PI * 2); g.fill();
-  g.fillStyle = 'rgba(180,170,140,0.5)';
+  g.fillStyle = bloodMoon ? '#d8432e' : '#f3e9c8';
+  g.beginPath(); g.arc(mx, my, bloodMoon ? 42 : 36, 0, Math.PI * 2); g.fill();
+  g.fillStyle = bloodMoon ? 'rgba(120,20,15,0.5)' : 'rgba(180,170,140,0.5)';
   g.beginPath(); g.arc(mx - 10, my - 8, 7, 0, Math.PI * 2); g.fill();
   g.beginPath(); g.arc(mx + 12, my + 10, 5, 0, Math.PI * 2); g.fill();
 
@@ -215,4 +221,33 @@ export function drawPerson(ctx, x, foot, ang, colors, gunLen, recoil = 0) {
   ctx.fillStyle = '#3a3a42';
   ctx.fillRect(12, -3, gunLen * 0.45, 3);
   ctx.restore();
+}
+
+// Biểu tượng vũ khí (dataURL), vẽ bằng canvas và lưu cache
+const iconCache = {};
+const GUN_SHAPES = {
+  pistol: [[8, 10, 34, 9], [10, 18, 9, 16], [38, 11, 6, 6]],
+  shotgun: [[2, 12, 20, 10], [20, 10, 72, 7], [22, 17, 34, 5], [18, 21, 8, 12]],
+  smg: [[10, 10, 52, 11], [60, 13, 16, 5], [24, 20, 8, 16], [40, 20, 6, 12], [2, 13, 10, 6]],
+  rifle: [[0, 12, 24, 10], [22, 11, 76, 6], [40, 4, 26, 5], [46, 17, 6, 10], [30, 16, 8, 8]],
+  lmg: [[0, 12, 22, 10], [20, 9, 54, 12], [72, 12, 26, 5], [34, 21, 18, 12], [46, 4, 8, 6], [80, 17, 3, 12]],
+};
+export function weaponIcon(id) {
+  if (iconCache[id]) return iconCache[id];
+  const c = document.createElement('canvas');
+  c.width = 100; c.height = 40;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e9dcc0';
+  if (id === 'grenade') {
+    g.beginPath(); g.ellipse(50, 24, 11, 13, 0, 0, Math.PI * 2); g.fill();
+    g.fillRect(45, 7, 12, 6);
+    g.strokeStyle = '#e9dcc0'; g.lineWidth = 2.5;
+    g.beginPath(); g.arc(62, 11, 5, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = 'rgba(0,0,0,0.35)';
+    g.fillRect(40, 20, 20, 2); g.fillRect(40, 27, 20, 2);
+  } else {
+    for (const [x, y, w, h] of GUN_SHAPES[id] || []) g.fillRect(x, y, w, h);
+  }
+  iconCache[id] = c.toDataURL();
+  return iconCache[id];
 }

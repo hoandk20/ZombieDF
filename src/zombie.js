@@ -3,7 +3,7 @@ import { ZOMBIES, BARRICADE_X, LANE_MIN, LANE_MAX, W } from './config.js';
 const rand = (a, b) => a + Math.random() * (b - a);
 
 export class Zombie {
-  constructor(type, hpMul = 1) {
+  constructor(type, hpMul = 1, demo = false) {
     const T = ZOMBIES[type];
     this.type = type;
     this.T = T;
@@ -15,7 +15,10 @@ export class Zombie {
     this.speed = T.speed * rand(0.85, 1.15);
     this.foot = rand(LANE_MIN, LANE_MAX);
     this.x = W + 40 + rand(0, 60);
-    this.targetX = BARRICADE_X + this.w / 2 + rand(-2, 10);
+    this.demo = demo;
+    this.targetX = T.ranged ? rand(470, 640) : BARRICADE_X + this.w / 2 + rand(-2, 10);
+    if (demo) this.speed *= 0.8;
+    if (T.boss) { this.foot = (LANE_MIN + LANE_MAX) / 2 + 10; this.roarT = 2; }
     this.state = 'walk'; // walk | attack | dead
     this.phase = rand(0, Math.PI * 2);
     this.atkT = rand(0.2, T.atkRate);
@@ -82,6 +85,10 @@ export class Zombie {
     this.hitT = Math.max(0, this.hitT - dt);
     if (this.state === 'dead') { this.deadT += dt; return; }
 
+    if (this.T.boss) {
+      this.roarT -= dt;
+      if (this.roarT <= 0) { this.roarT = rand(6, 9); game.bossRoar(this); }
+    }
     if (this.state === 'walk') {
       this.x -= this.speed * dt;
       this.phase += dt * (2 + this.speed * 0.06);
@@ -91,12 +98,13 @@ export class Zombie {
       this.atkT -= dt;
       this.swing = Math.max(0, this.swing - dt * 3);
       if (this.atkT <= 0) {
-        this.atkT = this.T.atkRate;
+        this.atkT = this.T.atkRate * rand(0.85, 1.15);
         this.swing = 1;
-        game.damageBarricade(this.T.dmg, this.foot);
+        if (this.T.ranged) game.spitAcid(this);
+        else game.damageBarricade(this.T.dmg, this.foot);
       }
     }
-    if (Math.random() < dt * 0.04) game.sfx.groan();
+    if (!this.demo && Math.random() < dt * 0.04) game.sfx.groan();
   }
 
   hurt(dmg, head, game) {
@@ -132,7 +140,7 @@ export class Zombie {
     ctx.restore();
 
     // thanh máu cho zombie to
-    if (this.alive && this.T.heavy && this.hp < this.maxHp) {
+    if (this.alive && this.T.heavy && !this.T.boss && this.hp < this.maxHp) {
       const bw = 46;
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fillRect(this.x - bw / 2, this.foot - this.h - 14, bw, 5);
@@ -178,6 +186,29 @@ export class Zombie {
     // vết rách / máu
     ctx.fillStyle = 'rgba(90,10,10,0.55)';
     ctx.fillRect(-w * 0.2, shoulderY + 10 * s, w * 0.3, 6 * s);
+    if (T.ranged) { // bụng phình chứa axit, phát sáng
+      const glow = 0.55 + Math.sin(this.phase * 2) * 0.15 + (this.state === 'attack' ? this.swing * 0.3 : 0);
+      ctx.fillStyle = `rgba(170,230,60,${glow})`;
+      ctx.beginPath();
+      ctx.ellipse(-w * 0.12, (shoulderY + hipY) / 2 + 6 * s, w * 0.45, (hipY - shoulderY) * 0.38, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(60,90,10,0.6)';
+      ctx.beginPath(); ctx.arc(-w * 0.25, (shoulderY + hipY) / 2, 3 * s, 0, Math.PI * 2); ctx.fill();
+    }
+    if (T.boss) { // gai xương trên vai, vết thương phát sáng
+      ctx.fillStyle = '#d8d0b8';
+      for (let i = 0; i < 4; i++) {
+        const bx = -w / 2 + 8 * s + i * w * 0.26;
+        ctx.beginPath();
+        ctx.moveTo(bx, shoulderY);
+        ctx.lineTo(bx + 4 * s, shoulderY - 12 * s - (i % 2) * 6 * s);
+        ctx.lineTo(bx + 8 * s, shoulderY);
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(255,60,30,0.6)';
+      ctx.fillRect(w * 0.05, shoulderY + 24 * s, w * 0.25, 4 * s);
+      ctx.fillRect(-w * 0.35, shoulderY + 40 * s, w * 0.2, 3 * s);
+    }
 
     // đầu
     if (!this.headless) {
@@ -186,9 +217,11 @@ export class Zombie {
       ctx.arc(-h * 0.03, -h + r, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#ff3b2f';
+      if (T.boss) { ctx.shadowColor = '#ff2a10'; ctx.shadowBlur = 12; }
       ctx.beginPath();
       ctx.arc(-h * 0.03 - r * 0.5, -h + r * 0.9, r * 0.17, 0, Math.PI * 2);
       ctx.fill();
+      ctx.shadowBlur = 0;
       ctx.fillStyle = '#2a1a1a';
       ctx.fillRect(-h * 0.03 - r * 0.8, -h + r * 1.4, r * 0.6, r * 0.18);
     } else {
