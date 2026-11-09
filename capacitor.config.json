@@ -1,0 +1,8 @@
+{
+  "appId": "com.zombiedf.barricadenights",
+  "appName": "Barricade Nights",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#0b1020"
+  }
+}

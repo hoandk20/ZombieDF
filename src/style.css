@@ -1,0 +1,109 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; height: 100%; background: #000; overflow: hidden;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #eee; user-select: none; -webkit-user-select: none; touch-action: none;
+  overscroll-behavior: none;
+}
+body { display: flex; align-items: center; justify-content: center; }
+#app { position: relative; width: 960px; height: 540px; overflow: hidden; }
+#game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+#ui { position: absolute; inset: 0; pointer-events: none; }
+#ui button, #ui .panel, #ui .screen:not(.passthrough) { pointer-events: auto; }
+
+button {
+  font: inherit; font-size: 1em; color: #f1e7cf; cursor: pointer;
+  background: linear-gradient(#4a3b2c, #33281e); border: 0.12em solid #6e5a40;
+  border-radius: 0.4em; padding: 0.5em 1em; text-shadow: 0 1px 0 #000;
+}
+button:hover:not(:disabled) { filter: brightness(1.2); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: 0.4; cursor: default; }
+button.primary { background: linear-gradient(#8e2e22, #5e1a14); border-color: #c0503a; }
+button.big { font-size: 1.15em; padding: 0.6em 1.6em; }
+
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.menu { align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(0,0,0,0.2), rgba(0,0,0,0.75)); }
+.title {
+  font-family: Impact, "Arial Black", sans-serif; font-size: 4.2em; margin: 0; line-height: 0.95;
+  letter-spacing: 0.05em; color: #d8c79c; text-align: center; text-shadow: 0 0.06em 0 #000, 0 0 0.4em rgba(180,30,20,0.6);
+}
+.title span { display: block; color: #c0392b; font-size: 0.8em; letter-spacing: 0.3em; }
+.tagline { margin: 0.6em 0 1.4em; color: #bbb; font-style: italic; }
+.menu-buttons { display: flex; flex-direction: column; gap: 0.5em; min-width: 16em; }
+
+.panel-screen { align-items: center; justify-content: center; }
+.dim { background: rgba(0,0,0,0.6); }
+.dim.red { background: rgba(60,0,0,0.65); }
+.panel {
+  background: rgba(20,16,12,0.92); border: 0.12em solid #5a4630; border-radius: 0.6em;
+  padding: 1em 1.2em; box-shadow: 0 0.4em 1.2em rgba(0,0,0,0.6);
+}
+.panel.small { display: flex; flex-direction: column; gap: 0.6em; min-width: 18em; text-align: center; }
+.panel h2 { margin: 0 0 0.3em; font-family: Impact, "Arial Black", sans-serif; letter-spacing: 0.05em; color: #e8d9b0; }
+.panel h2.danger { color: #ff5a45; font-size: 2em; }
+.help { max-width: 40em; }
+.help ul { padding-left: 1.2em; margin: 0 0 1em; line-height: 1.5; font-size: 0.95em; }
+
+/* HUD ban đêm */
+.hud { position: absolute; inset: 0; pointer-events: none; }
+.hud-btn {
+  position: absolute; pointer-events: auto; background: rgba(0,0,0,0.5); border: 0.12em solid rgba(255,255,255,0.25);
+  border-radius: 50%; width: 3.2em; height: 3.2em; padding: 0; font-size: 1.1em; display: flex;
+  align-items: center; justify-content: center; flex-direction: column; line-height: 1;
+}
+.hud-btn small { font-size: 0.5em; opacity: 0.7; }
+.hud-btn.pause { top: 0.8em; right: 0.8em; width: 2.6em; height: 2.6em; font-size: 0.95em; }
+.hud-btn.reload { bottom: 0.6em; left: 0.7em; width: 3.4em; height: 3.4em; font-size: 1.4em; }
+/* các nút nằm ở vùng của người chơi (bên trái hàng rào) để không che zombie */
+.weapon-bar { position: absolute; left: 0.75em; top: 5.2em; display: flex; flex-direction: column; gap: 0.3em; pointer-events: auto; }
+.weapon-slot {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 0.4em;
+  background: rgba(0,0,0,0.55); border: 0.12em solid rgba(255,255,255,0.2); padding: 0.35em 0.6em;
+  width: 7.2em; text-align: left; font-size: 0.8em;
+}
+.weapon-slot.active { border-color: #ffcf4a; background: rgba(80,60,10,0.6); }
+.weapon-slot.empty .slot-ammo { color: #ff6b5a; }
+.slot-key { grid-row: span 2; font-weight: bold; color: #ffcf4a; align-self: center; }
+.slot-name { font-size: 0.85em; opacity: 0.85; white-space: nowrap; }
+.slot-ammo { font-weight: bold; font-size: 1.15em; }
+.slot-ammo small { font-weight: normal; opacity: 0.6; font-size: 0.75em; }
+
+/* Ban ngày */
+.day { background: linear-gradient(rgba(40,30,20,0.92), rgba(15,12,10,0.96)); padding: 0.8em 1em; gap: 0.6em; }
+.day-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1em; }
+.day-header h2 { margin: 0; font-family: Impact, "Arial Black", sans-serif; color: #ffd77a; letter-spacing: 0.03em; font-size: 1.5em; }
+.summary { margin: 0.2em 0 0; color: #bbb; font-size: 0.85em; }
+.stats { display: flex; gap: 0.8em; font-weight: bold; white-space: nowrap; }
+.stats .cash { color: #9fe07a; }
+.day-body { flex: 1; display: grid; grid-template-columns: 0.9fr 1.3fr; gap: 0.8em; min-height: 0; }
+.day-body .panel { padding: 0.7em 0.9em; overflow-y: auto; touch-action: pan-y; }
+.day-body h3 { margin: 0 0 0.5em; font-size: 1em; color: #e8d9b0; display: flex; justify-content: space-between; }
+.day-body h3 small { color: #ffcf4a; font-weight: normal; }
+.hour-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em; gap: 0.5em; }
+.hour-label { font-size: 0.95em; }
+.hour-label small { display: block; color: #999; font-size: 0.75em; }
+.stepper { display: flex; align-items: center; gap: 0.3em; }
+.stepper button { width: 2em; height: 2em; padding: 0; font-weight: bold; }
+.stepper span { min-width: 2em; text-align: center; font-weight: bold; }
+.hours > .primary { width: 100%; margin-top: 0.3em; }
+.day-log { margin: 0.3em 0 0; padding-left: 0; list-style: none; font-size: 0.85em; line-height: 1.5; color: #ddd; }
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45em; }
+.shop-item {
+  display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; text-align: left;
+  padding: 0.45em 0.6em; font-size: 0.85em; background: linear-gradient(#3a3026, #2a221b);
+}
+.shop-item.weapon { border-color: #a07a3a; }
+.si-title { font-weight: bold; }
+.si-desc { grid-column: 1; font-size: 0.8em; color: #aaa; }
+.si-price { grid-row: 1 / span 2; grid-column: 2; align-self: center; color: #9fe07a; font-weight: bold; }
+.day-footer { display: flex; justify-content: space-between; align-items: center; }
+
+#rotate { display: none; }
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate {
+    display: flex; position: fixed; inset: 0; z-index: 10; background: #0b1020; color: #e8d9b0;
+    flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 1.2em;
+  }
+  #rotate div { font-size: 4em; }
+}
