@@ -32,9 +32,9 @@ export const UPKEEP = 18; // tiền khẩu phần mỗi đồng đội mỗi sá
 
 // Độ khó: nhân với máu, sát thương, số lượng, tốc độ zombie và tiền thưởng
 export const DIFFICULTIES = {
-  easy:      { name: 'Dễ',      desc: 'Cân bằng như bản đầu. Hợp để làm quen.', hp: 0.9, dmg: 1, count: 1, speed: 1, reward: 1.1, recruit: 1.6, mate: 1, upkeep: 0.5, pack: 0.18, interval: 1 },
-  normal:    { name: 'Thường',  desc: 'Zombie khỏe, nhanh, kéo đến theo bầy. Đồng đội khó tìm.', hp: 1.6, dmg: 1.3, count: 1.35, speed: 1.3, reward: 0.85, recruit: 1, mate: 0.8, upkeep: 1, pack: 0.32, interval: 0.85 },
-  hard:      { name: 'Khó',     desc: 'Bầy đàn đông và hung hãn. Mỗi viên đạn đều quý.', hp: 2.0, dmg: 1.6, count: 1.5, speed: 1.45, reward: 0.75, recruit: 0.8, mate: 0.7, upkeep: 1.3, pack: 0.4, interval: 0.75 },
+  easy:      { name: 'Dễ',      desc: 'Cân bằng như bản đầu. Hợp để làm quen.', hp: 0.8, dmg: 0.9, count: 0.95, speed: 1, reward: 1.15, recruit: 1.6, mate: 1, upkeep: 0.5, pack: 0.18, interval: 1 },
+  normal:    { name: 'Thường',  desc: 'Zombie khỏe, nhanh, kéo đến theo bầy. Đồng đội khó tìm.', hp: 1.4, dmg: 1.0, count: 1.2, speed: 1.2, reward: 0.95, recruit: 1, mate: 0.8, upkeep: 1, pack: 0.28, interval: 0.92 },
+  hard:      { name: 'Khó',     desc: 'Bầy đàn đông và hung hãn. Mỗi viên đạn đều quý.', hp: 1.8, dmg: 1.45, count: 1.4, speed: 1.35, reward: 0.82, recruit: 0.8, mate: 0.7, upkeep: 1.3, pack: 0.36, interval: 0.8 },
   nightmare: { name: 'Ác mộng', desc: 'Dành cho người đã thắng. Gần như không thể.', hp: 2.6, dmg: 2.0, count: 1.7, speed: 1.6, reward: 0.65, recruit: 0.6, mate: 0.6, upkeep: 1.6, pack: 0.48, interval: 0.65 },
 };
 export const DIFF_ORDER = ['easy', 'normal', 'hard', 'nightmare'];
@@ -140,7 +140,7 @@ export const ZOMBIES = {
   runner:  { name: 'Kẻ chạy', hp: 42,  speed: 66, dmg: 4,  atkRate: 0.7, h: 98,  w: 26, reward: 15, skin: '#a39470', shirt: '#3c4350', pants: '#352b20', kind: 'upright' },
   crawler: { name: 'Kẻ bò', hp: 45,  speed: 18, dmg: 5,  atkRate: 1.0, h: 40,  w: 58, reward: 15, skin: '#8f8060', shirt: '#4a3a2c', pants: '#2e281f', kind: 'crawl' },
   brute:   { name: 'Gã khổng lồ', hp: 440, speed: 13, dmg: 22, atkRate: 1.6, h: 142, w: 50, reward: 60, skin: '#7d6f52', shirt: '#5a2c22', pants: '#2a251d', kind: 'upright', heavy: true },
-  spitter: { name: 'Kẻ phun axit', hp: 90,  speed: 24, dmg: 11, atkRate: 3.2, h: 108, w: 38, reward: 35, skin: '#a49a5c', shirt: '#4a4a26', pants: '#2c2a1e', kind: 'upright', ranged: true },
+  spitter: { name: 'Kẻ phun axit', hp: 90,  speed: 24, dmg: 8, atkRate: 3.8, h: 108, w: 38, reward: 35, skin: '#a49a5c', shirt: '#4a4a26', pants: '#2c2a1e', kind: 'upright', ranged: true },
   riot:    { name: 'Cảnh sát bọc giáp', hp: 150, speed: 21, dmg: 9, atkRate: 1.3, h: 108, w: 34, reward: 40, skin: '#94866a', shirt: '#26324a', pants: '#1c2232', kind: 'upright', armored: true, helmet: 70 },
   bloater: { name: 'Kẻ trương phình', hp: 120, speed: 15, dmg: 55, atkRate: 0.5, h: 112, w: 56, reward: 30, skin: '#9c9460', shirt: '#55502c', pants: '#2c2a20', kind: 'upright', bomber: true },
   colossus:{ name: 'Quái Vật Cảng', hp: 6500, speed: 8, dmg: 80, atkRate: 2.4, h: 250, w: 98, reward: 1500, skin: '#6a5e48', shirt: '#2a2018', pants: '#1a1612', kind: 'upright', heavy: true, boss: true, summoner: true },
@@ -262,7 +262,7 @@ export function waveFor(n) {
       runner: n >= 2 ? Math.min(0.15 + 0.06 * n, 0.6) : 0,
       crawler: n >= 3 ? 0.18 : 0,
       brute: n >= 4 ? Math.min(0.03 + 0.012 * n, 0.14) : 0,
-      spitter: n >= 6 ? Math.min(0.08 + 0.01 * n, 0.18) : 0,
+      spitter: n >= 6 ? Math.min(0.06 + 0.006 * n, 0.12) : 0,
       riot: n >= 11 ? Math.min(0.12 + 0.015 * (n - 11), 0.28) : 0,
       bloater: n >= 12 ? Math.min(0.08 + 0.01 * (n - 12), 0.16) : 0,
       dog: n >= 22 ? (m.horde ? 0.35 : 0.2) : 0,
@@ -300,9 +300,9 @@ export const MAX_DMG_LVL = 8;
 
 // "Đạo diễn" bầy đàn: mức đe doạ tăng khi hàng rào gần như không bị xây xước, giảm khi suýt thua
 export const THREAT = {
-  easy:      { min: 0.85, max: 1.4, up: 0.1 },
-  normal:    { min: 0.9, max: 2.6, up: 0.22 },
-  hard:      { min: 1.0, max: 3.0, up: 0.26 },
+  easy:      { min: 0.8, max: 1.25, up: 0.08 },
+  normal:    { min: 0.85, max: 1.35, up: 0.1 },
+  hard:      { min: 0.95, max: 1.8, up: 0.14 },
   nightmare: { min: 1.1, max: 3.6, up: 0.3 },
 };
 export function nextThreat(d, dmgRatio) {
@@ -317,8 +317,8 @@ export function nextThreat(d, dmgRatio) {
 }
 export function eliteChance(n, threat) {
   const local = n <= CAMPAIGN_NIGHTS ? ((n - 1) % STAGE_LENGTH) + 1 : n;
-  if (local < 8) return 0;
-  return Math.min(0.3, (0.05 + (local - 8) * 0.006 + (n > STAGE_LENGTH ? 0.03 : 0)) * threat);
+  if (local < 9) return 0;
+  return Math.min(0.18, (0.03 + (local - 9) * 0.004 + (n > STAGE_LENGTH ? 0.02 : 0)) * threat);
 }
 export const mateLevel = (xp) => (xp >= 60 ? 3 : xp >= 20 ? 2 : 1);
 export const MATE_XP = [0, 20, 60];

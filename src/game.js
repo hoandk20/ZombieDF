@@ -188,7 +188,7 @@ export class Game {
     const th = this.wave.grace ? Math.min(1, d.threat || 1) : d.threat || 1; // khởi động: không áp mức đe doạ
     this.threat = th;
     this.wave.total = Math.round(this.wave.total * diffOf(d).count * (1 + (th - 1) * 0.55));
-    this.wave.hpMul *= th;
+    this.wave.hpMul *= 1 + (th - 1) * 0.7;
     this.wave.interval /= 1 + (th - 1) * 0.5;
     this.wave.speedMul = (this.wave.speedMul || 1) * (1 + (th - 1) * 0.12);
     this.spawnTimer = 2.5;
@@ -748,7 +748,7 @@ export class Game {
     const b = z.boxes();
     this.projectiles.push({
       type: 'acid', x0: b.hx - b.hr, y0: b.hy + b.hr * 0.4, x1: BARRICADE_X - 2, y1: rand(BARRICADE_TOP + 15, LANE_MAX - 10),
-      t: 0, dur: 1.0, arc: 110, dmg: z.T.dmg * (1 + this.data.night * 0.02) * Math.min(1.3, diffOf(this.data).dmg),
+      t: 0, dur: 1.0, arc: 110, dmg: z.T.dmg * (1 + this.data.night * 0.012) * Math.min(1.15, diffOf(this.data).dmg),
     });
     sfx.spit();
   }
