@@ -82,6 +82,8 @@ function shadeFill(ctx, x0, x1, col, flash, o) {
 
 // vị trí đầu (tỉ lệ theo chiều cao) cho dáng còng lưng; dùng chung cho hitbox và hình vẽ
 const HEAD_X = 0.17, HEAD_Y = 0.86, HEAD_R = 0.105;
+// tư thế nằm sấp khi mất cả hai chân: xoay thân và dịch về sau (theo tỉ lệ chiều cao)
+const LEGLESS = { rot: -1.38, tx: 0.66, ty: -0.1 };
 
 export class Zombie {
   constructor(type, hpMul = 1, demo = false) {
@@ -120,6 +122,14 @@ export class Zombie {
     this.dress = ['#5a3a44', '#3a4a5a', '#6a5a3a', '#4a2a2a', '#5a5a62', '#6a3a2a', '#7a6a6a'][Math.floor(Math.random() * 7)];
     this.hairCol = ['#16100e', '#3a2418', '#5a4a3a', '#2a2a2a', '#6a6050'][Math.floor(Math.random() * 5)];
     this.oneArm = plain && Math.random() < 0.15;
+    // cắt rời chi: bắn đủ đau vào tay/chân thì rụng
+    this.armsLost = this.oneArm ? 1 : 0;
+    this.legsLost = 0;
+    this.legless = false;
+    this.armDmg = 0;
+    this.legDmg = 0;
+    this.bleedT = 0;
+    this.bleedAt = null;
     this.skull = !this.female && Math.random() < 0.35;
     this.twitchT = rand(1.5, 5);
     this.twitching = 0;
@@ -147,6 +157,65 @@ export class Zombie {
     return Math.max(0.6, m);
   }
 
+  // toạ độ thân (đứng) -> toạ độ tại chỗ khi nằm sấp bò (so với x, foot)
+  fromBody(px, py) {
+    const c = Math.cos(LEGLESS.rot), sn = Math.sin(LEGLESS.rot), h = this.h;
+    return [h * LEGLESS.tx + px * c - py * sn, h * LEGLESS.ty + px * sn + py * c];
+  }
+  toBody(X, Y) {
+    const c = Math.cos(-LEGLESS.rot), sn = Math.sin(-LEGLESS.rot);
+    X -= this.h * LEGLESS.tx; Y -= this.h * LEGLESS.ty;
+    return [X * c - Y * sn, X * sn + Y * c];
+  }
+  canDismember() { return this.T.kind === 'upright' && !this.T.boss; }
+
+  // Trúng đạn vào thân ở độ cao y (thế giới): cộng dồn sát thương lên tay / chân, đủ thì rụng
+  limbHit(dmg, y, game) {
+    if (!this.canDismember()) return;
+    const rel = (this.foot + this.jumpY - y) / this.h;
+    const thr = this.maxHp * (this.T.heavy ? 0.5 : 0.34);
+    if (this.legless) { // đang bò: chỉ còn tay để bắn rụng
+      if (this.armsLost < 2 && !this.T.shield) { this.armDmg += dmg * 0.6; if (this.armDmg >= thr) { this.armDmg = 0; this.loseArm(game); } }
+      return;
+    }
+    if (rel < 0.44 && this.legsLost < 2) {
+      this.legDmg += dmg;
+      if (this.legDmg >= thr) { this.legDmg = 0; this.loseLeg(game); }
+    } else if (rel >= 0.48 && rel < 0.8 && this.armsLost < 2 && !this.T.shield) {
+      this.armDmg += dmg * 0.7;
+      if (this.armDmg >= thr) { this.armDmg = 0; this.loseArm(game); }
+    }
+  }
+  // vụ nổ xé xác: rụng ngẫu nhiên một hai chi
+  blastLimbs(game) {
+    if (!this.canDismember()) return;
+    if (this.legsLost < 2 && Math.random() < 0.6) this.loseLeg(game);
+    if (this.armsLost < 2 && !this.T.shield && Math.random() < 0.5) this.loseArm(game);
+  }
+  loseArm(game) {
+    this.armsLost++;
+    const s = this.h / 100;
+    const sh = this.legless ? this.fromBody(-this.h * 0.1, -this.h * 0.72) : [-this.h * 0.1 - 4 * s, -this.h * 0.7];
+    this.bleedAt = sh; this.bleedT = 1.6;
+    this.dmg *= this.armsLost >= 2 ? 0.55 : 0.8; // cụt tay thì cào yếu đi
+    game.sever(this, 'arm', this.x + sh[0], this.foot + sh[1] + this.jumpY);
+  }
+  loseLeg(game) {
+    this.legsLost++;
+    const at = [0, -this.h * 0.42];
+    this.bleedAt = at; this.bleedT = 1.8;
+    game.sever(this, 'leg', this.x + at[0], this.foot + at[1] + this.jumpY);
+    if (this.legsLost === 1) { this.speed *= 0.62; this.stunT = Math.max(this.stunT, 0.25); return; } // khập khiễng
+    // mất cả hai chân: đổ sấp xuống, lết bằng tay
+    this.legless = true;
+    this.leaping = false; this.jumpY = 0; this.charging = 0;
+    this.speed *= 0.55;
+    this.stunT = Math.max(this.stunT, 0.6);
+    this.bleedAt = this.fromBody(0, -this.h * 0.47);
+    if (!this.T.ranged && !this.T.screamer && !this.T.bounty) this.targetX = BARRICADE_X + this.h * 0.32;
+    if (this.state === 'attack' && this.x > this.targetX + 3) this.state = 'walk';
+  }
+
   // Hitbox trong toạ độ thế giới
   boxes() {
     if (this.T.kind === 'dog') {
@@ -163,6 +232,15 @@ export class Zombie {
         hx: this.x - this.w / 2 + r, hy: this.foot - r - 4, hr: r,
         bx0: this.x - this.w / 2 + r, by0: this.foot - this.h * 0.62,
         bx1: this.x + this.w / 2, by1: this.foot,
+      };
+    }
+    if (this.legless) { // mất cả hai chân: nằm sấp, lết bằng tay
+      const r = this.h * HEAD_R;
+      const [hx, hy] = this.fromBody(-this.h * HEAD_X, -this.h * HEAD_Y);
+      return {
+        hx: this.x + hx, hy: this.foot + hy, hr: r,
+        bx0: this.x + hx + r * 0.6, by0: this.foot - this.h * 0.3,
+        bx1: this.x + this.h * 0.3, by1: this.foot,
       };
     }
     // dáng còng lưng: đầu chúi về phía trước và thấp xuống
@@ -226,6 +304,13 @@ export class Zombie {
       }
       return;
     }
+    if (this.bleedT > 0 && this.bleedAt) {
+      this.bleedT -= dt;
+      if (!this.demo && Math.random() < dt * 30) {
+        const [bx, by] = this.bleedAt;
+        game.addParticle({ x: this.x + bx, y: this.foot + by + this.jumpY, vx: rand(10, 90), vy: rand(-120, -20), life: 0.7, color: Math.random() < 0.5 ? '#8b0d0d' : '#5e0a0a', size: rand(2, 3.5), g: 500, ground: this.foot + rand(-3, 3), decal: true });
+      }
+    }
     this.buffT = Math.max(0, this.buffT - dt);
     this.kbRecent = Math.max(0, this.kbRecent - dt * 14);
     this.screamT = Math.max(0, this.screamT - dt);
@@ -261,7 +346,7 @@ export class Zombie {
       if (this.x > W + 70) game.bountyEscaped(this);
       return;
     }
-    if (this.state === 'walk' && this.T.leaper && !this.leapt && this.x < 580) {
+    if (this.state === 'walk' && this.T.leaper && !this.leapt && !this.legsLost && this.x < 580) {
       this.leaping = true; this.leapt = true; this.leapT = 0; this.leapFrom = this.x;
       game.sfx.leap && game.sfx.leap();
       return;
@@ -341,7 +426,7 @@ export class Zombie {
     if (this.state === 'dead') {
       const k = Math.min(1, this.deadT / 0.45);
       const ease = 1 - (1 - k) * (1 - k);
-      if (this.T.kind === 'upright') ctx.rotate(ease * Math.PI / 2);
+      if (this.T.kind === 'upright' && !this.legless) ctx.rotate(ease * Math.PI / 2);
       else ctx.translate(0, ease * 4);
       if (this.deadT > 4) ctx.globalAlpha = Math.max(0, 1 - (this.deadT - 4) / 1.5);
     } else {
@@ -359,6 +444,7 @@ export class Zombie {
       ctx.fillStyle = g; ctx.fillRect(-this.h * 0.75, -this.h * 1.25, this.h * 1.5, this.h * 1.5);
     }
     LITE = !this.detail;
+    if (this.legless) { ctx.translate(this.h * LEGLESS.tx, this.h * LEGLESS.ty); ctx.rotate(LEGLESS.rot); }
     if (this.T.kind === 'crawl') this.drawCrawl(ctx); else if (this.T.kind === 'dog') this.drawDog(ctx); else this.drawUpright(ctx);
     LITE = false;
     ctx.restore();
@@ -386,15 +472,16 @@ export class Zombie {
 
     if (this.elite && this.alive) { // dấu đầu lâu trên đầu
       ctx.fillStyle = '#ff4a3a'; ctx.font = `bold ${Math.round(10 + this.h * 0.04)}px sans-serif`; ctx.textAlign = 'center';
-      ctx.fillText('☠', this.x - this.h * 0.12, this.foot - this.h - 6 + this.jumpY);
+      ctx.fillText('☠', this.x - this.h * 0.12, this.foot - this.h * (this.legless ? 0.4 : 1) - 6 + this.jumpY);
     }
     // thanh máu cho zombie to và zombie tinh nhuệ
     if (this.alive && (this.T.heavy || this.elite) && !this.T.boss && this.hp < this.maxHp) {
       const bw = 46;
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(this.x - bw / 2, this.foot - this.h - 14, bw, 5);
+      const top = this.foot - this.h * (this.legless ? 0.4 : 1);
+      ctx.fillRect(this.x - bw / 2, top - 14, bw, 5);
       ctx.fillStyle = '#d94040';
-      ctx.fillRect(this.x - bw / 2, this.foot - this.h - 14, bw * Math.max(0, this.hp / this.maxHp), 5);
+      ctx.fillRect(this.x - bw / 2, top - 14, bw * Math.max(0, this.hp / this.maxHp), 5);
     }
   }
 
@@ -444,12 +531,26 @@ export class Zombie {
     };
     const legCol = (c) => (this.female ? (flash ? '#ddd' : shade(T.skin, -22)) : c);
     const legW = this.female ? 0.7 : 1;
-    leg(4 * s, -sw, legCol(shade(T.pants, -18)));
+    // mỏm cụt đùi: vải rách, thịt đỏ, đầu xương trắng
+    const stump = (dx, col) => {
+      const ex = hipX + dx - 2 * s, ey = hipY + h * 0.11;
+      seg(ctx, hipX + dx, hipY, ex, ey, w * 0.42 * legW, w * 0.38 * legW, col, 1.1 * s, flash || !this.detail);
+      ctx.fillStyle = flash ? '#eee' : '#6a0c0c';
+      ctx.beginPath(); ctx.ellipse(ex, ey + 1 * s, w * 0.2 * legW, 3 * s, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = flash ? '#fff' : '#9a1a12';
+      ctx.beginPath(); ctx.ellipse(ex, ey + 1 * s, w * 0.12 * legW, 2 * s, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#e4dac4'; ctx.lineWidth = 2.4 * s;
+      ctx.beginPath(); ctx.moveTo(ex, ey - 1 * s); ctx.lineTo(ex + 1 * s, ey + 5 * s); ctx.stroke();
+    };
+    const limp = this.legsLost === 1 && walking ? Math.max(0, Math.sin(this.phase)) * 4 * s : 0; // khập khiễng nhún lên xuống
+    if (this.legsLost >= 2) stump(4 * s, legCol(shade(T.pants, -18)));
+    else leg(4 * s, this.legsLost === 1 ? -sw * 0.5 : -sw, legCol(shade(T.pants, -18)));
+    ctx.translate(0, limp);
     ctx.translate(0, -bob);
 
     // ---- tay sau (buông thõng) ----
     const arm = (offX, phase, col, sleeve, front = false) => {
-      if (front && this.oneArm) { // cụt tay: mỏm cụt lộ xương
+      if (front ? this.armsLost >= 1 : this.armsLost >= 2) { // cụt tay: mỏm cụt lộ xương
         ctx.strokeStyle = sleeve; ctx.lineWidth = w * 0.26;
         ctx.beginPath(); ctx.moveTo(shX + offX, shY + 2 * s); ctx.lineTo(shX + offX - 4 * s, shY + 14 * s); ctx.stroke();
         ctx.fillStyle = '#6a0c0c'; ctx.beginPath(); ctx.arc(shX + offX - 4 * s, shY + 15 * s, w * 0.13, 0, Math.PI * 2); ctx.fill();
@@ -459,10 +560,20 @@ export class Zombie {
       }
       const lift = attacking ? Math.sin(this.swing * Math.PI) : 0;
       const dangle = walking ? Math.sin(phase) * 6 * s : 0;
-      const ex = shX + offX - 6 * s + dangle - lift * 16 * s;
-      const ey = shY + 26 * s - lift * 20 * s;
-      const hx2 = ex - 7 * s - lift * 18 * s;
-      const hy2 = ey + 24 * s - lift * 26 * s;
+      let ex = shX + offX - 6 * s + dangle - lift * 16 * s;
+      let ey = shY + 26 * s - lift * 20 * s;
+      let hx2 = ex - 7 * s - lift * 18 * s;
+      let hy2 = ey + 24 * s - lift * 26 * s;
+      if (this.legless) { // nằm sấp: hai tay vươn ra trước bấu xuống đất kéo lê thân
+        const [sx, sy] = this.fromBody(shX + offX, shY + 3 * s);
+        const cyc = Math.sin(phase);
+        const hand = attacking
+          ? [sx - h * 0.3, -h * (0.12 + 0.22 * Math.sin(this.swing * Math.PI))]
+          : [sx - h * (0.24 + 0.09 * cyc), -2 * s - Math.max(0, Math.cos(phase)) * 7 * s];
+        const elbow = [(sx + hand[0]) / 2 + h * 0.02, Math.min(sy, hand[1]) - h * 0.1];
+        [ex, ey] = this.toBody(elbow[0], elbow[1]);
+        [hx2, hy2] = this.toBody(hand[0], hand[1]);
+      }
       const o = 1 * s;
       limb(ctx, [[shX + offX, shY + 3 * s], [ex, ey], [hx2, hy2]], [w * 0.21, w * 0.15, w * 0.11], col, o, flash || !this.detail); // bắp tay + cẳng tay gầy
       ctx.fillStyle = 'rgba(255,240,220,0.22)'; // khuỷu tay xương xẩu
@@ -496,7 +607,7 @@ export class Zombie {
     };
     arm(6 * s, this.phase + Math.PI, skinDark, shade(T.shirt, -20));
 
-    leg(-4 * s, sw, legCol(pants));
+    if (this.legsLost >= 1) stump(-4 * s, legCol(pants)); else leg(-4 * s, sw, legCol(pants));
 
     // ---- thân: ngực trơ xương sườn, áo phanh ----
     const tw = w * 0.5;

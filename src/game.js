@@ -6,7 +6,7 @@ import {
   diffOf, UPKEEP, TURRET, MINE, WIRE, nextThreat, eliteChance, SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE,
 } from './config.js';
 import { SURVIVORS, NIGHT_TITLES, MATE_COMBAT, hasPerk } from './story.js';
-import { Zombie, roundRect } from './zombie.js';
+import { Zombie, roundRect, shade as shadeHex } from './zombie.js';
 import { makeBackground, drawBarricade, drawHero, drawCharacter, CHARACTERS } from './render.js';
 import { sfx, initAudio, setMood, heartbeat, reloadSound, cancelReload } from './audio.js';
 import { saveGame } from './save.js';
@@ -54,6 +54,7 @@ export class Game {
   resetNightState() {
     this.zombies = [];
     this.particles = [];
+    this.gibs = [];
     this.tracers = [];
     this.texts = [];
     this.lights = [];
@@ -94,6 +95,7 @@ export class Game {
     this.dropTimes = [];
     this.nightT = 0;
     this.mods = {};
+    this.gibs = [];
     this.dctx.clearRect(0, 0, W, H);
   }
 
@@ -572,6 +574,9 @@ export class Game {
     if (!z.alive) return;
     const res = z.hurt(dmg, head, this, opts.kind || 'bullet');
     const killed = res === true;
+    // bắn trúng tay / chân đủ đau thì rụng; nổ lớn xé xác
+    if (res !== 'shield' && !head && (opts.kind || 'bullet') === 'bullet') z.limbHit(dmg, y, this);
+    else if (opts.kind === 'blast' && killed && dmg >= 80 && Math.random() < 0.55) z.blastLimbs(this);
     if (res === 'shield') {
       for (let i = 0; i < 4; i++) this.addParticle({ x, y, vx: rand(20, 140), vy: rand(-120, 0), life: 0.25, color: '#ffe8a0', size: 2 });
       if (Math.random() < 0.15) this.texts.push({ x: z.x, y: z.foot - z.h - 6, text: 'KHIÊN! BẮN VÀO ĐẦU', life: 0.8, max: 0.8, size: 12, color: '#c8d8f0' });
@@ -805,6 +810,66 @@ export class Game {
       this.addParticle({ x: BARRICADE_X - 2, y: rand(BARRICADE_TOP + 10, foot - 6), vx: rand(-120, -20), vy: rand(-120, 0), life: 0.6, color: Math.random() < 0.5 ? '#6b4a2b' : '#8a7b57', size: rand(2, 4), g: 500, ground: foot });
     }
     if (this.data.hp <= 0) { this.data.hp = 0; this.gameOver(); }
+  }
+
+  // một cánh tay / cẳng chân văng ra, rơi xuống đất rồi nằm lại như vết máu
+  sever(z, part, x, y) {
+    const T = z.T, s = z.h / 100;
+    const skin = shadeHex(T.skin, part === 'arm' ? -10 : -30);
+    const cloth = z.female ? (part === 'arm' ? z.dress : shadeHex(T.skin, -22)) : part === 'arm' ? shadeHex(T.shirt, -20) : T.pants;
+    if (this.gibs.length > 40) this.gibs.shift();
+    this.gibs.push({ part, x, y, vx: rand(40, 170), vy: rand(-300, -160), rot: rand(0, Math.PI * 2), vr: rand(-14, 14), s, w: z.w, skin, cloth, ground: z.foot + rand(-4, 8), bounced: false, life: 6 });
+    for (let i = 0; i < 16; i++) this.addParticle({ x, y, vx: rand(-40, 200), vy: rand(-240, -20), life: rand(0.5, 1), color: Math.random() < 0.5 ? '#8b0d0d' : '#5e0a0a', size: rand(2, 4.5), g: 600, ground: z.foot + rand(-5, 5), decal: true });
+    sfx.headshot();
+    if (Math.random() < 0.35) this.texts.push({ x: z.x, y: z.foot - z.h * (z.legless ? 0.5 : 1) - 8, text: part === 'arm' ? 'ĐỨT TAY!' : z.legless ? 'CỤT CHÂN!' : 'GÃY CHÂN!', life: 0.8, max: 0.8, size: 13, color: '#ff8a7a' });
+  }
+  updateGibs(dt) {
+    for (const g of this.gibs) {
+      g.vy += 900 * dt; g.x += g.vx * dt; g.y += g.vy * dt; g.rot += g.vr * dt;
+      if (g.y >= g.ground) {
+        g.y = g.ground;
+        if (!g.bounced) { g.bounced = true; g.vy *= -0.28; g.vx *= 0.45; g.vr *= 0.4; }
+        else { // nằm im: in hẳn xuống lớp nền
+          g.rot = Math.round(g.rot / Math.PI) * Math.PI + (g.rot % 0.6);
+          this.drawGib(this.dctx, g);
+          this.dctx.fillStyle = 'rgba(90,8,8,0.5)';
+          this.dctx.beginPath(); this.dctx.ellipse(g.x, g.y + 2, 14 * g.s, 4 * g.s, 0, 0, Math.PI * 2); this.dctx.fill();
+          g.life = 0;
+        }
+      }
+      g.life -= dt;
+    }
+    this.gibs = this.gibs.filter((g) => g.life > 0);
+  }
+  drawGib(ctx, g) {
+    const s = g.s;
+    ctx.save();
+    ctx.translate(g.x, g.y); ctx.rotate(g.rot);
+    ctx.lineCap = 'round';
+    const tube = (x0, x1, wd, col) => {
+      ctx.strokeStyle = 'rgba(20,10,8,0.9)'; ctx.lineWidth = wd + 2 * s;
+      ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x1, 0); ctx.stroke();
+      ctx.strokeStyle = col; ctx.lineWidth = wd;
+      ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x1, 0); ctx.stroke();
+    };
+    if (g.part === 'arm') {
+      tube(-14 * s, 6 * s, g.w * 0.17, g.skin);          // cẳng tay
+      tube(6 * s, 16 * s, g.w * 0.22, g.skin);
+      tube(8 * s, 18 * s, g.w * 0.28, g.cloth);           // tay áo rách
+      ctx.fillStyle = g.skin; ctx.beginPath(); ctx.arc(-16 * s, 0, 3.6 * s, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(20,10,8,0.9)'; ctx.lineWidth = 1.6 * s; ctx.beginPath();
+      for (let k = 0; k < 4; k++) { const a = Math.PI * 0.85 + k * 0.18; ctx.moveTo(-16 * s, 0); ctx.lineTo(-16 * s + Math.cos(a) * 7 * s, Math.sin(a) * 7 * s); }
+      ctx.stroke();
+      ctx.fillStyle = '#6a0c0c'; ctx.beginPath(); ctx.arc(19 * s, 0, g.w * 0.14, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#e4dac4'; ctx.lineWidth = 2.2 * s; ctx.beginPath(); ctx.moveTo(18 * s, 0); ctx.lineTo(24 * s, -1 * s); ctx.stroke();
+    } else {
+      tube(-16 * s, 4 * s, g.w * 0.24, g.skin);           // cẳng chân
+      tube(0, 22 * s, g.w * 0.38, g.cloth);               // đùi trong quần
+      ctx.fillStyle = g.skin; ctx.beginPath(); ctx.ellipse(-19 * s, -3 * s, 3.5 * s, 7 * s, 0, 0, Math.PI * 2); ctx.fill(); // bàn chân
+      ctx.fillStyle = '#6a0c0c'; ctx.beginPath(); ctx.ellipse(23 * s, 0, 3 * s, g.w * 0.19, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#e4dac4'; ctx.lineWidth = 2.6 * s; ctx.beginPath(); ctx.moveTo(22 * s, 0); ctx.lineTo(29 * s, 1 * s); ctx.stroke();
+    }
+    ctx.restore();
   }
 
   addParticle(p) {
@@ -1173,6 +1238,7 @@ export class Game {
   }
 
   updateFx(dt) {
+    this.updateGibs(dt);
     for (const p of this.particles) {
       p.life -= dt;
       p.vy += (p.g || 0) * dt;
@@ -1379,6 +1445,7 @@ export class Game {
       }
     }
 
+    for (const g of this.gibs) this.drawGib(ctx, g);
     for (const p of this.particles) {
       const a = Math.min(1, (p.life / p.max) * 2);
       if (p.kind === 'smoke') {
