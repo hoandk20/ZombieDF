@@ -194,7 +194,7 @@ export class UI {
       case 'buy': this.buy(arg); break;
       case 'tab': this.shopTab = arg; sfx.click(); this.renderDay(); break;
       case 'squad': this.toggleSquad(arg); break;
-      case 'startNight': g.data.upgradeReset = false; saveGame(g.data); sfx.click(); g.startNight(); break;
+      case 'startNight': g.data.upgradeReset = false; g.data.chapterReset = false; saveGame(g.data); sfx.click(); g.startNight(); break;
       case 'endless':
         g.data.endless = true;
         saveGame(g.data);
@@ -474,6 +474,14 @@ export class UI {
     if (act > (g.data.seenAct || 1) && !g.data.endless) {
       g.data.crew = []; g.data.squad = []; g.data.mates = {}; g.data.searchPity = 0;
       resetDefenses(g.data);
+      // chỗ mới thì hàng rào cũng phải dựng lại từ đầu, nhưng mang theo được một ít vật liệu
+      let built = 0;
+      for (let i = 0; i < (g.data.barricadeLevel || 0); i++) built += barricadeUpgradePrice(i);
+      g.data.salvage = Math.round(built * 0.4);
+      g.data.cash += g.data.salvage;
+      g.data.barricadeLevel = 0;
+      g.data.hp = barricadeMax(0);
+      g.data.chapterReset = true;
       if (act === 3 || act === 5) { // màn mới: nâng cấp vũ khí cũng làm lại từ đầu
         g.data.dmgLevel = 0; g.data.reloadLevel = 0; g.data.upgradeReset = true;
         // màn mới: Hoàn ra đi tay trắng, chỉ còn khẩu súng lục của ông ngoại
@@ -830,7 +838,8 @@ export class UI {
     const th = d.threat || 1;
     const thInfo = info && info.threat !== undefined ? (info.threat > info.threatBefore ? ` Đêm qua rào chỉ mất ${info.dmgPct}% nên bầy đàn đang mạnh lên.` : info.threat < info.threatBefore ? ` Đêm qua rào mất ${info.dmgPct}%, bầy đàn nới tay một chút.` : '') : '';
     const threatWarn = th > 1.05 || (info && info.threat !== info.threatBefore) ? `<div class="warn${th >= 1.6 ? '' : ' soft'}">☠ Mức đe doạ <b>${th.toFixed(2)}×</b>: zombie nhiều máu hơn, đông hơn, dồn dập hơn.${thInfo}</div>` : '';
-    const resetWarn = d.upgradeReset ? '<div class="warn soft">⚙ Màn mới, bắt đầu lại tay trắng: chỉ còn súng lục, $300, 2 lựu đạn, 8 hộp đồ ăn. Súng, đạn, nâng cấp, đồng đội và công trình phòng thủ đều phải làm lại.</div>' : '';
+    const resetWarn = d.upgradeReset ? '<div class="warn soft">⚙ Màn mới, bắt đầu lại tay trắng: chỉ còn súng lục, $300, 2 lựu đạn, 8 hộp đồ ăn. Súng, đạn, nâng cấp, hàng rào, đồng đội và công trình phòng thủ đều phải làm lại.</div>'
+      : d.chapterReset ? `<div class="warn soft">⚙ Chương mới, chỗ ở mới: hàng rào phải dựng lại từ đầu (mất hết cấp gia cố), đồng đội và công trình phòng thủ cũng vậy. Súng, đạn và tiền vẫn giữ nguyên.${d.salvage ? ` Vật liệu tháo từ hàng rào cũ bán được <b>$${d.salvage}</b>.` : ''} Hai đêm đầu bầy đàn sẽ thưa hơn.</div>` : '';
     const squadWarn = hurtSquad.length && bench.length && openSlots > 0
       ? `<div class="warn">🩹 ${hurtSquad.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} đang bị thương. Mở tab Đồng đội để đưa người khác lên thay.</div>` : '';
     const warn = (isBossNight(d.night) ? `<div class="warn">⚠ Đêm nay có trăng máu: ${ZOMBIES[bossTypeFor(d.night)].name} sẽ xuất hiện.</div>` : '')

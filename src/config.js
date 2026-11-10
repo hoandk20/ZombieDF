@@ -246,13 +246,17 @@ export function waveFor(n) {
   const ramp = n <= CAMPAIGN_NIGHTS && st > 1 && local <= 5;
   const gk = ramp ? [0.5, 0.6, 0.75, 0.9, 0.95][local - 1] : 1;
   if (grace) { total *= 0.6 + 0.1 * (local - 1); interval *= 1.25; }
+  // 2 đêm đầu của chương thứ hai trong màn: hàng rào vừa dựng lại nên bầy đàn đến thưa hơn
+  const settle = n <= CAMPAIGN_NIGHTS && (local === 11 || local === 12);
+  if (settle) { total *= local === 11 ? 0.7 : 0.85; interval *= local === 11 ? 1.2 : 1.1; }
   const w = {
     grace,
     local,
-    rewardMul: grace ? 1.4 : 1,
+    settle,
+    rewardMul: grace ? 1.4 : settle ? 1.15 : 1,
     total: Math.round(total),
     interval,
-    hpMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.11 + up * 0.25 : 1 + 19 * 0.11 + (n - 20) * 0.06) * gk,
+    hpMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.11 + up * 0.25 : 1 + 19 * 0.11 + (n - 20) * 0.06) * gk * (settle ? (local === 11 ? 0.85 : 0.92) : 1),
     dmgMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.02 + up * 0.08 : 1 + (n - 1) * 0.02) * (grace ? 0.75 : 1),
     speedMul: m.rush ? 1.3 : 1,
     boss: isBossNight(n),

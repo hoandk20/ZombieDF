@@ -185,7 +185,7 @@ export class Game {
     this.scene = sceneFor(d.night);
     this.mods = this.wave.mods || {};
     // mức đe doạ thích nghi với hỏa lực người chơi
-    const th = this.wave.grace ? Math.min(1, d.threat || 1) : d.threat || 1; // khởi động: không áp mức đe doạ
+    const th = this.wave.grace || this.wave.settle ? Math.min(1, d.threat || 1) : d.threat || 1; // khởi động: không áp mức đe doạ
     this.threat = th;
     this.wave.total = Math.round(this.wave.total * diffOf(d).count * (1 + (th - 1) * 0.55));
     this.wave.hpMul *= 1 + (th - 1) * 0.7;
