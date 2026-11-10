@@ -21,6 +21,7 @@ export function newSave() {
     wireLevel: 0,
     floodlight: false,
     food: 8,
+    threat: 1,
     hungry: false,
     eventDay: 0,
     shockerLevel: 0,

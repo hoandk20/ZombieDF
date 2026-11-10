@@ -3,7 +3,7 @@ import {
   WEAPONS, WEAPON_ORDER, HEADSHOT_MUL, SURVIVOR_SLOTS, GRENADE, CAMPAIGN_NIGHTS, ACT_LENGTH,
   waveFor, weatherFor, barricadeMax, reloadMul, actFor, bossTypeFor, dmgMul,
   sceneFor, stageFor, bossCountFor, STAGE_LENGTH, CAMP_INCOME, mateLevel,
-  diffOf, UPKEEP, TURRET, MINE, WIRE, SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE,
+  diffOf, UPKEEP, TURRET, MINE, WIRE, nextThreat, eliteChance, SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE,
 } from './config.js';
 import { SURVIVORS, NIGHT_TITLES, MATE_COMBAT, hasPerk } from './story.js';
 import { Zombie, roundRect } from './zombie.js';
@@ -182,7 +182,13 @@ export class Game {
     this.weather = weatherFor(d.night);
     this.scene = sceneFor(d.night);
     this.mods = this.wave.mods || {};
-    this.wave.total = Math.round(this.wave.total * diffOf(d).count);
+    // mức đe doạ thích nghi với hỏa lực người chơi
+    const th = this.wave.grace ? Math.min(1, d.threat || 1) : d.threat || 1; // khởi động: không áp mức đe doạ
+    this.threat = th;
+    this.wave.total = Math.round(this.wave.total * diffOf(d).count * (1 + (th - 1) * 0.55));
+    this.wave.hpMul *= th;
+    this.wave.interval /= 1 + (th - 1) * 0.5;
+    this.wave.speedMul = (this.wave.speedMul || 1) * (1 + (th - 1) * 0.12);
     this.spawnTimer = 2.5;
     // công trình phòng thủ
     this.shock = { t: 1, zapT: 0 };
@@ -246,7 +252,9 @@ export class Game {
     if (hasPerk(d, 'tuan')) d.hp = Math.min(barricadeMax(d.barricadeLevel), d.hp + barricadeMax(d.barricadeLevel) * 0.1);
     let extraGrenade = false;
     if (hasPerk(d, 'hung') && d.grenades < GRENADE.max) { d.grenades++; extraGrenade = true; }
-    const info = { night: d.night, bonus, campIncome, upkeep, eat, hungry: d.hungry, campers: campers.length, extraGrenade, ...this.stats };
+    const before = d.threat || 1;
+    if (!this.wave.grace) d.threat = nextThreat(d, this.stats.damage / this.maxHp);
+    const info = { night: d.night, bonus, campIncome, upkeep, eat, hungry: d.hungry, campers: campers.length, extraGrenade, threat: d.threat, threatBefore: before, dmgPct: Math.round((this.stats.damage / this.maxHp) * 100), ...this.stats };
     const wasFinale = d.night === CAMPAIGN_NIGHTS && !d.endless;
     const transition = !d.endless && [10, 20, 30, 40, 50].includes(d.night) ? d.night : 0;
     d.night += 1;
@@ -615,7 +623,7 @@ export class Game {
     if (this.state !== 'night') return;
 
     const d = this.data;
-    let reward = rewarded ? Math.round(z.T.reward * (head ? 1.5 : 1) * diffOf(d).reward) : 0;
+    let reward = rewarded ? Math.round(z.T.reward * (head ? 1.5 : 1) * diffOf(d).reward * (z.elite ? 2 : 1) * (this.wave.rewardMul || 1)) : 0;
     if (head && byPlayer && hasPerk(d, 'linh')) reward = Math.round(reward * 1.25);
     if (z.T.bounty) {
       this.texts.push({ x: z.x, y: z.foot - z.h - 34, text: 'CƯỚP LẠI HÒM TIẾP TẾ!', life: 2, max: 2, size: 18, color: '#ffcf4a' });
@@ -713,7 +721,7 @@ export class Game {
       // sát thương giảm mạnh ở rìa vụ nổ; trùm và gã khổng lồ chịu nổ tốt hơn
       const tough = z.T.boss ? 0.5 : z.T.heavy ? 0.65 : 1;
       this.hitZombie(z, base * (0.15 + 0.85 * k) * tough, false, z.x, cy, Math.sign(z.x - x) || 1, byPlayer, { silent: true, kind: 'blast' });
-      if (z.alive && !z.T.heavy) z.x += 45 * k * (Math.sign(z.x - x) || 1);
+      if (z.alive) z.x += (40 * k * (Math.sign(z.x - x) || 1)) / Math.pow(z.mass(), 1.3); // vụ nổ hất văng, con to ít bị hất
     }
     const fireCols = opts.toxic ? ['#c8f040', '#7fb020'] : ['#ffb030', '#ff6a10'];
     for (let i = 0; i < 26; i++) this.addParticle({ x, y: y - 6, vx: rand(-260, 260), vy: rand(-380, -60), life: rand(0.3, 0.7), color: fireCols[i % 2], size: rand(3, 7), g: 400, kind: 'fire' });
@@ -828,6 +836,9 @@ export class Game {
     // sinh zombie
     if (this.spawned < this.wave.total) {
       this.spawnTimer -= dt;
+      // dọn quá nhanh thì đợt sau kéo đến ngay, không để khoảng lặng
+      const onField = this.zombies.reduce((n, z) => n + (z.alive ? 1 : 0), 0);
+      if (onField < 3 + Math.floor(d.night / 4) && this.spawnTimer > 0.35 && this.nightT > 3) this.spawnTimer = 0.35;
       if (this.spawnTimer <= 0) {
         const df = diffOf(d);
         // thỉnh thoảng cả bầy kéo đến cùng lúc
@@ -1268,6 +1279,10 @@ export class Game {
     const z = new Zombie(type, this.wave.hpMul * df.hp);
     z.speed *= (this.wave.speedMul || 1) * df.speed;
     z.dmg *= (this.wave.dmgMul || 1) * df.dmg;
+    if (!z.T.boss && type !== 'spawnling' && type !== 'bounty' && Math.random() < eliteChance(this.data.night, this.threat || 1)) {
+      z.elite = true; // tinh nhuệ: nhiều máu, nhanh, cắn đau, thưởng gấp đôi
+      z.maxHp *= 2.2; z.hp = z.maxHp; z.speed *= 1.15; z.dmg *= 1.25; z.helmet *= 2;
+    }
     return z;
   }
 
@@ -1436,7 +1451,7 @@ export class Game {
 
     // ánh sáng cộng dồn: chớp súng, vụ nổ, cửa sổ nhà
     ctx.globalCompositeOperation = 'lighter';
-    if (inGame && (this.state === 'night' || this.state === 'paused')) { // đèn pin của Phong rọi theo hướng ngắm
+    if (inGame && (this.state === 'night' || this.state === 'paused')) { // đèn pin của Hoàn rọi theo hướng ngắm
       const a = this.aimAngle();
       const fl = ctx.createRadialGradient(SHOULDER.x, SHOULDER.y, 10, SHOULDER.x, SHOULDER.y, 560);
       fl.addColorStop(0, 'rgba(255,240,200,0.16)'); fl.addColorStop(1, 'rgba(255,240,200,0)');

@@ -9,7 +9,7 @@ cần file tài nguyên nào.
 
 ## Cốt truyện
 
-Nhân vật chính là **Phong**, kỹ thuật viên trạm phát thanh thị trấn Bến Sương: tóc đen dựng, luôn đeo
+Nhân vật chính là **Hoàn**, kỹ sư IT phụ trách máy chủ và mạng của đài phát thanh thị trấn Bến Sương: tóc đen dựng, luôn đeo
 tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng phát, và radio là sợi dây hy vọng cuối cùng.
 
 - **Chương 1 · Bến Sương (đêm 1–10):** cố thủ trong nhà ông ngoại dưới chân đồi chờ trực thăng.
@@ -23,7 +23,7 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 - **Màn 2 · Mật mã Hồng Sơn (đêm 21–40):** trạm nghiên cứu Hồng Sơn có vắc-xin nhưng cần 20 ngày điều chế.
   **Chương 3 · Đập Hồng Sơn** (núi rừng, đập thủy điện) và **Chương 4 · Căn cứ Hồng Sơn** (đèn pha, tháp canh,
   phòng thí nghiệm). Trùm: Kẻ Khổng Lồ (25), Bạo Chúa Rừng gọi đàn chó (30), hai Kẻ Khổng Lồ (35), Mẫu Thể Số 0
-  ba giai đoạn (40). Kết thúc: Phong phát công thức vắc-xin trên mọi tần số.
+  ba giai đoạn (40). Kết thúc: Hoàn phát công thức vắc-xin trên mọi tần số.
 - **Màn 3 · Chuyến hàng cuối cùng (đêm 41–60):** mang thùng chủng gốc vắc-xin về Bệnh viện Trung ương.
   **Chương 5 · Cao tốc Bắc Nam** (cầu vượt, xe bỏ hoang đang cháy) và **Chương 6 · Thủ đô** (nhà chọc trời,
   tháp truyền hình, ga tàu điện ngầm). Trùm: Quái Vật Cảng (45), Cỗ Máy Nghiền lao húc, da thép (50),
@@ -46,7 +46,7 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 ## Không khí sinh tồn
 
 - **Cắt cảnh minh hoạ** cho mọi lần chuyển bản đồ và đoạn kết, vẽ động bằng canvas, khớp từng câu thoại.
-- Đêm tối hơn, **đèn pin** của Phong rọi theo hướng ngắm, máy quay rung như cầm tay, hạt nhiễu phim,
+- Đêm tối hơn, **đèn pin** của Hoàn rọi theo hướng ngắm, máy quay rung như cầm tay, hạt nhiễu phim,
   tro bụi bay, máu bắn lên màn hình khi rào bị đánh mạnh, màu nhạt dần khi rào sắp vỡ.
 - Âm thanh xa xăm theo từng bản đồ: tiếng hét, chó tru, súng nổ xa, kính vỡ, còi báo động, còi tàu.
 - **Đồ hộp**: cả nhóm ăn mỗi sáng; hết đồ ăn thì bị đói (nạp đạn chậm, bắn rung tay, đồng đội yếu đi).
@@ -81,7 +81,11 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 - Vũ khí sát thương lan (súng phóng lựu, lựu đạn, mìn, súng điện, súng cối, tháp Tesla) đã được giảm:
   sát thương giảm mạnh ở rìa vụ nổ, trùm và gã khổng lồ chịu nổ tốt hơn, lựu đạn đắt hơn và mang tối đa 4 quả.
 - Súng phun lửa có tầm bắn trung bình (420px) thay vì sát rào.
-- **Nâng cấp vũ khí** (Đạn xuyên giáp, Luyện nạp đạn) **về cấp 0 khi sang màn mới**, cùng với đồng đội và công trình.
+- **Mỗi màn bắt đầu lại tay trắng:** súng (chỉ còn súng lục), đạn, tiền ($300), lựu đạn, đồ hộp, nâng cấp vũ khí,
+  đồng đội và công trình phòng thủ đều đặt lại. Cấp gia cố hàng rào được giữ.
+- **Mức đe doạ thích nghi:** hàng rào càng ít bị xây xước, đêm sau zombie càng nhiều máu, đông và dồn dập hơn;
+  suýt thua thì bầy đàn nới tay. Từ đêm 8 có **zombie tinh nhuệ** (hào quang đỏ, gấp đôi máu, thưởng gấp đôi).
+- **Đẩy lùi theo khối lượng:** zombie càng to càng ít bị đẩy lùi; bị bắn liên tục thì kháng dần.
 
 ## Đội hình đồng đội
 

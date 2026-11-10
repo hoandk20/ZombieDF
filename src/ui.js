@@ -2,7 +2,7 @@ import {
   WEAPONS, WEAPON_ORDER, DAY_HOURS, MAX_RELOAD_LVL, GRENADE, CAMPAIGN_NIGHTS, ACT_LENGTH, ACT_NAMES,
   barricadeMax, barricadeUpgradePrice, reloadUpgradePrice, repairKitPrice, isBossNight, bossTypeFor, actFor,
   ZOMBIES, dmgUpgradePrice, MAX_DMG_LVL, stageFor, STAGE_LENGTH, STAGE_NAMES, SCENES, MAX_SQUAD,
-  modsFor, MOD_INFO, mateLevel, MATE_XP, CAMP_INCOME,
+  modsFor, MOD_INFO, waveFor, mateLevel, MATE_XP, CAMP_INCOME,
   DIFFICULTIES, DIFF_ORDER, diffOf, UPKEEP, TURRET, MINE, WIRE, FLOODLIGHT_PRICE,
   SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE, DEFENSES_BY_ACT, ALL_DEFENSES, resetDefenses,
 } from './config.js';
@@ -55,7 +55,7 @@ const MORNING_EVENTS = [
     text: 'Radio bắt được một giọng nói run rẩy: "Ai đó… chúng tôi bị kẹt ở trạm xăng, còn ba người…"',
     choices: [
       { label: 'Gửi đồ tiếp tế', hint: '−3 đồ hộp, dễ tìm người hơn', run: (d) => { d.food = Math.max(0, (d.food || 0) - 3); d.searchPity = (d.searchPity || 0) + 6; return 'Bạn hướng dẫn họ chỗ lấy đồ. Họ hứa sẽ báo cho bạn nếu thấy ai còn sống quanh đây.'; } },
-      { label: 'Tắt radio', hint: 'Giữ đồ ăn', run: () => 'Bạn tắt radio. Lần đầu tiên, Phong tháo tai nghe xuống trước khi tín hiệu kịp tắt.' },
+      { label: 'Tắt radio', hint: 'Giữ đồ ăn', run: () => 'Bạn tắt radio. Lần đầu tiên, Hoàn tháo tai nghe xuống trước khi tín hiệu kịp tắt.' },
     ],
   },
   {
@@ -226,7 +226,7 @@ export class UI {
         <div class="menu-left">
           <div class="eyebrow">3 màn · 60 đêm · Bến Sương → Thủ đô</div>
           <h1 class="title"><span class="t1">BARRICADE</span><span class="t2">NIGHTS</span></h1>
-          <p class="tagline">Phong, người giữ trạm phát thanh cuối cùng. Giữ vững hàng rào cho đến khi được cứu.</p>
+          <p class="tagline">Hoàn, một kỹ sư IT giữ đài phát thanh cuối cùng. Giữ vững hàng rào cho đến khi được cứu.</p>
           <div class="menu-buttons">
             ${save ? `<button class="primary" data-act="continue">${contLabel}</button>` : ''}
             <button class="${save ? '' : 'primary'}" data-act="new">Chiến dịch mới</button>
@@ -277,11 +277,11 @@ export class UI {
       <div class="screen panel-screen fade-in">
         <div class="panel help">
           <div class="help-head">
-            <img class="hero-card" src="${heroPortrait()}" alt="Phong">
+            <img class="hero-card" src="${heroPortrait()}" alt="Hoàn">
             <div>
               <div class="eyebrow">Nhân vật chính</div>
-              <h2>Phong · kỹ thuật viên trạm phát thanh</h2>
-              <p class="story-line">Không bao giờ tháo tai nghe. Chừng nào radio còn phát, chừng đó Phong còn chiến đấu.</p>
+              <h2>Hoàn · kỹ sư IT của đài phát thanh</h2>
+              <p class="story-line">Không bao giờ tháo tai nghe. Biết code, biết sửa máy, và không bao giờ tháo tai nghe. Chừng nào radio còn phát, chừng đó Hoàn còn chiến đấu.</p>
             </div>
           </div>
           <div class="help-grid">
@@ -476,6 +476,14 @@ export class UI {
       resetDefenses(g.data);
       if (act === 3 || act === 5) { // màn mới: nâng cấp vũ khí cũng làm lại từ đầu
         g.data.dmgLevel = 0; g.data.reloadLevel = 0; g.data.upgradeReset = true;
+        // màn mới: Hoàn ra đi tay trắng, chỉ còn khẩu súng lục của ông ngoại
+        g.data.weapons = { pistol: { mag: WEAPONS.pistol.mag, reserve: 0 } };
+        g.data.current = 'pistol';
+        g.data.cash = 300;
+        g.data.grenades = 2;
+        g.data.food = 8;
+        g.data.hungry = false;
+        g.data.threat = Math.round((1 + ((g.data.threat || 1) - 1) * 0.5) * 100) / 100;
       }
     }
     this.playCutscene(lines, () => {
@@ -497,7 +505,7 @@ export class UI {
         <div class="panel small victory">
           <div class="eyebrow">Chiến dịch hoàn thành</div>
           <h2 class="big-title gold">BẠN ĐÃ SỐNG SÓT</h2>
-          <p class="story-line">Sáu mươi đêm, từ Bến Sương tới thủ đô. Phong đã mang thùng mẫu đến Bệnh viện Trung ương, và vắc-xin bắt đầu được sản xuất cho cả đất nước.</p>
+          <p class="story-line">Sáu mươi đêm, từ Bến Sương tới thủ đô. Hoàn đã mang thùng mẫu đến Bệnh viện Trung ương, và vắc-xin bắt đầu được sản xuất cho cả đất nước.</p>
           <div class="stat-row">
             <div><b>${d.totalKills}</b><span>zombie đã hạ</span></div>
             <div><b>${d.headshots || 0}</b><span>headshot</span></div>
@@ -809,12 +817,17 @@ export class UI {
     const newFoe = { 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater', 22: 'dog', 24: 'screamer', 27: 'reviver', 32: 'shielder', 42: 'leaper', 44: 'burner', 52: 'splitter', 54: 'stalker' }[d.night];
     const mods = modsFor(d.night);
     const modList = Object.keys(MOD_INFO).filter((k) => mods[k]);
-    const forecast = modList.length ? `<div class="forecast"><span class="radio-tag">DỰ BÁO ĐÊM NAY</span>${modList.map((k) => `<div><b>${MOD_INFO[k].icon} ${MOD_INFO[k].name}${k === 'airdrops' ? ` ×${mods.airdrops}` : ''}</b> ${MOD_INFO[k].desc}</div>`).join('')}</div>` : '';
+    const wv = waveFor(d.night);
+    const graceInfo = wv.grace ? `<div><b>🌱 Khởi động màn mới (đêm ${wv.local}/3)</b> Zombie yếu hơn, ít quái nặng, không có tinh nhuệ. Tiền thưởng ×1,4 để kịp mua súng.</div>` : '';
+    const forecast = modList.length || graceInfo ? `<div class="forecast"><span class="radio-tag">DỰ BÁO ĐÊM NAY</span>${graceInfo}${modList.map((k) => `<div><b>${MOD_INFO[k].icon} ${MOD_INFO[k].name}${k === 'airdrops' ? ` ×${mods.airdrops}` : ''}</b> ${MOD_INFO[k].desc}</div>`).join('')}</div>` : '';
     const hurtSquad = d.squad.filter((id) => d.mates[id]?.injured > 0);
     const openSlots = MAX_SQUAD - d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length;
     const bench = d.crew.filter((id) => !d.squad.includes(id) && !(d.mates[id]?.injured > 0));
     const foodWarn = (d.food || 0) < this.eatPerDay() ? `<div class="warn">🥫 Đồ ăn không đủ cho sáng mai (cần ${this.eatPerDay()}, còn ${d.food || 0}). Hãy lục lọi hoặc mua đồ hộp, nếu không cả nhóm sẽ đói.</div>` : '';
-    const resetWarn = d.upgradeReset ? '<div class="warn soft">⚙ Màn mới: nâng cấp Đạn xuyên giáp và Luyện nạp đạn đã về cấp 0. Đồng đội và công trình phòng thủ cũng phải làm lại.</div>' : '';
+    const th = d.threat || 1;
+    const thInfo = info && info.threat !== undefined ? (info.threat > info.threatBefore ? ` Đêm qua rào chỉ mất ${info.dmgPct}% nên bầy đàn đang mạnh lên.` : info.threat < info.threatBefore ? ` Đêm qua rào mất ${info.dmgPct}%, bầy đàn nới tay một chút.` : '') : '';
+    const threatWarn = th > 1.05 || (info && info.threat !== info.threatBefore) ? `<div class="warn${th >= 1.6 ? '' : ' soft'}">☠ Mức đe doạ <b>${th.toFixed(2)}×</b>: zombie nhiều máu hơn, đông hơn, dồn dập hơn.${thInfo}</div>` : '';
+    const resetWarn = d.upgradeReset ? '<div class="warn soft">⚙ Màn mới, bắt đầu lại tay trắng: chỉ còn súng lục, $300, 2 lựu đạn, 8 hộp đồ ăn. Súng, đạn, nâng cấp, đồng đội và công trình phòng thủ đều phải làm lại.</div>' : '';
     const squadWarn = hurtSquad.length && bench.length && openSlots > 0
       ? `<div class="warn">🩹 ${hurtSquad.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} đang bị thương. Mở tab Đồng đội để đưa người khác lên thay.</div>` : '';
     const warn = (isBossNight(d.night) ? `<div class="warn">⚠ Đêm nay có trăng máu: ${ZOMBIES[bossTypeFor(d.night)].name} sẽ xuất hiện.</div>` : '')
@@ -896,7 +909,7 @@ export class UI {
           <section class="panel plan">
             ${info ? `<div class="recap">Đêm ${info.night}: hạ <b>${info.kills}</b> zombie (${info.headshots} headshot), chuỗi dài nhất <b>${info.bestStreak}</b>, kiếm <b>$${info.earned}</b> + thưởng sống sót <b>$${info.bonus}</b>${info.campIncome ? ` + trại <b>$${info.campIncome}</b>` : ''}${info.eat ? `, cả nhóm ăn <b>${info.eat}</b> hộp` : ''}${info.hungry ? ' <span class="hurt-txt">· HẾT ĐỒ ĂN, CẢ NHÓM ĐANG ĐÓI</span>' : ''}${info.crates ? `, mở <b>${info.crates}</b> thùng tiếp tế` : ''}${info.extraGrenade ? ', Hùng nhặt thêm 1 lựu đạn' : ''}.${info.injured?.length ? ` <span class="hurt-txt">${info.injured.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} bị thương.</span>` : ''}</div>` : ''}
             ${radio ? `<div class="radio-card"><span class="radio-tag">${radio.who}</span>${esc(radio.text)}</div>` : ''}
-            ${resetWarn}${warn}${foodWarn}${squadWarn}${forecast}
+            ${resetWarn}${threatWarn}${warn}${foodWarn}${squadWarn}${forecast}
             <h3>${this.dayDone ? 'Kết quả trong ngày' : 'Kế hoạch ban ngày'} <small>${this.dayDone ? 'Đã hết giờ' : `${DAY_HOURS - used} giờ còn lại`}</small></h3>
             <div class="hour-dots">${hourDots}</div>
             ${this.dayDone

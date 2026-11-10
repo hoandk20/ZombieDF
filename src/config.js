@@ -33,9 +33,9 @@ export const UPKEEP = 18; // tiền khẩu phần mỗi đồng đội mỗi sá
 // Độ khó: nhân với máu, sát thương, số lượng, tốc độ zombie và tiền thưởng
 export const DIFFICULTIES = {
   easy:      { name: 'Dễ',      desc: 'Cân bằng như bản đầu. Hợp để làm quen.', hp: 0.9, dmg: 1, count: 1, speed: 1, reward: 1.1, recruit: 1.6, mate: 1, upkeep: 0.5, pack: 0.18, interval: 1 },
-  normal:    { name: 'Thường',  desc: 'Zombie khỏe, nhanh, kéo đến theo bầy. Đồng đội khó tìm.', hp: 1.6, dmg: 1.6, count: 1.35, speed: 1.3, reward: 0.85, recruit: 1, mate: 0.8, upkeep: 1, pack: 0.32, interval: 0.85 },
-  hard:      { name: 'Khó',     desc: 'Bầy đàn đông và hung hãn. Mỗi viên đạn đều quý.', hp: 2.0, dmg: 2.0, count: 1.5, speed: 1.45, reward: 0.75, recruit: 0.8, mate: 0.7, upkeep: 1.3, pack: 0.4, interval: 0.75 },
-  nightmare: { name: 'Ác mộng', desc: 'Dành cho người đã thắng. Gần như không thể.', hp: 2.6, dmg: 2.6, count: 1.7, speed: 1.6, reward: 0.65, recruit: 0.6, mate: 0.6, upkeep: 1.6, pack: 0.48, interval: 0.65 },
+  normal:    { name: 'Thường',  desc: 'Zombie khỏe, nhanh, kéo đến theo bầy. Đồng đội khó tìm.', hp: 1.6, dmg: 1.3, count: 1.35, speed: 1.3, reward: 0.85, recruit: 1, mate: 0.8, upkeep: 1, pack: 0.32, interval: 0.85 },
+  hard:      { name: 'Khó',     desc: 'Bầy đàn đông và hung hãn. Mỗi viên đạn đều quý.', hp: 2.0, dmg: 1.6, count: 1.5, speed: 1.45, reward: 0.75, recruit: 0.8, mate: 0.7, upkeep: 1.3, pack: 0.4, interval: 0.75 },
+  nightmare: { name: 'Ác mộng', desc: 'Dành cho người đã thắng. Gần như không thể.', hp: 2.6, dmg: 2.0, count: 1.7, speed: 1.6, reward: 0.65, recruit: 0.6, mate: 0.6, upkeep: 1.6, pack: 0.48, interval: 0.65 },
 };
 export const DIFF_ORDER = ['easy', 'normal', 'hard', 'nightmare'];
 export const diffOf = (d) => DIFFICULTIES[(d && d.difficulty) || 'normal'] || DIFFICULTIES.normal;
@@ -214,7 +214,13 @@ const MODS = {
   59: { blackout: true, airdrops: 2 },
 };
 export function modsFor(n) {
-  if (n <= CAMPAIGN_NIGHTS) return { airdrops: 0, ...(MODS[n] || {}) };
+  if (n <= CAMPAIGN_NIGHTS) {
+    const local = ((n - 1) % STAGE_LENGTH) + 1;
+    const m = { airdrops: 0, ...(MODS[n] || {}) };
+    // 3 đêm khởi động đầu màn mới: chỉ giữ thả dù tiếp tế, bỏ các đêm đặc biệt khó
+    if (n > STAGE_LENGTH && local <= 3) return { airdrops: Math.max(1, m.airdrops) };
+    return m;
+  }
   return { airdrops: n % 3 === 0 ? 2 : 0, blackout: n % 4 === 0, bounty: n % 7 === 0, rush: n % 6 === 0, horde: n % 8 === 0 };
 }
 export const MOD_INFO = {
@@ -227,15 +233,27 @@ export const MOD_INFO = {
 
 export function waveFor(n) {
   const m = modsFor(n);
-  let total = 10 + Math.min(n, 20) * 5 + Math.min(n, 12) ** 2 * 0.45 + Math.max(0, Math.min(n, 40) - 20) * 1.5 + Math.max(0, n - 40) * 0.5;
-  let interval = Math.max(0.3, 2.2 - n * 0.16);
+  // mỗi màn bắt đầu lại tay trắng nên sức mạnh zombie tính theo đêm trong màn, cộng thêm một bậc mỗi màn
+  const st = n <= CAMPAIGN_NIGHTS ? stageFor(n) : Math.ceil(n / STAGE_LENGTH);
+  const local = n <= CAMPAIGN_NIGHTS ? ((n - 1) % STAGE_LENGTH) + 1 : n;
+  const up = n <= CAMPAIGN_NIGHTS ? st - 1 : 0;
+  let total = 10 + Math.min(local, 20) * 5 + Math.min(local, 12) ** 2 * 0.45 + up * 8 + (n > CAMPAIGN_NIGHTS ? (n - 20) * 1.2 : 0);
+  let interval = Math.max(0.3, 2.2 - local * 0.16 - up * 0.1);
   if (m.rush) total *= 0.8;
   if (m.horde) { total *= 1.35; interval *= 0.65; }
-  return {
+  // 3 đêm khởi động đầu mỗi màn mới: zombie yếu, ít quái nặng, thưởng nhiều để kịp tích tiền
+  const grace = n <= CAMPAIGN_NIGHTS && st > 1 && local <= 3;
+  const ramp = n <= CAMPAIGN_NIGHTS && st > 1 && local <= 5;
+  const gk = ramp ? [0.5, 0.6, 0.75, 0.9, 0.95][local - 1] : 1;
+  if (grace) { total *= 0.6 + 0.1 * (local - 1); interval *= 1.25; }
+  const w = {
+    grace,
+    local,
+    rewardMul: grace ? 1.4 : 1,
     total: Math.round(total),
     interval,
-    hpMul: 1 + Math.min(n - 1, 19) * 0.11 + Math.max(0, Math.min(n, 40) - 20) * 0.07 + Math.max(0, n - 40) * 0.05,
-    dmgMul: 1 + (n - 1) * 0.035,
+    hpMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.11 + up * 0.25 : 1 + 19 * 0.11 + (n - 20) * 0.06) * gk,
+    dmgMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.02 + up * 0.08 : 1 + (n - 1) * 0.02) * (grace ? 0.75 : 1),
     speedMul: m.rush ? 1.3 : 1,
     boss: isBossNight(n),
     mods: m,
@@ -257,6 +275,8 @@ export function waveFor(n) {
       stalker: n >= 54 ? 0.11 : 0,
     },
   };
+  if (grace) for (const k of ['brute', 'riot', 'spitter', 'bloater', 'shielder', 'burner', 'splitter', 'reviver', 'screamer', 'stalker', 'leaper']) w.weights[k] *= 0.25;
+  return w;
 }
 
 export function weatherFor(n) {
@@ -274,8 +294,31 @@ export const reloadMul = (lvl) => Math.pow(0.88, lvl);
 export const reloadUpgradePrice = (lvl) => 500 * (lvl + 1);
 export const MAX_RELOAD_LVL = 4;
 export const repairKitPrice = (night) => 120 + night * 20;
-export const dmgMul = (lvl) => 1 + 0.12 * lvl;
-export const dmgUpgradePrice = (lvl) => 700 * (lvl + 1);
-export const MAX_DMG_LVL = 10;
+export const dmgMul = (lvl) => 1 + 0.08 * lvl;
+export const dmgUpgradePrice = (lvl) => Math.round(900 * Math.pow(lvl + 1, 1.2));
+export const MAX_DMG_LVL = 8;
+
+// "Đạo diễn" bầy đàn: mức đe doạ tăng khi hàng rào gần như không bị xây xước, giảm khi suýt thua
+export const THREAT = {
+  easy:      { min: 0.85, max: 1.4, up: 0.1 },
+  normal:    { min: 0.9, max: 2.6, up: 0.22 },
+  hard:      { min: 1.0, max: 3.0, up: 0.26 },
+  nightmare: { min: 1.1, max: 3.6, up: 0.3 },
+};
+export function nextThreat(d, dmgRatio) {
+  const T = THREAT[d.difficulty || 'normal'] || THREAT.normal;
+  let t = d.threat || 1;
+  if (dmgRatio < 0.06) t += T.up;            // không xây xước gì
+  else if (dmgRatio < 0.15) t += T.up * 0.6;
+  else if (dmgRatio < 0.3) t += T.up * 0.2;
+  else if (dmgRatio > 0.65) t -= 0.25;       // suýt thua: nới tay
+  else if (dmgRatio > 0.45) t -= 0.1;
+  return Math.max(T.min, Math.min(T.max, Math.round(t * 100) / 100));
+}
+export function eliteChance(n, threat) {
+  const local = n <= CAMPAIGN_NIGHTS ? ((n - 1) % STAGE_LENGTH) + 1 : n;
+  if (local < 8) return 0;
+  return Math.min(0.3, (0.05 + (local - 8) * 0.006 + (n > STAGE_LENGTH ? 0.03 : 0)) * threat);
+}
 export const mateLevel = (xp) => (xp >= 60 ? 3 : xp >= 20 ? 2 : 1);
 export const MATE_XP = [0, 20, 60];

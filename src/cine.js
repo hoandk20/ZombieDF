@@ -218,6 +218,14 @@ const SHOTS = {
     ctx.fillStyle = '#1a1a1e'; ctx.fillRect(340, 310, 80, 30);
     ctx.fillStyle = `rgba(120,255,140,${0.6 + Math.sin(t * 12) * 0.2})`; for (let i = 0; i < 10; i++) ctx.fillRect(344 + i * 7, 335 - Math.abs(Math.sin(t * 9 + i)) * 20, 4, Math.abs(Math.sin(t * 9 + i)) * 20 + 2);
     ctx.fillStyle = '#c9a24a'; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(445 + i * 18, 330, 6, 0, TAU); ctx.fill(); }
+    // laptop với những dòng lệnh đang chạy
+    ctx.fillStyle = '#1a1c22'; ctx.fillRect(540, 352, 120, 8);
+    ctx.fillStyle = '#22252c'; ctx.beginPath(); ctx.moveTo(552, 352); ctx.lineTo(560, 280); ctx.lineTo(650, 280); ctx.lineTo(648, 352); ctx.fill();
+    ctx.fillStyle = '#08120c'; ctx.beginPath(); ctx.moveTo(558, 346); ctx.lineTo(565, 286); ctx.lineTo(644, 286); ctx.lineTo(643, 346); ctx.fill();
+    ctx.fillStyle = '#5adc8a';
+    for (let i = 0; i < 7; i++) { const w = 20 + ((i * 37 + Math.floor(t * 3)) % 50); ctx.fillRect(568, 292 + i * 7.5, w, 2.2); }
+    if (Math.sin(t * 6) > 0) ctx.fillRect(568, 344, 6, 2.2);
+    glow(ctx, 604, 316, 90, '90,220,140', 0.12);
     ctx.strokeStyle = '#3a3a40'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(480, 300); ctx.lineTo(500, 220); ctx.stroke();
     glow(ctx, 380, 325, 180, '120,255,140', 0.12);
     glow(ctx, 710, 190, 260, '255,130,60', 0.12 + Math.sin(t * 7) * 0.03);

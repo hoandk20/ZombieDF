@@ -124,6 +124,7 @@ export class Zombie {
     this.twitchT = rand(1.5, 5);
     this.twitching = 0;
     this.detail = true; // game tắt bớt chi tiết cho con ở xa khi quá đông
+    this.kbRecent = 0;
     this.burnT = 0;
     this.burnDps = 0;
     this.stunT = 0;
@@ -135,6 +136,16 @@ export class Zombie {
   }
 
   get alive() { return this.state !== 'dead'; }
+
+  // khối lượng tương đối so với một xác sống thường (dùng cho độ đẩy lùi)
+  mass() {
+    let m = (this.h * this.w) / (104 * 30);
+    if (this.T.heavy) m *= 2.5;
+    if (this.T.boss) m *= 6;
+    if (this.elite) m *= 1.5;
+    if (this.T.shield || this.T.plated || this.T.armored) m *= 1.3;
+    return Math.max(0.6, m);
+  }
 
   // Hitbox trong toạ độ thế giới
   boxes() {
@@ -216,6 +227,7 @@ export class Zombie {
       return;
     }
     this.buffT = Math.max(0, this.buffT - dt);
+    this.kbRecent = Math.max(0, this.kbRecent - dt * 14);
     this.screamT = Math.max(0, this.screamT - dt);
     if (this.stunT > 0) { this.stunT -= dt; return; } // bị bẫy điện làm tê liệt
     if (this.leaping) { // kẻ nhảy đang bật qua mìn và dây thép gai
@@ -302,8 +314,12 @@ export class Zombie {
     if (this.armorPhase && kind === 'bullet') dmg *= 0.4; // giai đoạn 3 của Mẫu Thể Số 0
     this.hp -= dmg;
     if (kind !== 'fire') this.hitT = 0.08; // cháy âm ỉ thì không chớp trắng
-    const kb = (this.T.heavy ? 1.5 : 6) * Math.min(dmg / 30, 3);
-    this.x = Math.min(this.x + kb, W + 100);
+    // đẩy lùi: con càng to (càng nặng) càng ít bị đẩy; trúng liên tục thì kháng dần
+    if (kind !== 'fire') {
+      const kb = (5 * Math.min(dmg / 35, 1.6)) / this.mass() / (1 + this.kbRecent * 0.35);
+      this.kbRecent += kb;
+      this.x = Math.min(this.x + kb, W + 100);
+    }
     if (this.hp <= 0 && this.T.revive && !this.revived && !head && kind === 'bullet') {
       this.state = 'dead';
       this.deadT = 0;
@@ -337,6 +353,11 @@ export class Zombie {
     if (this.reviveT > 0) ctx.translate(Math.sin(this.reviveT * 40) * 1.5, 0); // co giật trước khi đứng dậy
     if (this.jumpY) ctx.translate(0, this.jumpY);
     if (this.T.stalker && this.alive && this.hitT <= 0 && this.burnT <= 0) ctx.globalAlpha *= Math.max(0.07, Math.min(1, (560 - this.x) / 220));
+    if (this.elite && this.alive) { // hào quang đỏ của zombie tinh nhuệ
+      const g = ctx.createRadialGradient(0, -this.h * 0.5, this.w * 0.2, 0, -this.h * 0.5, this.h * 0.75);
+      g.addColorStop(0, 'rgba(200,20,20,0.28)'); g.addColorStop(1, 'rgba(200,20,20,0)');
+      ctx.fillStyle = g; ctx.fillRect(-this.h * 0.75, -this.h * 1.25, this.h * 1.5, this.h * 1.5);
+    }
     LITE = !this.detail;
     if (this.T.kind === 'crawl') this.drawCrawl(ctx); else if (this.T.kind === 'dog') this.drawDog(ctx); else this.drawUpright(ctx);
     LITE = false;
@@ -363,8 +384,12 @@ export class Zombie {
       }
     }
 
-    // thanh máu cho zombie to
-    if (this.alive && this.T.heavy && !this.T.boss && this.hp < this.maxHp) {
+    if (this.elite && this.alive) { // dấu đầu lâu trên đầu
+      ctx.fillStyle = '#ff4a3a'; ctx.font = `bold ${Math.round(10 + this.h * 0.04)}px sans-serif`; ctx.textAlign = 'center';
+      ctx.fillText('☠', this.x - this.h * 0.12, this.foot - this.h - 6 + this.jumpY);
+    }
+    // thanh máu cho zombie to và zombie tinh nhuệ
+    if (this.alive && (this.T.heavy || this.elite) && !this.T.boss && this.hp < this.maxHp) {
       const bw = 46;
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fillRect(this.x - bw / 2, this.foot - this.h - 14, bw, 5);
