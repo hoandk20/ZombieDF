@@ -331,6 +331,47 @@ export const sfx = {
   turret() { if (throttle('turret', 70)) return; noise(0.08, 2600, 0.28); tone(150, 70, 0.05, 0.1); },
   ricochet() { if (throttle('rico', 90)) return; tone(2400, 1600, 0.06, 0.08, 'square'); },
   leap() { if (throttle('leap', 300)) return; noise(0.25, 700, 0.2, 'bandpass', 2); },
+  // Âm thanh xa xăm ngẫu nhiên, tuỳ bản đồ (tiếng hét, chó tru, súng nổ xa, kính vỡ, còi báo động…)
+  ambient(scene) {
+    if (!ctx || !soundOn) return;
+    const pool = ['scream', 'howl', 'gun', 'glass', 'groanFar'];
+    if (scene === 'harbor') pool.push('horn', 'creak');
+    if (scene === 'dam') pool.push('creak', 'howl');
+    if (scene === 'base' || scene === 'capital' || scene === 'highway') pool.push('siren');
+    const k = pool[Math.floor(Math.random() * pool.length)];
+    const t = ctx.currentTime;
+    const far = (node, freq = 900) => { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq; node.connect(f); f.connect(sfxBus); return f; };
+    if (k === 'scream') { // tiếng hét xa, méo
+      const o = ctx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(700, t); o.frequency.linearRampToValueAtTime(1100, t + 0.25); o.frequency.linearRampToValueAtTime(500, t + 1.1);
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.035, t + 0.15); g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+      o.connect(g); far(g, 1400); o.start(t); o.stop(t + 1.25);
+    } else if (k === 'howl') { // chó tru
+      const o = ctx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(380, t); o.frequency.linearRampToValueAtTime(620, t + 0.6); o.frequency.linearRampToValueAtTime(420, t + 1.8);
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.05, t + 0.3); g.gain.exponentialRampToValueAtTime(0.001, t + 1.9);
+      o.connect(g); far(g, 1200); o.start(t); o.stop(t + 2);
+    } else if (k === 'gun') { // ai đó vẫn đang chiến đấu ở phía xa
+      const n = 1 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < n; i++) noise(0.25, 380, 0.12, 'lowpass', 1, i * (0.12 + Math.random() * 0.2));
+    } else if (k === 'glass') {
+      for (let i = 0; i < 6; i++) noise(0.05, 5000 + Math.random() * 2000, 0.05, 'highpass', 1, i * 0.03 + Math.random() * 0.05);
+    } else if (k === 'groanFar') {
+      this.groan();
+    } else if (k === 'horn') { // còi tàu xa ngoài khơi
+      for (const f0 of [110, 138]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f0; const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.03, t + 0.4); g.gain.linearRampToValueAtTime(0.0001, t + 2.6); o.connect(g); far(g, 500); o.start(t); o.stop(t + 2.7); }
+    } else if (k === 'creak') { // kim loại kẽo kẹt
+      const o = ctx.createOscillator(); o.type = 'square';
+      o.frequency.setValueAtTime(90, t); o.frequency.linearRampToValueAtTime(140, t + 0.9);
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.02, t + 0.2); g.gain.exponentialRampToValueAtTime(0.001, t + 1);
+      o.connect(g); far(g, 700); o.start(t); o.stop(t + 1.05);
+    } else if (k === 'siren') { // còi báo động vọng lại
+      const o = ctx.createOscillator(); o.type = 'triangle';
+      for (let i = 0; i < 4; i++) { o.frequency.setValueAtTime(620, t + i * 0.7); o.frequency.linearRampToValueAtTime(880, t + i * 0.7 + 0.35); o.frequency.linearRampToValueAtTime(620, t + i * 0.7 + 0.7); }
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.025, t + 0.5); g.gain.linearRampToValueAtTime(0.0001, t + 2.8);
+      o.connect(g); far(g, 1600); o.start(t); o.stop(t + 2.9);
+    }
+  },
   ally() { if (throttle('ally', 80)) return; noise(0.12, 1800, 0.3); tone(170, 60, 0.07, 0.1); },
   reload() { click(0, 1, 0.25); },
   reloadDone() { reloadNodes = []; },

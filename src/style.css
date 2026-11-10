@@ -253,6 +253,13 @@ button.wide { width: 100%; }
 .diff-btn b em { font-style: normal; font-size: 0.6em; background: var(--amber); color: #1a1208; padding: 0.1em 0.4em; border-radius: 0.2em; vertical-align: middle; margin-left: 0.3em; }
 .diff-btn span { font-size: 0.78em; color: var(--muted); line-height: 1.4; }
 .diff-btn.rec { border-color: var(--amber); }
+.cutscene.cine { background: transparent; }
+.stat.low b { color: var(--blood-hi); }
+.event-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em; margin-top: 0.6em; }
+.event-choices button { display: flex; flex-direction: column; gap: 0.2em; text-align: left; padding: 0.6em 0.8em; }
+.event-choices b { font-family: var(--f-display); font-weight: 600; letter-spacing: 0.03em; }
+.event-choices span { font-size: 0.75em; color: var(--muted); }
+.event-choices .primary span { color: #f0d0c0; }
 .squad-btn { font-size: 0.78em; padding: 0.4em 0.7em; white-space: nowrap; }
 .squad-btn.on { border-color: var(--cash); color: var(--cash); }
 .warn.soft { color: var(--amber); background: rgba(233, 180, 90, 0.1); }

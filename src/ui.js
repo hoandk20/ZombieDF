@@ -15,6 +15,74 @@ import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './aud
 import { weaponIcon, heroPortrait, characterPortrait } from './render.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
+
+// Sự kiện buổi sáng: những lựa chọn khó khăn của người sống sót
+const MORNING_EVENTS = [
+  {
+    title: 'Người lạ xin ăn',
+    text: 'Một người đàn ông gầy gò đứng ngoài hàng rào, tay giơ cao. "Tôi chỉ xin ít đồ ăn. Hai ngày rồi tôi chưa ăn gì."',
+    choices: [
+      { label: 'Chia 2 hộp đồ ăn', hint: '−2 đồ hộp, có thể được đền đáp', run: (d) => { d.food = Math.max(0, (d.food || 0) - 2); if (Math.random() < 0.6) { d.grenades = Math.min(6, d.grenades + 1); return 'Ông ấy cảm ơn rối rít, để lại một quả lựu đạn tìm được trên đường rồi lặng lẽ đi về phía núi.'; } return 'Ông ấy ăn ngấu nghiến rồi đi mất. Ít nhất đêm nay bạn ngủ ngon hơn.'; } },
+      { label: 'Đuổi đi', hint: 'Giữ đồ ăn cho nhóm', run: () => 'Ông ấy nhìn bạn rất lâu rồi bỏ đi. Bạn cố không nghĩ về chuyện đó.' },
+    ],
+  },
+  {
+    title: 'Tiếng khóc trong khu nhà bên',
+    text: 'Có tiếng khóc như trẻ con vọng ra từ căn nhà đổ nát bên kia đường. Có thể là người sống sót. Cũng có thể là cái bẫy.',
+    choices: [
+      { label: 'Đi kiểm tra', hint: 'Rủi ro, có thể được đồ ăn', run: (d, max) => { if (Math.random() < 0.55) { d.food = (d.food || 0) + 4; d.searchPity = (d.searchPity || 0) + 3; return 'Một gia đình trốn dưới hầm. Họ đã lên đường về phía nam, để lại 4 hộp đồ ăn và chỉ cho bạn chỗ có thể còn người sống.'; } d.hp = Math.max(1, d.hp - max * 0.12); return 'Là một con zombie mắc kẹt dưới đống gạch. Cả bầy nghe tiếng động kéo đến, phá một mảng hàng rào trước khi bạn kịp chạy về.'; } },
+      { label: 'Mặc kệ', hint: 'An toàn', run: () => 'Tiếng khóc tắt dần lúc gần trưa. Bạn không bao giờ biết đó là gì.' },
+    ],
+  },
+  {
+    title: 'Thùng cứu trợ giữa đường',
+    text: 'Một thùng hàng cứu trợ rơi lệch, nằm giữa đường cách hàng rào hai trăm mét. Vài cái bóng đang lảng vảng quanh đó.',
+    choices: [
+      { label: 'Liều ra lấy', hint: 'Được tiền và đồ ăn, rào có thể bị hư', run: (d, max) => { const cash = Math.round(rand(150, 300) * (1 + d.night * 0.05)); d.cash += cash; d.food = (d.food || 0) + 2; if (Math.random() < 0.5) { d.hp = Math.max(1, d.hp - max * 0.08); return `Bạn kéo được thùng về: $${cash} và 2 hộp đồ ăn. Nhưng vài con bám theo, cào hỏng một góc hàng rào.`; } return `Bạn kéo được thùng về trót lọt: $${cash} và 2 hộp đồ ăn.`; } },
+      { label: 'Bỏ qua', hint: 'Không mạo hiểm', run: () => 'Đến chiều, thùng hàng đã biến mất. Ai đó khác liều hơn bạn.' },
+    ],
+  },
+  {
+    title: 'Kho thuốc bỏ hoang',
+    text: 'Bạn tìm thấy một hiệu thuốc cửa sắt còn khoá. Bên trong tối om, có mùi lạ.',
+    choices: [
+      { label: 'Phá cửa vào', hint: 'Có thể được nhiều đồ, có thể mất tiền sửa đồ', run: (d) => { if (Math.random() < 0.7) { d.food = (d.food || 0) + 2; d.grenades = Math.min(6, d.grenades + 1); for (const id of Object.keys(d.mates || {})) d.mates[id].injured = Math.max(0, (d.mates[id].injured || 0) - 1); return 'Thuốc men, băng gạc, 2 hộp đồ ăn và một quả lựu đạn. Những người bị thương hồi phục nhanh hơn một ngày.'; } d.cash = Math.max(0, d.cash - 120); return 'Cửa có bẫy. Bạn thoát được nhưng làm hỏng đồ nghề, mất $120 để sửa.'; } },
+      { label: 'Đi tiếp', hint: 'An toàn', run: () => 'Bạn đánh dấu chỗ này trên bản đồ. Có lẽ để lần sau.' },
+    ],
+  },
+  {
+    title: 'Tín hiệu cầu cứu',
+    text: 'Radio bắt được một giọng nói run rẩy: "Ai đó… chúng tôi bị kẹt ở trạm xăng, còn ba người…"',
+    choices: [
+      { label: 'Gửi đồ tiếp tế', hint: '−3 đồ hộp, dễ tìm người hơn', run: (d) => { d.food = Math.max(0, (d.food || 0) - 3); d.searchPity = (d.searchPity || 0) + 6; return 'Bạn hướng dẫn họ chỗ lấy đồ. Họ hứa sẽ báo cho bạn nếu thấy ai còn sống quanh đây.'; } },
+      { label: 'Tắt radio', hint: 'Giữ đồ ăn', run: () => 'Bạn tắt radio. Lần đầu tiên, Phong tháo tai nghe xuống trước khi tín hiệu kịp tắt.' },
+    ],
+  },
+  {
+    title: 'Chuột phá kho',
+    text: 'Sáng nay kho đồ ăn có dấu răng chuột. Nếu không làm gì, chúng sẽ ăn hết.',
+    choices: [
+      { label: 'Mua bẫy và dọn kho', hint: '−$80, giữ được đồ ăn', run: (d) => { d.cash = Math.max(0, d.cash - 80); return 'Kho sạch sẽ, đồ ăn còn nguyên. Bạn tự nhủ ít nhất vẫn còn thứ mình kiểm soát được.'; } },
+      { label: 'Chấp nhận mất', hint: '−2 đồ hộp', run: (d) => { d.food = Math.max(0, (d.food || 0) - 2); return 'Lũ chuột ăn mất 2 hộp. Bữa sáng hôm nay ít hơn mọi ngày.'; } },
+    ],
+  },
+  {
+    title: 'Gương mặt quen',
+    text: 'Trong số những cái xác lảng vảng ngoài hàng rào, có một gương mặt bạn nhận ra: người bán bánh mì đầu ngõ, vẫn đeo chiếc tạp dề cũ.',
+    choices: [
+      { label: 'Kết thúc cho ông ấy', hint: 'Lấy lại đồ trong túi tạp dề', run: (d) => { const c = Math.round(rand(60, 140)); d.cash += c; d.food = (d.food || 0) + 1; return `Một phát súng duy nhất. Trong túi tạp dề còn $${c} và một hộp sữa. Bạn chôn ông ấy cạnh hàng rào.`; } },
+      { label: 'Để ông ấy đi', hint: 'Không làm gì', run: () => 'Bạn nhìn theo cho đến khi bóng ông khuất sau dãy nhà. Có những thứ bạn chưa sẵn sàng làm.' },
+    ],
+  },
+  {
+    title: 'Mưa đêm qua',
+    text: 'Mưa lớn suốt đêm làm ướt kho đạn và mục một phần hàng rào.',
+    choices: [
+      { label: 'Phơi đạn, chằng rào', hint: 'Mất thời gian, giữ đạn', run: (d, max) => { d.hp = Math.max(1, d.hp - max * 0.05); return 'Đạn khô lại, nhưng một phần hàng rào vẫn hỏng mất 5% độ bền.'; } },
+      { label: 'Gia cố rào trước', hint: 'Mất một ít đạn', run: (d) => { const ids = Object.keys(d.weapons).filter((id) => !WEAPONS[id].infinite); if (ids.length) { const id = ids[Math.floor(Math.random() * ids.length)]; const lost = Math.ceil(d.weapons[id].reserve * 0.2); d.weapons[id].reserve -= lost; return `Hàng rào vững vàng, nhưng ${lost} viên đạn ${WEAPONS[id].name} bị ẩm, không dùng được nữa.`; } return 'Hàng rào vững vàng. May mà bạn chưa có nhiều đạn để mà mất.'; } },
+    ],
+  },
+];
 const ri = (a, b) => Math.floor(rand(a, b + 1));
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -135,6 +203,7 @@ export class UI {
       case 'next': this.advanceCut(); break;
       case 'skip': this.finishCut(); break;
       case 'closeModal': this.closeModal(); break;
+      case 'event': this.resolveEvent(arg); break;
     }
   }
 
@@ -267,6 +336,10 @@ export class UI {
     const text = this.root.querySelector('.cut-text');
     who.textContent = line.who;
     who.className = 'cut-who who-' + (line.who === 'RADIO' ? 'radio' : line.who === 'NHẬT KÝ' ? 'journal' : 'you');
+    // mỗi câu có thể gắn một cảnh minh hoạ; câu không có cảnh thì giữ cảnh trước
+    if (line.shot) this.game.setShot(line.shot);
+    else if (c.i === 0) this.game.setShot(null);
+    this.root.querySelector('.cutscene')?.classList.toggle('cine', !!this.game.cine);
     text.className = 'cut-text' + (line.who === 'RADIO' ? ' radio' : '');
     if (line.who === 'RADIO') sfx.static();
     c.chars = 0;
@@ -299,6 +372,7 @@ export class UI {
     if (!c) return;
     clearInterval(c.timer);
     this.cut = null;
+    this.game.setShot(null);
     c.done();
   }
 
@@ -451,6 +525,33 @@ export class UI {
     this.fadeDay = true;
     this.dayLog = this.dayDone ? [{ icon: '·', text: 'Bạn đã dùng hết thời gian của ngày hôm nay.' }] : [];
     this.renderDay();
+    const d = g.data;
+    if (info && !info.transition && d.eventDay !== d.night && Math.random() < 0.5) {
+      d.eventDay = d.night;
+      this.showEvent(MORNING_EVENTS[Math.floor(Math.random() * MORNING_EVENTS.length)]);
+    }
+  }
+
+  showEvent(ev) {
+    this.currentEvent = ev;
+    this.modal(`
+      <div class="eyebrow">Buổi sáng · Ngày ${this.game.data.night}</div>
+      <h2>${ev.title}</h2>
+      <p class="story-line">${ev.text}</p>
+      <div class="event-choices">
+        ${ev.choices.map((c, i) => `<button class="${i === 0 ? 'primary' : ''}" data-act="event" data-arg="${i}"><b>${c.label}</b><span>${c.hint}</span></button>`).join('')}
+      </div>`);
+  }
+
+  resolveEvent(i) {
+    const ev = this.currentEvent;
+    if (!ev) return;
+    const d = this.game.data;
+    const result = ev.choices[Number(i)].run(d, barricadeMax(d.barricadeLevel));
+    this.currentEvent = null;
+    saveGame(d);
+    this.renderDay();
+    this.modal(`<h2>${ev.title}</h2><p class="story-line">${result}</p><div class="modal-actions"><button class="primary" data-act="closeModal">Tiếp tục</button></div>`);
   }
 
   changeHour(arg) {
@@ -476,6 +577,7 @@ export class UI {
     }
     let cash = 0;
     const cashMul = hasPerk(d, 'mai') ? 1.3 : 1;
+    let cans = 0;
     for (let i = 0; i < this.alloc.scav; i++) {
       cash += Math.round(rand(35, 85) * (1 + d.night * 0.08) * cashMul);
       if (Math.random() < 0.3) {
@@ -500,7 +602,13 @@ export class UI {
         }
       }
     }
-    if (this.alloc.scav) { d.cash += cash; log.push({ icon: '💰', text: `Lục lọi được $${cash}${hasPerk(d, 'mai') ? ' (Mai dẫn đường)' : ''}.` }); }
+    for (let i = 0; i < this.alloc.scav; i++) if (Math.random() < 0.55) cans += 1 + (Math.random() < 0.25 ? 1 : 0);
+    if (this.alloc.scav) {
+      d.cash += cash;
+      d.food = (d.food || 0) + cans;
+      log.push({ icon: '💰', text: `Lục lọi được $${cash}${hasPerk(d, 'mai') ? ' (Mai dẫn đường)' : ''}.` });
+      log.push({ icon: '🥫', text: cans ? `Tìm được ${cans} hộp đồ ăn.` : 'Không tìm được chút đồ ăn nào.' });
+    }
 
     const found = [];
     for (let i = 0; i < this.alloc.search; i++) {
@@ -538,6 +646,11 @@ export class UI {
     const d = this.game.data;
     const next = SURVIVORS.filter((s) => !d.crew.includes(s.id) && s.act === actFor(d.night) && (s.from || 1) > d.night).sort((a, b) => a.from - b.from)[0];
     return next ? `Chưa có ai quanh đây (có người mới từ đêm ${next.from})` : 'Quanh đây không còn ai';
+  }
+
+  eatPerDay() {
+    const d = this.game.data;
+    return 1 + d.crew.length + (diffOf(d).upkeep > 1.2 ? 1 : 0);
   }
 
   availableRecruits() {
@@ -587,6 +700,7 @@ export class UI {
     }
     if (this.shopTab === 'defense') return this.defenseItems();
     const items = [
+      { id: 'food', title: 'Đồ hộp × 3', desc: `Mỗi sáng cả nhóm ăn ${this.eatPerDay()} hộp. Hết đồ ăn thì bị đói: nạp đạn chậm, bắn rung tay. Đang có ${d.food || 0}.`, price: Math.round(70 * (1 + d.night * 0.03)), glyph: '🥫' },
       { id: 'grenade', icon: 'grenade', title: 'Lựu đạn', desc: `Nổ diện rộng, cực mạnh với bầy đàn. Đang có ${d.grenades}/${GRENADE.max}.`, price: GRENADE.price, disabled: d.grenades >= GRENADE.max },
       { id: 'repair', title: 'Bộ sửa chữa', desc: `+25% độ bền ngay lập tức (${Math.ceil(d.hp)}/${max})`, price: repairKitPrice(d.night), disabled: d.hp >= max },
       { id: 'barricade', title: `Gia cố hàng rào · cấp ${d.barricadeLevel + 1}`, desc: `Độ bền tối đa ${max} → ${barricadeMax(d.barricadeLevel + 1)}`, price: barricadeUpgradePrice(d.barricadeLevel) },
@@ -645,6 +759,7 @@ export class UI {
     const max = barricadeMax(d.barricadeLevel);
     if (id === 'repair') d.hp = Math.min(max, d.hp + max * 0.25);
     else if (id === 'grenade') d.grenades++;
+    else if (id === 'food') d.food = (d.food || 0) + 3;
     else if (id === 'barricade') {
       d.barricadeLevel++;
       d.hp += barricadeMax(d.barricadeLevel) - max; // phần tăng thêm được đầy
@@ -695,6 +810,7 @@ export class UI {
     const hurtSquad = d.squad.filter((id) => d.mates[id]?.injured > 0);
     const openSlots = MAX_SQUAD - d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length;
     const bench = d.crew.filter((id) => !d.squad.includes(id) && !(d.mates[id]?.injured > 0));
+    const foodWarn = (d.food || 0) < this.eatPerDay() ? `<div class="warn">🥫 Đồ ăn không đủ cho sáng mai (cần ${this.eatPerDay()}, còn ${d.food || 0}). Hãy lục lọi hoặc mua đồ hộp, nếu không cả nhóm sẽ đói.</div>` : '';
     const squadWarn = hurtSquad.length && bench.length && openSlots > 0
       ? `<div class="warn">🩹 ${hurtSquad.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} đang bị thương. Mở tab Đồng đội để đưa người khác lên thay.</div>` : '';
     const warn = (isBossNight(d.night) ? `<div class="warn">⚠ Đêm nay có trăng máu: ${ZOMBIES[bossTypeFor(d.night)].name} sẽ xuất hiện.</div>` : '')
@@ -767,15 +883,16 @@ export class UI {
           </div>
           <div class="stats">
             <div class="stat cash"><b>$${d.cash}</b><span>tiền</span></div>
+            <div class="stat${(d.food || 0) < this.eatPerDay() ? ' low' : ''}"><b>🥫 ${d.food || 0}</b><span>đồ hộp · ăn ${this.eatPerDay()}/ngày</span></div>
             <div class="stat"><b>${Math.ceil(d.hp)}<i>/${max}</i></b><span>hàng rào</span></div>
             <div class="stat"><b>${d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length}<i>/${MAX_SQUAD}</i></b><span>trên rào · ${d.crew.length} người</span></div>
           </div>
         </header>
         <div class="day-body">
           <section class="panel plan">
-            ${info ? `<div class="recap">Đêm ${info.night}: hạ <b>${info.kills}</b> zombie (${info.headshots} headshot), chuỗi dài nhất <b>${info.bestStreak}</b>, kiếm <b>$${info.earned}</b> + thưởng sống sót <b>$${info.bonus}</b>${info.campIncome ? ` + trại <b>$${info.campIncome}</b>` : ''}${info.upkeep ? `, khẩu phần <b class="hurt-txt">−$${info.upkeep}</b>` : ''}${info.crates ? `, mở <b>${info.crates}</b> thùng tiếp tế` : ''}${info.extraGrenade ? ', Hùng nhặt thêm 1 lựu đạn' : ''}.${info.injured?.length ? ` <span class="hurt-txt">${info.injured.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} bị thương.</span>` : ''}</div>` : ''}
+            ${info ? `<div class="recap">Đêm ${info.night}: hạ <b>${info.kills}</b> zombie (${info.headshots} headshot), chuỗi dài nhất <b>${info.bestStreak}</b>, kiếm <b>$${info.earned}</b> + thưởng sống sót <b>$${info.bonus}</b>${info.campIncome ? ` + trại <b>$${info.campIncome}</b>` : ''}${info.eat ? `, cả nhóm ăn <b>${info.eat}</b> hộp` : ''}${info.hungry ? ' <span class="hurt-txt">· HẾT ĐỒ ĂN, CẢ NHÓM ĐANG ĐÓI</span>' : ''}${info.crates ? `, mở <b>${info.crates}</b> thùng tiếp tế` : ''}${info.extraGrenade ? ', Hùng nhặt thêm 1 lựu đạn' : ''}.${info.injured?.length ? ` <span class="hurt-txt">${info.injured.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} bị thương.</span>` : ''}</div>` : ''}
             ${radio ? `<div class="radio-card"><span class="radio-tag">${radio.who}</span>${esc(radio.text)}</div>` : ''}
-            ${warn}${squadWarn}${forecast}
+            ${warn}${foodWarn}${squadWarn}${forecast}
             <h3>${this.dayDone ? 'Kết quả trong ngày' : 'Kế hoạch ban ngày'} <small>${this.dayDone ? 'Đã hết giờ' : `${DAY_HOURS - used} giờ còn lại`}</small></h3>
             <div class="hour-dots">${hourDots}</div>
             ${this.dayDone

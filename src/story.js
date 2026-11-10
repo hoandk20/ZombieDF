@@ -5,12 +5,12 @@
 export const HERO_NAME = 'PHONG';
 
 export const INTRO = [
-  { who: 'RADIO', text: '…rè… rè… Đây là Đài Phát Thanh Khẩn Cấp vùng duyên hải. Dịch bệnh đã tràn qua thị trấn Bến Sương.' },
-  { who: 'PHONG', text: 'Tôi là Phong, kỹ thuật viên trạm phát thanh thị trấn. Ba ngày nay tôi chỉ ngồi bên bộ đàm, nghe những cuộc gọi cầu cứu tắt dần.' },
-  { who: 'RADIO', text: 'Người nhiễm bệnh mất hết lý trí và tấn công mọi thứ còn sống. Chúng mạnh nhất về đêm. Không được ra ngoài sau khi mặt trời lặn.' },
-  { who: 'RADIO', text: 'Trực thăng cứu hộ sẽ hạ cánh trên đồi Cao Vọng sau MƯỜI đêm nữa. Ai còn nghe được… hãy cố thủ. Hãy sống sót.' },
-  { who: 'PHONG', text: 'Căn nhà cũ của ông ngoại nằm ngay chân đồi. Vài bao cát, mấy tấm ván, khẩu súng lục và hai quả lựu đạn trong rương gỗ.' },
-  { who: 'PHONG', text: 'Tai nghe vẫn đeo trên cổ. Chừng nào radio còn phát, chừng đó tôi còn hy vọng. Mặt trời vừa lặn.' },
+  { who: 'RADIO', shot: 'townBurning', text: '…rè… rè… Đây là Đài Phát Thanh Khẩn Cấp vùng duyên hải. Dịch bệnh đã tràn qua thị trấn Bến Sương.' },
+  { who: 'PHONG', shot: 'radioRoom', text: 'Tôi là Phong, kỹ thuật viên trạm phát thanh thị trấn. Ba ngày nay tôi chỉ ngồi bên bộ đàm, nghe những cuộc gọi cầu cứu tắt dần.' },
+  { who: 'RADIO', shot: 'townBurning', text: 'Người nhiễm bệnh mất hết lý trí và tấn công mọi thứ còn sống. Chúng mạnh nhất về đêm. Không được ra ngoài sau khi mặt trời lặn.' },
+  { who: 'RADIO', shot: 'radioRoom', text: 'Trực thăng cứu hộ sẽ hạ cánh trên đồi Cao Vọng sau MƯỜI đêm nữa. Ai còn nghe được… hãy cố thủ. Hãy sống sót.' },
+  { who: 'PHONG', shot: 'grandpaHouse', text: 'Căn nhà cũ của ông ngoại nằm ngay chân đồi. Vài bao cát, mấy tấm ván, khẩu súng lục và hai quả lựu đạn trong rương gỗ.' },
+  { who: 'PHONG', shot: 'grandpaHouse', text: 'Tai nghe vẫn đeo trên cổ. Chừng nào radio còn phát, chừng đó tôi còn hy vọng. Mặt trời vừa lặn.' },
 ];
 
 // Câu dẫn hiện ở đầu mỗi đêm
@@ -300,81 +300,81 @@ export const DAWN_LOG = {
 
 // Hết chương 1: trực thăng đến, nhưng hành trình chưa kết thúc
 export const ACT1_END = [
-  { who: 'PHONG', text: 'Kẻ Khổng Lồ đổ sập xuống ngay trước hàng rào. Mặt đất rung lên lần cuối, rồi im bặt.' },
-  { who: 'RADIO', text: 'Phi đội Hải Âu gọi người sống sót ở Cao Vọng. Chúng tôi thấy pháo sáng của các bạn. Đang hạ cánh!' },
-  { who: 'PHONG', text: 'Tiếng cánh quạt xé tan màn sương. Ánh bình minh đầu tiên sau mười đêm dài rọi lên những bao cát rách nát.' },
-  { who: 'RADIO', text: 'Tin xấu: hạm đội đã rút ra xa vì bão. Trực thăng chỉ còn một chỗ, và chỉ đủ nhiên liệu tới Cảng Vọng Hải.' },
-  { who: 'PHONG', text: 'Lan và Ông Tư đẩy tôi lên. "Cậu là người duy nhất biết sửa radio. Bọn tôi sẽ đi chuyến sau." Cánh cửa đóng lại trước khi tôi kịp nói gì.' },
+  { who: 'PHONG', shot: 'titanFalls', text: 'Kẻ Khổng Lồ đổ sập xuống ngay trước hàng rào. Mặt đất rung lên lần cuối, rồi im bặt.' },
+  { who: 'RADIO', shot: 'heliLanding', text: 'Phi đội Hải Âu gọi người sống sót ở Cao Vọng. Chúng tôi thấy pháo sáng của các bạn. Đang hạ cánh!' },
+  { who: 'PHONG', shot: 'heliLanding', text: 'Tiếng cánh quạt xé tan màn sương. Ánh bình minh đầu tiên sau mười đêm dài rọi lên những bao cát rách nát.' },
+  { who: 'RADIO', shot: 'heliOverSea', text: 'Tin xấu: hạm đội đã rút ra xa vì bão. Trực thăng chỉ còn một chỗ, và chỉ đủ nhiên liệu tới Cảng Vọng Hải.' },
+  { who: 'PHONG', shot: 'heliDoor', text: 'Lan và Ông Tư đẩy tôi lên. "Cậu là người duy nhất biết sửa radio. Bọn tôi sẽ đi chuyến sau." Cánh cửa đóng lại trước khi tôi kịp nói gì.' },
 ];
 
 export const ACT2_INTRO = [
-  { who: 'RADIO', text: 'Cảng Vọng Hải là điểm sơ tán cuối cùng của vùng duyên hải. Tàu Bình Minh sẽ cập cầu tàu số 3 sau MƯỜI đêm nữa.' },
-  { who: 'PHONG', text: 'Trực thăng thả tôi xuống cầu tàu rồi quay đầu. Một mình. Cả thành phố cảng chìm trong bóng tối, và bóng tối đang chuyển động.' },
-  { who: 'PHONG', text: 'Container chắn ngang, tôn lợp làm khiên. Lại một hàng rào nữa. Lại mười đêm nữa.' },
+  { who: 'RADIO', shot: 'heliOverSea', text: 'Cảng Vọng Hải là điểm sơ tán cuối cùng của vùng duyên hải. Tàu Bình Minh sẽ cập cầu tàu số 3 sau MƯỜI đêm nữa.' },
+  { who: 'PHONG', shot: 'harborDrop', text: 'Trực thăng thả tôi xuống cầu tàu rồi quay đầu. Một mình. Cả thành phố cảng chìm trong bóng tối, và bóng tối đang chuyển động.' },
+  { who: 'PHONG', shot: 'harborDrop', text: 'Container chắn ngang, tôn lợp làm khiên. Lại một hàng rào nữa. Lại mười đêm nữa.' },
 ];
 
 // Hết màn 1 (đêm 20): tàu cập bến, nhưng hành trình mới bắt đầu
 export const STAGE1_END = [
-  { who: 'PHONG', text: 'Quái Vật Cảng gục xuống, kéo theo nửa cầu tàu chìm vào làn nước đen.' },
-  { who: 'RADIO', text: 'Tàu Bình Minh gọi cầu tàu số 3. Chúng tôi đang cập bến. Thả dây! Mọi người lên tàu ngay!' },
-  { who: 'PHONG', text: 'Tiếng còi tàu vang dài qua mặt biển. Hai mươi đêm. Tôi tưởng mọi thứ đã kết thúc.' },
-  { who: 'PHONG', text: 'Bảo và Mai ở lại trên tàu. Tàu Bình Minh phải đưa hàng trăm người ra hạm đội, và họ cần một thợ máy, một người biết đường.' },
+  { who: 'PHONG', shot: 'shipArrives', text: 'Quái Vật Cảng gục xuống, kéo theo nửa cầu tàu chìm vào làn nước đen.' },
+  { who: 'RADIO', shot: 'shipArrives', text: 'Tàu Bình Minh gọi cầu tàu số 3. Chúng tôi đang cập bến. Thả dây! Mọi người lên tàu ngay!' },
+  { who: 'PHONG', shot: 'shipArrives', text: 'Tiếng còi tàu vang dài qua mặt biển. Hai mươi đêm. Tôi tưởng mọi thứ đã kết thúc.' },
+  { who: 'PHONG', shot: 'shipDeck', text: 'Bảo và Mai ở lại trên tàu. Tàu Bình Minh phải đưa hàng trăm người ra hạm đội, và họ cần một thợ máy, một người biết đường.' },
 ];
 
 export const STAGE2_INTRO = [
-  { who: 'RADIO', text: '…rè… Đây là Trạm Nghiên Cứu Hồng Sơn. Chúng tôi có mẫu vắc-xin. Cần hai mươi ngày để điều chế. Trạm đang bị vây. Ai nghe được… xin hãy đến.' },
-  { who: 'PHONG', text: 'Thuyền trưởng nhìn tôi. Cả nhóm nhìn tôi. Tôi là người duy nhất hiểu tín hiệu đó đến từ đâu.' },
-  { who: 'PHONG', text: 'Thuyền trưởng cho tôi một chiếc xuồng máy. Tôi ngược sông lên núi một mình. Ở Hồng Sơn có những người khác cũng đang chiến đấu.' },
-  { who: 'RADIO', text: 'MÀN 2 · MẬT MÃ HỒNG SƠN. Giữ cổng đập mười đêm, rồi giữ căn cứ thêm mười đêm nữa, cho đến khi vắc-xin hoàn tất.' },
+  { who: 'RADIO', shot: 'radioSignal', text: '…rè… Đây là Trạm Nghiên Cứu Hồng Sơn. Chúng tôi có mẫu vắc-xin. Cần hai mươi ngày để điều chế. Trạm đang bị vây. Ai nghe được… xin hãy đến.' },
+  { who: 'PHONG', shot: 'radioSignal', text: 'Thuyền trưởng nhìn tôi. Cả nhóm nhìn tôi. Tôi là người duy nhất hiểu tín hiệu đó đến từ đâu.' },
+  { who: 'PHONG', shot: 'riverBoat', text: 'Thuyền trưởng cho tôi một chiếc xuồng máy. Tôi ngược sông lên núi một mình. Ở Hồng Sơn có những người khác cũng đang chiến đấu.' },
+  { who: 'RADIO', shot: 'damGate', text: 'MÀN 2 · MẬT MÃ HỒNG SƠN. Giữ cổng đập mười đêm, rồi giữ căn cứ thêm mười đêm nữa, cho đến khi vắc-xin hoàn tất.' },
 ];
 
 export const ACT3_END = [
-  { who: 'PHONG', text: 'Bạo Chúa Rừng đổ sập xuống mép đập. Bê tông nứt toác dưới sức nặng của nó.' },
-  { who: 'RADIO', text: 'Đập không trụ được nữa. Rút vào căn cứ trong lòng núi ngay! Chúng tôi sẽ mở cổng thép.' },
-  { who: 'PHONG', text: 'Hùng và Linh ở lại trên mép đập cầm chân bầy đàn cho tôi chạy. Cánh cổng thép đóng sập sau lưng. Tôi vẫn nghe tiếng súng máy của Hùng rất lâu.' },
+  { who: 'PHONG', shot: 'damCrack', text: 'Bạo Chúa Rừng đổ sập xuống mép đập. Bê tông nứt toác dưới sức nặng của nó.' },
+  { who: 'RADIO', shot: 'damCrack', text: 'Đập không trụ được nữa. Rút vào căn cứ trong lòng núi ngay! Chúng tôi sẽ mở cổng thép.' },
+  { who: 'PHONG', shot: 'steelGate', text: 'Hùng và Linh ở lại trên mép đập cầm chân bầy đàn cho tôi chạy. Cánh cổng thép đóng sập sau lưng. Tôi vẫn nghe tiếng súng máy của Hùng rất lâu.' },
 ];
 
 export const ACT4_INTRO = [
-  { who: 'PHONG', text: 'Căn cứ Hồng Sơn: tường thép, đèn pha, tháp canh, và phòng thí nghiệm của bác sĩ Khoa ở trung tâm.' },
-  { who: 'RADIO', text: 'Mười đêm cuối. Vắc-xin đang được điều chế. Phong, chúng tôi cần cậu giữ cho bộ phát sóng sống sót.' },
+  { who: 'PHONG', shot: 'baseInterior', text: 'Căn cứ Hồng Sơn: tường thép, đèn pha, tháp canh, và phòng thí nghiệm của bác sĩ Khoa ở trung tâm.' },
+  { who: 'RADIO', shot: 'baseInterior', text: 'Mười đêm cuối. Vắc-xin đang được điều chế. Phong, chúng tôi cần cậu giữ cho bộ phát sóng sống sót.' },
 ];
 
 export const STAGE2_END = [
-  { who: 'PHONG', text: 'Mẫu Thể Số 0 gục xuống trước cánh cổng thép. Sau bốn mươi đêm, mọi thứ im lặng.' },
-  { who: 'RADIO', text: 'Bác sĩ Khoa: vắc-xin đã hoàn tất. Phong, đến lượt cậu.' },
-  { who: 'PHONG', text: 'Tôi đeo tai nghe, đặt tay lên bộ phát sóng. Tần số khẩn cấp, mọi băng tần, toàn quốc.' },
-  { who: 'PHONG', text: 'Đây là Phong, trạm phát thanh Bến Sương. Nếu bạn còn nghe được… chúng tôi có thuốc chữa. Hãy ghi lại công thức sau đây.' },
-  { who: 'PHONG', text: 'Lần đầu tiên sau bốn mươi đêm, radio không còn tiếng rè. Chỉ có những giọng nói đáp lại, từ khắp mọi nơi.' },
-  { who: 'RADIO', text: 'Bác sĩ Khoa: công thức là chưa đủ. Bệnh viện Trung ương ở thủ đô cần chủng gốc để sản xuất hàng triệu liều. Ai đó phải mang thùng mẫu này đi.' },
-  { who: 'PHONG', text: 'Khoa và Vy phải ở lại giữ phòng thí nghiệm. Tôi nhận thùng mẫu lạnh. Lại một mình, lại một con đường mới.' },
+  { who: 'PHONG', shot: 'zeroFalls', text: 'Mẫu Thể Số 0 gục xuống trước cánh cổng thép. Sau bốn mươi đêm, mọi thứ im lặng.' },
+  { who: 'RADIO', shot: 'broadcastTower', text: 'Bác sĩ Khoa: vắc-xin đã hoàn tất. Phong, đến lượt cậu.' },
+  { who: 'PHONG', shot: 'broadcastTower', text: 'Tôi đeo tai nghe, đặt tay lên bộ phát sóng. Tần số khẩn cấp, mọi băng tần, toàn quốc.' },
+  { who: 'PHONG', shot: 'broadcastTower', text: 'Đây là Phong, trạm phát thanh Bến Sương. Nếu bạn còn nghe được… chúng tôi có thuốc chữa. Hãy ghi lại công thức sau đây.' },
+  { who: 'PHONG', shot: 'broadcastTower', text: 'Lần đầu tiên sau bốn mươi đêm, radio không còn tiếng rè. Chỉ có những giọng nói đáp lại, từ khắp mọi nơi.' },
+  { who: 'RADIO', shot: 'coolerBox', text: 'Bác sĩ Khoa: công thức là chưa đủ. Bệnh viện Trung ương ở thủ đô cần chủng gốc để sản xuất hàng triệu liều. Ai đó phải mang thùng mẫu này đi.' },
+  { who: 'PHONG', shot: 'coolerBox', text: 'Khoa và Vy phải ở lại giữ phòng thí nghiệm. Tôi nhận thùng mẫu lạnh. Lại một mình, lại một con đường mới.' },
 ];
 
 export const STAGE3_INTRO = [
-  { who: 'RADIO', text: 'MÀN 3 · CHUYẾN HÀNG CUỐI CÙNG. Ba trăm cây số cao tốc Bắc Nam. Rồi thủ đô. Thùng mẫu phải đến Bệnh viện Trung ương trong hai mươi ngày.' },
-  { who: 'PHONG', text: 'Chiếc xe quân sự chết máy ở km 112. Phía trước là một đoàn xe tải bỏ hoang nằm ngang mặt đường. Tôi dựng hàng rào bằng chính những chiếc xe đó.' },
-  { who: 'PHONG', text: 'Ngoài kia có những kẻ biết nhảy, và có những kẻ đang cháy mà vẫn bước đi. Tôi phải tìm người mới, dựng phòng tuyến mới.' },
+  { who: 'RADIO', shot: 'highwayRoad', text: 'MÀN 3 · CHUYẾN HÀNG CUỐI CÙNG. Ba trăm cây số cao tốc Bắc Nam. Rồi thủ đô. Thùng mẫu phải đến Bệnh viện Trung ương trong hai mươi ngày.' },
+  { who: 'PHONG', shot: 'carWall', text: 'Chiếc xe quân sự chết máy ở km 112. Phía trước là một đoàn xe tải bỏ hoang nằm ngang mặt đường. Tôi dựng hàng rào bằng chính những chiếc xe đó.' },
+  { who: 'PHONG', shot: 'carWall', text: 'Ngoài kia có những kẻ biết nhảy, và có những kẻ đang cháy mà vẫn bước đi. Tôi phải tìm người mới, dựng phòng tuyến mới.' },
 ];
 
 export const ACT5_END = [
-  { who: 'PHONG', text: 'Cỗ Máy Nghiền đổ ập xuống giữa cao tốc như một chiếc xe bọc thép lật nghiêng. Cửa ngõ thủ đô đã ở ngay trước mặt.' },
-  { who: 'PHONG', text: 'Xe tải của Tuấn không chạy nổi thêm mét nào. Anh ở lại giữ trạm thu phí cho đoàn người tị nạn phía sau. Ngọc theo đoàn xe cứu trợ để dẫn đường cho không quân.' },
+  { who: 'PHONG', shot: 'juggernautFalls', text: 'Cỗ Máy Nghiền đổ ập xuống giữa cao tốc như một chiếc xe bọc thép lật nghiêng. Cửa ngõ thủ đô đã ở ngay trước mặt.' },
+  { who: 'PHONG', shot: 'tollGate', text: 'Xe tải của Tuấn không chạy nổi thêm mét nào. Anh ở lại giữ trạm thu phí cho đoàn người tị nạn phía sau. Ngọc theo đoàn xe cứu trợ để dẫn đường cho không quân.' },
 ];
 
 export const ACT6_INTRO = [
-  { who: 'PHONG', text: 'Thủ đô. Những tòa nhà chọc trời tắt đèn, ga tàu điện ngầm thở ra hơi lạnh. Bệnh viện Trung ương chỉ còn cách mười dãy phố.' },
-  { who: 'RADIO', text: 'Bệnh viện Trung ương gọi người mang mẫu. Cầm cự mười đêm trong khi chúng tôi dọn đường. Có thứ gì đó đang làm tổ dưới lòng thành phố.' },
+  { who: 'PHONG', shot: 'capitalSkyline', text: 'Thủ đô. Những tòa nhà chọc trời tắt đèn, ga tàu điện ngầm thở ra hơi lạnh. Bệnh viện Trung ương chỉ còn cách mười dãy phố.' },
+  { who: 'RADIO', shot: 'metroMouth', text: 'Bệnh viện Trung ương gọi người mang mẫu. Cầm cự mười đêm trong khi chúng tôi dọn đường. Có thứ gì đó đang làm tổ dưới lòng thành phố.' },
 ];
 
 export const ENDING = [
-  { who: 'PHONG', text: 'Nữ Hoàng Bầy Đàn gục xuống giữa quảng trường. Từng con non quanh nó đứng khựng lại, rồi đổ rạp xuống như những con rối đứt dây.' },
-  { who: 'RADIO', text: 'Bệnh viện Trung ương: chúng tôi đã nhận được chủng gốc. Dây chuyền sản xuất bắt đầu lúc 6 giờ sáng. Một triệu liều mỗi tuần.' },
-  { who: 'PHONG', text: 'Trực thăng cứu trợ bay qua đầu, từng chiếc một, mang theo những thùng vắc-xin đầu tiên về khắp các tỉnh.' },
-  { who: 'PHONG', text: 'Sáu mươi đêm. Bến Sương, Vọng Hải, Hồng Sơn, cao tốc, thủ đô. Những người tôi gặp trên đường đều đã ở lại một nơi nào đó để tôi đi tiếp.' },
-  { who: 'PHONG', text: 'Tôi đeo tai nghe. Trên mọi tần số, người ta đang gọi tên nhau. Lần này, họ đều được trả lời.' },
+  { who: 'PHONG', shot: 'queenFalls', text: 'Nữ Hoàng Bầy Đàn gục xuống giữa quảng trường. Từng con non quanh nó đứng khựng lại, rồi đổ rạp xuống như những con rối đứt dây.' },
+  { who: 'RADIO', shot: 'hospitalRoof', text: 'Bệnh viện Trung ương: chúng tôi đã nhận được chủng gốc. Dây chuyền sản xuất bắt đầu lúc 6 giờ sáng. Một triệu liều mỗi tuần.' },
+  { who: 'PHONG', shot: 'heliSwarm', text: 'Trực thăng cứu trợ bay qua đầu, từng chiếc một, mang theo những thùng vắc-xin đầu tiên về khắp các tỉnh.' },
+  { who: 'PHONG', shot: 'heliSwarm', text: 'Sáu mươi đêm. Bến Sương, Vọng Hải, Hồng Sơn, cao tốc, thủ đô. Những người tôi gặp trên đường đều đã ở lại một nơi nào đó để tôi đi tiếp.' },
+  { who: 'PHONG', shot: 'phongHeadphones', text: 'Tôi đeo tai nghe. Trên mọi tần số, người ta đang gọi tên nhau. Lần này, họ đều được trả lời.' },
 ];
 
 export const ENDLESS_NOTE = [
-  { who: 'RADIO', text: 'Vắc-xin cần thời gian để đến được mọi nơi. Căn cứ Hồng Sơn sẽ là trạm phân phối, nếu nó còn đứng vững…' },
+  { who: 'RADIO', shot: 'baseInterior', text: 'Vắc-xin cần thời gian để đến được mọi nơi. Căn cứ Hồng Sơn sẽ là trạm phân phối, nếu nó còn đứng vững…' },
   { who: 'PHONG', text: 'Chế độ vô tận đã mở. Mỗi đêm khó hơn, cứ 5 đêm lại có một con trùm.' },
 ];
 

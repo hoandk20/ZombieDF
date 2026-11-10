@@ -41,3 +41,4 @@ requestAnimationFrame(frame);
 
 // tiện debug trong console
 window.__game = game;
+window.__ui = ui;

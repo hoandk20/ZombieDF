@@ -10,6 +10,7 @@ import { Zombie, roundRect } from './zombie.js';
 import { makeBackground, drawBarricade, drawHero, drawCharacter, CHARACTERS } from './render.js';
 import { sfx, initAudio, setMood, heartbeat, reloadSound, cancelReload } from './audio.js';
 import { saveGame } from './save.js';
+import { drawShot } from './cine.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -38,6 +39,12 @@ export class Game {
     this.weather = MENU_WEATHER;
     this.rain = Array.from({ length: 170 }, () => ({ x: rand(0, W + 200), y: rand(-H, H), len: rand(10, 20), spd: rand(650, 900) }));
     this.nextLightning = 4;
+    this.cine = null;
+    this.ambT = 6;
+    this.splat = 0;
+    this.motes = Array.from({ length: 46 }, () => ({ x: rand(0, W), y: rand(0, H), s: rand(0.6, 1.6), p: rand(0, 6) }));
+    this.grain = makeGrain();
+    this.splats = Array.from({ length: 9 }, (_, i) => ({ x: i % 2 ? rand(0, 140) : rand(W - 140, W), y: rand(0, H), r: rand(30, 70) }));
     this.lightning = 0;
     this.bolt = null;
     this.resetNightState();
@@ -146,6 +153,12 @@ export class Game {
     return this.bgs[key];
   }
 
+  // Cắt cảnh minh hoạ cho phim cốt truyện
+  setShot(id) {
+    if (!id) { this.cine = null; return; }
+    if (!this.cine || this.cine.id !== id) this.cine = { id, t: 0 };
+  }
+
   // Đổi bối cảnh cho phim cốt truyện (vd. sang bến cảng ở chương 2)
   setScene(scene) {
     this.resetNightState();
@@ -203,6 +216,7 @@ export class Game {
     const stage = stageFor(d.night);
     const local = d.night - (stage - 1) * STAGE_LENGTH;
     this.titleCard = { title: d.night <= CAMPAIGN_NIGHTS && !d.endless ? `MÀN ${stage} · ĐÊM ${local}` : `ĐÊM ${d.night}`, sub, t: 4, max: 4 };
+    if (d.hungry) this.texts.push({ x: W / 2, y: 300, text: 'CẢ NHÓM ĐANG ĐÓI · NẠP ĐẠN CHẬM, BẮN RUNG TAY', life: 4, max: 4, size: 16, color: '#ff9a6a' });
     sfx.sting();
     setMood('night');
     this.setState('night');
@@ -223,12 +237,16 @@ export class Game {
     const campers = d.crew.filter((id) => !squad.includes(id) && !(d.mates[id]?.injured > 0));
     const campIncome = Math.round(campers.length * CAMP_INCOME * (1 + d.night * 0.04));
     d.cash += campIncome;
-    const upkeep = Math.min(d.cash, Math.round(d.crew.length * UPKEEP * df.upkeep * (1 + d.night * 0.03)));
-    d.cash -= upkeep;
+    // cả nhóm phải ăn: thiếu đồ hộp thì bị đói, chiến đấu kém đi
+    const eat = 1 + d.crew.length + (df.upkeep > 1.2 ? 1 : 0);
+    const upkeep = 0;
+    d.food = (d.food ?? 8) - eat;
+    d.hungry = d.food < 0;
+    if (d.food < 0) d.food = 0;
     if (hasPerk(d, 'tuan')) d.hp = Math.min(barricadeMax(d.barricadeLevel), d.hp + barricadeMax(d.barricadeLevel) * 0.1);
     let extraGrenade = false;
     if (hasPerk(d, 'hung') && d.grenades < GRENADE.max) { d.grenades++; extraGrenade = true; }
-    const info = { night: d.night, bonus, campIncome, upkeep, campers: campers.length, extraGrenade, ...this.stats };
+    const info = { night: d.night, bonus, campIncome, upkeep, eat, hungry: d.hungry, campers: campers.length, extraGrenade, ...this.stats };
     const wasFinale = d.night === CAMPAIGN_NIGHTS && !d.endless;
     const transition = !d.endless && [10, 20, 30, 40, 50].includes(d.night) ? d.night : 0;
     d.night += 1;
@@ -274,7 +292,7 @@ export class Game {
 
   startReload() {
     if (this.state !== 'night' || this.reloadT > 0 || !this.canReload()) return false;
-    this.reloadTotal = this.weapon.reload * reloadMul(this.data.reloadLevel);
+    this.reloadTotal = this.weapon.reload * reloadMul(this.data.reloadLevel) * (this.data.hungry ? 1.3 : 1);
     this.reloadT = this.reloadTotal;
     reloadSound(this.data.current, this.reloadTotal);
     return true;
@@ -304,7 +322,7 @@ export class Game {
     st.mag--;
     this.cooldown = w.rate;
     const ang = this.aimAngle();
-    const bloom = w.auto && this.firing ? Math.min(this.recoil * 0.004, 0.04) : 0;
+    const bloom = (w.auto && this.firing ? Math.min(this.recoil * 0.004, 0.04) : 0) + (this.data.hungry ? 0.02 : 0);
     if (w.flame) this.flame(ang, w);
     else if (w.explosive) this.launch(ang, w);
     else if (w.chain) this.tesla(ang, w);
@@ -766,6 +784,7 @@ export class Game {
   damageBarricade(dmg, foot) {
     if (this.state !== 'night') return;
     if (hasPerk(this.data, 'dat')) dmg *= 0.85;
+    if (dmg >= 16) this.splat = Math.min(1, this.splat + dmg / 90);
     this.data.hp -= dmg;
     this.stats.damage += dmg;
     if (this.data.hp / this.maxHp < 0.35) this.injureMate(dmg / 320);
@@ -786,6 +805,7 @@ export class Game {
   // ---------- Update ----------
   update(dtReal) {
     this.time += dtReal;
+    if (this.cine) this.cine.t += dtReal;
     const s = this.state;
     if (s === 'paused' || s === 'day') return;
     let dt = dtReal;
@@ -799,6 +819,10 @@ export class Game {
     const d = this.data;
 
     this.nightT += dt;
+    // tiếng động xa xăm của một thế giới đã sụp đổ
+    this.ambT -= dt;
+    if (this.ambT <= 0) { this.ambT = rand(5, 11); sfx.ambient(this.scene); }
+    this.splat = Math.max(0, this.splat - dt * 0.22);
     // sinh zombie
     if (this.spawned < this.wave.total) {
       this.spawnTimer -= dt;
@@ -892,7 +916,7 @@ export class Game {
         if (s.burst >= burst) s.burst = 0;
         s.recoil = 4;
         const ox = sx + Math.cos(s.ang) * 34, oy = sy + Math.sin(s.ang) * 34;
-        const dmg = c.dmg * (1 + 0.35 * (lv - 1)) * diffOf(this.data).mate;
+        const dmg = c.dmg * (1 + 0.35 * (lv - 1)) * diffOf(this.data).mate * (this.data.hungry ? 0.7 : 1);
         for (let k = 0; k < (c.pellets || 1); k++) {
           const miss = Math.random() < c.miss ? rand(-0.06, 0.06) : 0;
           const spread = c.pellets ? rand(-0.07, 0.07) : 0;
@@ -1171,6 +1195,12 @@ export class Game {
   }
 
   updateWeather(dt) {
+    const up = this.scene === 'harbor' ? -1 : 1;
+    for (const m of this.motes) {
+      m.y += (10 + m.s * 12) * dt * up;
+      m.x += (Math.sin(this.time * 0.6 + m.p) * 14 - 8) * dt;
+      if (m.y > H) m.y = -4; if (m.y < -4) m.y = H; if (m.x < -4) m.x = W;
+    }
     if (this.weather.rain) {
       for (const r of this.rain) {
         r.y += r.spd * dt;
@@ -1251,9 +1281,11 @@ export class Game {
   // ---------- Render ----------
   render() {
     const ctx = this.ctx;
+    if (this.cine && drawShot(ctx, this.cine.id, this.cine.t)) { this.drawGrain(ctx, 0.09); return; }
     const inGame = this.data && (this.state === 'night' || this.state === 'paused' || this.state === 'gameover');
     ctx.save();
     if (this.shake > 0 && this.settings.shake) ctx.translate(rand(-1, 1) * this.shake, rand(-1, 1) * this.shake);
+    if (this.state === 'night' && this.settings.shake) ctx.translate(Math.sin(this.time * 0.7) * 1.4, Math.cos(this.time * 0.53) * 1); // máy quay cầm tay
     ctx.drawImage(this.bg(), 0, 0);
     this.drawFog(ctx, 0.6);
     ctx.drawImage(this.decals, 0, 0);
@@ -1387,8 +1419,25 @@ export class Game {
       ctx.stroke();
     }
 
+    // bụi tro / hơi nước lơ lửng trong không khí
+    const moteCol = { harbor: '220,230,240', dam: '210,220,190', base: '220,220,230' }[this.scene] || '170,160,150';
+    for (const m of this.motes) {
+      ctx.fillStyle = `rgba(${moteCol},${0.25 + Math.sin(this.time + m.p) * 0.12})`;
+      ctx.fillRect(m.x, m.y, m.s * 1.6, m.s * 1.6);
+    }
+    // đêm tối hơn: chỉ đèn pin và ánh lửa mới thấy rõ
+    if (inGame && this.state !== 'gameover') { ctx.fillStyle = 'rgba(4,4,14,0.2)'; ctx.fillRect(-20, -20, W + 40, H + 40); }
+
     // ánh sáng cộng dồn: chớp súng, vụ nổ, cửa sổ nhà
     ctx.globalCompositeOperation = 'lighter';
+    if (inGame && (this.state === 'night' || this.state === 'paused')) { // đèn pin của Phong rọi theo hướng ngắm
+      const a = this.aimAngle();
+      const fl = ctx.createRadialGradient(SHOULDER.x, SHOULDER.y, 10, SHOULDER.x, SHOULDER.y, 560);
+      fl.addColorStop(0, 'rgba(255,240,200,0.16)'); fl.addColorStop(1, 'rgba(255,240,200,0)');
+      ctx.fillStyle = fl;
+      ctx.beginPath(); ctx.moveTo(SHOULDER.x, SHOULDER.y);
+      ctx.arc(SHOULDER.x, SHOULDER.y, 560, a - 0.17, a + 0.17); ctx.closePath(); ctx.fill();
+    }
     const win = 0.12 + Math.sin(this.time * 7) * 0.02 + (Math.random() < 0.03 ? -0.06 : 0);
     if (this.scene === 'harbor') {
       this.drawLight(ctx, 40, 300, 90, '200,220,255', win * 0.9);
@@ -1502,6 +1551,21 @@ export class Game {
       }
     }
 
+    if (inGame && hpRatio < 0.35) { // sắp vỡ: màu sắc nhạt dần
+      ctx.globalCompositeOperation = 'saturation';
+      ctx.fillStyle = `rgba(128,128,128,${(1 - hpRatio / 0.35) * 0.75})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    if (this.splat > 0.02) { // máu bắn lên màn hình khi rào bị đánh mạnh
+      for (const sp of this.splats) {
+        ctx.fillStyle = `rgba(110,8,8,${this.splat * 0.55})`;
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, sp.r * (0.8 + this.splat * 0.4), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(80,4,4,${this.splat * 0.5})`;
+        ctx.beginPath(); ctx.arc(sp.x + sp.r * 0.5, sp.y + sp.r * 0.6, sp.r * 0.35, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    this.drawGrain(ctx, this.state === 'night' ? 0.07 : 0.05);
     if (this.data && (this.state === 'night' || this.state === 'paused')) {
       this.drawCrosshair(ctx);
       this.drawHUD(ctx);
@@ -1746,6 +1810,13 @@ export class Game {
     if (Math.random() < 0.3) this.addParticle({ x: x - 13, y: y - 80, vx: rand(10, 30), vy: rand(-30, -15), life: 2.5, color: '70,60,60', size: rand(6, 10), kind: 'smoke' });
   }
 
+  drawGrain(ctx, a) { // hạt nhiễu phim
+    ctx.globalAlpha = a;
+    const ox = Math.floor(Math.random() * 128), oy = Math.floor(Math.random() * 128);
+    for (let x = -ox; x < W; x += 256) for (let y = -oy; y < H; y += 256) ctx.drawImage(this.grain, x, y);
+    ctx.globalAlpha = 1;
+  }
+
   drawLight(ctx, x, y, r, color, a) {
     if (a <= 0) return;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
@@ -1861,6 +1932,16 @@ export class Game {
     ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif';
     ctx.fillText(`Còn ${Math.max(0, total - this.stats.kills)} zombie`, 222, 79);
 
+    if (d.hungry) {
+      ctx.fillStyle = 'rgba(160,60,20,0.85)'; roundRect(ctx, 214, 66, 70, 16, 3); ctx.fill();
+      ctx.fillStyle = '#ffe0c0'; ctx.font = `600 11px ${DISPLAY_FONT}`; ctx.textAlign = 'center'; ctx.fillText('ĐANG ĐÓI', 249, 78);
+    }
+    const w = this.weapon, st = this.weaponState;
+    if (!w.infinite && st.mag + st.reserve < w.mag * 1.5 && Math.sin(this.time * 6) > 0) {
+      ctx.font = `600 13px ${DISPLAY_FONT}`; ctx.textAlign = 'left'; ctx.fillStyle = '#ff7a5a';
+      ctx.fillText(st.mag + st.reserve === 0 ? 'HẾT SẠCH ĐẠN' : 'SẮP HẾT ĐẠN', 300, 34);
+    }
+
     // combo
     if (this.comboShow) {
       const c = this.comboShow;
@@ -1913,4 +1994,19 @@ export class Game {
     ctx.fillText(c.sub, W / 2, 262);
     ctx.restore();
   }
+}
+
+// Kết cấu hạt nhiễu dùng chung
+function makeGrain() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const g = c.getContext('2d');
+  const img = g.createImageData(256, 256);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = Math.random() * 255;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    img.data[i + 3] = Math.random() < 0.5 ? 255 : 0;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
 }
