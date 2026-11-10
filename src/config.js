@@ -51,13 +51,13 @@ export const TURRET = {
   cool: 2.6,
   slots: [{ x: 214, y: 392 }, { x: 176, y: 398 }],
 };
-export const MINE = { price: 180, max: 8, radius: 95, dmg: 240 };
+export const MINE = { price: 180, max: 8, radius: 80, dmg: 170 };
 export const WIRE = { prices: [1400, 3000], slow: [1, 0.62, 0.45], dps: [0, 5, 10], from: 238, to: 330 };
 export const FLOODLIGHT_PRICE = 900;
 export const SHOCKER = { prices: [2800, 4200], every: [0, 1.8, 1.25], dmg: [0, 34, 52], stun: 0.6, from: 240, to: 350 };
-export const FLAME_TURRET = { price: 4200, range: 235, burn: 18, dmg: 5, spray: 3, cool: 2.2, slot: { x: 196, y: 386 } };
-export const MORTAR = { prices: [5200, 4800], every: [0, 3.6, 2.5], dmg: [0, 190, 260], radius: 115, x: 46, y: 468 };
-export const TESLA_TOWER = { prices: [6500, 5200], every: [0, 1.35, 0.9], dmg: [0, 70, 105], range: 430, chain: 4, x: 232, y: 352 };
+export const FLAME_TURRET = { price: 4200, range: 330, burn: 18, dmg: 5, spray: 3, cool: 2.2, slot: { x: 196, y: 386 } };
+export const MORTAR = { prices: [5200, 4800], every: [0, 4.2, 3.2], dmg: [0, 120, 170], radius: 90, x: 46, y: 468 };
+export const TESLA_TOWER = { prices: [6500, 5200], every: [0, 1.6, 1.15], dmg: [0, 45, 65], range: 430, chain: 3, x: 232, y: 352 };
 export const DRONE = { price: 4800, max: 2, dmg: 13, rate: 0.12, mag: 30, reload: 2.2 };
 
 // Mỗi chương (bản đồ) có bộ công trình phòng thủ riêng. Sang chương mới thì làm lại từ đầu.
@@ -106,15 +106,15 @@ export const WEAPONS = {
     desc: 'Băng 80 viên, xuyên 2. Nạp đạn rất lâu.',
   },
   flamer: {
-    id: 'flamer', name: 'Súng phun lửa', dmg: 7, rate: 0.05, mag: 120, reload: 3.2,
-    pellets: 1, spread: 0.1, pierce: 4, auto: true, flame: true, range: 330, burn: 16,
+    id: 'flamer', name: 'Súng phun lửa', dmg: 5, rate: 0.05, mag: 120, reload: 3.2,
+    pellets: 1, spread: 0.12, pierce: 4, auto: true, flame: true, range: 420, burn: 10,
     price: 5200, ammoPrice: 260, ammoPack: 120, shake: 0.6, len: 40, act: 2,
-    desc: 'Phun lửa tầm gần, đốt cháy cả đám. Xuyên giáp.',
+    desc: 'Phun lửa tầm trung, đốt cháy cả đám. Xuyên giáp.',
   },
   launcher: {
-    id: 'launcher', name: 'Súng phóng lựu', dmg: 210, rate: 1.0, mag: 4, reload: 3.0,
-    pellets: 1, spread: 0.01, pierce: 1, auto: false, explosive: true, radius: 105,
-    price: 6800, ammoPrice: 300, ammoPack: 8, shake: 5, len: 38, act: 2,
+    id: 'launcher', name: 'Súng phóng lựu', dmg: 165, rate: 1.25, mag: 4, reload: 3.2,
+    pellets: 1, spread: 0.01, pierce: 1, auto: false, explosive: true, radius: 92,
+    price: 6800, ammoPrice: 420, ammoPack: 6, shake: 5, len: 38, act: 2,
     desc: 'Bắn đạn nổ vào điểm ngắm. Dọn sạch bầy đàn.',
   },
   sniper: {
@@ -124,15 +124,15 @@ export const WEAPONS = {
     desc: 'Xuyên 8 mục tiêu trên một đường thẳng. Một phát một hàng.',
   },
   tesla: {
-    id: 'tesla', name: 'Súng điện', dmg: 55, rate: 0.32, mag: 30, reload: 2.4,
-    pellets: 1, spread: 0.02, pierce: 1, auto: true, chain: 5, chainRange: 150,
+    id: 'tesla', name: 'Súng điện', dmg: 46, rate: 0.36, mag: 30, reload: 2.4,
+    pellets: 1, spread: 0.02, pierce: 1, auto: true, chain: 4, chainRange: 125,
     price: 12500, ammoPrice: 420, ammoPack: 40, shake: 1.5, len: 40, act: 4,
-    desc: 'Tia sét nhảy sang 5 con gần nhau. Xuyên giáp.',
+    desc: 'Tia sét nhảy sang 4 con gần nhau. Xuyên giáp.',
   },
 };
 export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher', 'sniper', 'tesla'];
 
-export const GRENADE = { dmg: 280, radius: 125, price: 90, max: 6, fuse: 0.75 };
+export const GRENADE = { dmg: 190, radius: 100, price: 150, max: 4, fuse: 0.75 };
 
 // kind: 'upright' (đứng) hoặc 'crawl' (bò)
 export const ZOMBIES = {

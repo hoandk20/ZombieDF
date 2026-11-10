@@ -671,7 +671,7 @@ export class Game {
       this.damageBarricade(atWall ? z.dmg : z.dmg * 0.4, z.foot);
       this.injureMate(atWall ? 0.35 : 0.1);
     }
-    this.explode(x, y, { radius: 115, dmg: 160, toxic: true, byPlayer: !atWall, exclude: z });
+    this.explode(x, y, { radius: 100, dmg: 110, toxic: true, byPlayer: !atWall, exclude: z });
   }
 
   allSpawned() {
@@ -710,7 +710,9 @@ export class Game {
       const dist = Math.hypot(z.x - x, (cy - y) * 1.6);
       if (dist > R + z.w / 2) continue;
       const k = 1 - Math.min(1, dist / (R + z.w / 2));
-      this.hitZombie(z, base * (0.4 + 0.6 * k), false, z.x, cy, Math.sign(z.x - x) || 1, byPlayer, { silent: true, kind: 'blast' });
+      // sát thương giảm mạnh ở rìa vụ nổ; trùm và gã khổng lồ chịu nổ tốt hơn
+      const tough = z.T.boss ? 0.5 : z.T.heavy ? 0.65 : 1;
+      this.hitZombie(z, base * (0.15 + 0.85 * k) * tough, false, z.x, cy, Math.sign(z.x - x) || 1, byPlayer, { silent: true, kind: 'blast' });
       if (z.alive && !z.T.heavy) z.x += 45 * k * (Math.sign(z.x - x) || 1);
     }
     const fireCols = opts.toxic ? ['#c8f040', '#7fb020'] : ['#ffb030', '#ff6a10'];

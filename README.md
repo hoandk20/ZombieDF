@@ -76,6 +76,13 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
   - **Dây thép gai** (2 cấp): làm chậm và cứa zombie sát hàng rào.
   - **Đèn pha chiến trường**: nhìn rõ trong đêm mất điện.
 
+## Cân bằng vũ khí
+
+- Vũ khí sát thương lan (súng phóng lựu, lựu đạn, mìn, súng điện, súng cối, tháp Tesla) đã được giảm:
+  sát thương giảm mạnh ở rìa vụ nổ, trùm và gã khổng lồ chịu nổ tốt hơn, lựu đạn đắt hơn và mang tối đa 4 quả.
+- Súng phun lửa có tầm bắn trung bình (420px) thay vì sát rào.
+- **Nâng cấp vũ khí** (Đạn xuyên giáp, Luyện nạp đạn) **về cấp 0 khi sang màn mới**, cùng với đồng đội và công trình.
+
 ## Đội hình đồng đội
 
 - Đồng đội khó tìm: mỗi người chỉ xuất hiện từ một đêm nhất định (Lan từ đêm 2, Ông Tư 4, Bảo 6, Mai 8, Hùng 22,
