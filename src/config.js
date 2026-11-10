@@ -132,7 +132,7 @@ export const WEAPONS = {
 };
 export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher', 'sniper', 'tesla'];
 
-export const GRENADE = { dmg: 190, radius: 100, price: 150, max: 4, fuse: 0.75 };
+export const GRENADE = { dmg: 380, radius: 100, price: 150, max: 4, fuse: 0.75 };
 
 // kind: 'upright' (đứng) hoặc 'crawl' (bò)
 export const ZOMBIES = {
