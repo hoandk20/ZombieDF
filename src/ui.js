@@ -802,7 +802,9 @@ export class UI {
     const used = this.alloc.repair + this.alloc.scav + this.alloc.search;
     const info = this.dayInfo;
     const campaign = !d.endless && d.night <= CAMPAIGN_NIGHTS;
+    // giữ vị trí cuộn của cả khung kế hoạch lẫn cửa hàng khi vẽ lại
     const scroll = this.root.querySelector('.shop-list')?.scrollTop || 0;
+    const planScroll = this.root.querySelector('.panel.plan')?.scrollTop || 0;
 
     const act = actFor(d.night);
     const actStart = (act - 1) * ACT_LENGTH;
@@ -940,6 +942,8 @@ export class UI {
     this.animateLog = false;
     const list = this.root.querySelector('.shop-list');
     if (list) list.scrollTop = scroll;
+    const plan = this.root.querySelector('.panel.plan');
+    if (plan) plan.scrollTop = planScroll;
   }
 }
 
