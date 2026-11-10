@@ -247,6 +247,12 @@ button.wide { width: 100%; }
 .weapon-bar.two-col { display: grid; grid-template-columns: repeat(2, auto); gap: 0.25em; }
 .weapon-bar.two-col .weapon-slot { width: 8em; font-size: 0.62em; }
 .weapon-bar.two-col .slot-icon { width: 3em; }
+.diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em; margin-top: 0.4em; }
+.diff-btn { display: flex; flex-direction: column; gap: 0.2em; text-align: left; padding: 0.6em 0.8em; }
+.diff-btn b { font-family: var(--f-display); font-weight: 600; font-size: 1.1em; letter-spacing: 0.03em; }
+.diff-btn b em { font-style: normal; font-size: 0.6em; background: var(--amber); color: #1a1208; padding: 0.1em 0.4em; border-radius: 0.2em; vertical-align: middle; margin-left: 0.3em; }
+.diff-btn span { font-size: 0.78em; color: var(--muted); line-height: 1.4; }
+.diff-btn.rec { border-color: var(--amber); }
 .squad-btn { font-size: 0.78em; padding: 0.4em 0.7em; white-space: nowrap; }
 .squad-btn.on { border-color: var(--cash); color: var(--cash); }
 .warn.soft { color: var(--amber); background: rgba(233, 180, 90, 0.1); }

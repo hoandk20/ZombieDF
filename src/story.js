@@ -266,39 +266,39 @@ export const GAMEOVER_LINES = [
 // Người sống sót có tên, được tìm thấy theo thứ tự
 export const SURVIVORS = [
   {
-    id: 'lan', name: 'Lan', role: 'Y tá', perk: 'Sửa rào hiệu quả hơn 35%', weapon: 'pistol',
+    id: 'lan', name: 'Lan', role: 'Y tá', perk: 'Sửa rào hiệu quả hơn 35%', weapon: 'pistol', from: 2,
     look: { shirt: '#e8eef2', pants: '#3b4a5c', skin: '#f0c9a0', hair: '#1b1410' },
     intro: 'Một cô y tá trốn trong hiệu thuốc, tay còn cầm cuộn băng gạc. "Tôi biết cách vá mọi thứ. Kể cả hàng rào."',
   },
   {
-    id: 'tu', name: 'Ông Tư', role: 'Thợ săn', perk: 'Bắn chính xác, sát thương gấp đôi', weapon: 'rifle',
+    id: 'tu', name: 'Ông Tư', role: 'Thợ săn', perk: 'Bắn chính xác, sát thương gấp đôi', weapon: 'rifle', from: 4,
     look: { shirt: '#5b5236', pants: '#2b2a22', skin: '#c58c5c', hat: '#3a3324' },
     intro: 'Ông lão thợ săn ngồi trên nóc nhà kho, khẩu súng săn trên đùi. "Bốn mươi năm săn heo rừng. Mấy thứ này còn chậm hơn."',
   },
   {
-    id: 'bao', name: 'Bảo', role: 'Thợ máy', perk: 'Hàng rào tự hồi phục trong đêm', weapon: 'smg',
+    id: 'bao', name: 'Bảo', role: 'Thợ máy', perk: 'Hàng rào tự hồi phục trong đêm', weapon: 'smg', from: 6,
     look: { shirt: '#3c6e8f', pants: '#2b2f3a', skin: '#e0b48c', hat: '#c46a2a' },
     intro: 'Một thợ máy cố thủ trong gara với cái mỏ hàn. "Cho tôi ít sắt vụn, hàng rào của anh sẽ tự liền vết thương."',
   },
   {
-    id: 'mai', name: 'Mai', role: 'Sinh viên', perk: 'Lục lọi thu được thêm 30%', weapon: 'shotgun',
+    id: 'mai', name: 'Mai', role: 'Sinh viên', perk: 'Lục lọi thu được thêm 30%', weapon: 'shotgun', from: 8,
     look: { shirt: '#8f3c6d', pants: '#2b2f3a', skin: '#f0c9a0', hair: '#5a3418' },
     intro: 'Cô sinh viên trốn trong thư viện, ba lô đầy đồ hộp. "Tôi thuộc lòng bản đồ thị trấn. Chỗ nào còn đồ, tôi biết hết."',
   },
   {
-    id: 'hung', name: 'Hùng', role: 'Cựu binh', perk: 'Mỗi sáng nhặt thêm 1 lựu đạn', weapon: 'lmg', stage: 2,
+    id: 'hung', name: 'Hùng', role: 'Cựu binh', perk: 'Mỗi sáng nhặt thêm 1 lựu đạn', weapon: 'lmg', stage: 2, from: 22,
     intro: 'Một người lính biên phòng ngồi gác trên nóc trạm bơm, khẩu súng máy trên đùi. "Đơn vị tôi không còn ai. Cho tôi một chỗ trên hàng rào."',
   },
   {
-    id: 'linh', name: 'Linh', role: 'Xạ thủ', perk: 'Headshot của bạn được thêm 25% tiền', weapon: 'sniper', stage: 2,
+    id: 'linh', name: 'Linh', role: 'Xạ thủ', perk: 'Headshot của bạn được thêm 25% tiền', weapon: 'sniper', stage: 2, from: 24,
     intro: 'Cô gái tóc dài nằm trên tháp nước với khẩu súng bắn tỉa, từng là vận động viên bắn súng quốc gia. "Tôi không bắn trượt. Chưa bao giờ."',
   },
   {
-    id: 'khoa', name: 'Bác sĩ Khoa', role: 'Nhà nghiên cứu', perk: 'Đồng đội bị thương hồi phục nhanh hơn 1 đêm', weapon: 'pistol', stage: 2,
+    id: 'khoa', name: 'Bác sĩ Khoa', role: 'Nhà nghiên cứu', perk: 'Đồng đội bị thương hồi phục nhanh hơn 1 đêm', weapon: 'pistol', stage: 2, from: 27,
     intro: 'Người đàn ông đeo kính, áo blouse dính máu, ôm chặt thùng mẫu lạnh. "Tôi là người điều chế vắc-xin. Giữ tôi sống, và tôi sẽ giữ cả đất nước sống."',
   },
   {
-    id: 'vy', name: 'Vy', role: 'Kỹ sư điện', perk: 'Đêm mất điện: dựng đèn pha, nhìn rõ hơn nhiều', weapon: 'smg', stage: 2,
+    id: 'vy', name: 'Vy', role: 'Kỹ sư điện', perk: 'Đêm mất điện: dựng đèn pha, nhìn rõ hơn nhiều', weapon: 'smg', stage: 2, from: 31,
     intro: 'Cô kỹ sư buộc tóc hai búi, đội mũ bảo hộ vàng, đang nối lại máy phát của đập. "Cho tôi mười phút và một cái cờ lê, cả cái đập này sẽ sáng đèn."',
   },
 ];

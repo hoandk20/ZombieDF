@@ -173,6 +173,7 @@ export const sfx = {
   plane() { if (throttle('plane', 3000)) return; tone(80, 70, 2.5, 0.08, 'sawtooth'); noise(2.5, 300, 0.12); },
   hurt() { tone(400, 200, 0.25, 0.18, 'square'); },
   levelUp() { tone(523, 784, 0.18, 0.15, 'triangle'); tone(784, 1046, 0.22, 0.12, 'triangle', 0.15); },
+  turret() { if (throttle('turret', 70)) return; noise(0.08, 2600, 0.28); tone(150, 70, 0.05, 0.1); },
   ally() { if (throttle('ally', 80)) return; noise(0.12, 1800, 0.3); tone(170, 60, 0.07, 0.1); },
   reload() { tone(900, 650, 0.05, 0.12); tone(500, 420, 0.06, 0.12, 'square', 0.18); },
   reloadDone() { tone(1200, 900, 0.05, 0.12, 'square'); },

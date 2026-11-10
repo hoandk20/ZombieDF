@@ -3,6 +3,7 @@ import {
   WEAPONS, WEAPON_ORDER, HEADSHOT_MUL, SURVIVOR_SLOTS, GRENADE, CAMPAIGN_NIGHTS, ACT_LENGTH,
   waveFor, weatherFor, barricadeMax, reloadMul, actFor, bossTypeFor, dmgMul,
   sceneFor, stageFor, bossCountFor, STAGE_LENGTH, CAMP_INCOME, mateLevel,
+  diffOf, UPKEEP, TURRET, MINE, WIRE,
 } from './config.js';
 import { SURVIVORS, NIGHT_TITLES, MATE_COMBAT, hasPerk } from './story.js';
 import { Zombie, roundRect } from './zombie.js';
@@ -74,6 +75,8 @@ export class Game {
     this.grenadeArmed = false;
     this.stats = { kills: 0, headshots: 0, earned: 0, bestStreak: 0, damage: 0, combo: 0, crates: 0, injured: [] };
     this.extraSpawns = 0;
+    this.turrets = [];
+    this.mines = [];
     this.crates = [];
     this.rings = [];
     this.bolts = [];
@@ -165,7 +168,12 @@ export class Game {
     this.weather = weatherFor(d.night);
     this.scene = sceneFor(d.night);
     this.mods = this.wave.mods || {};
+    this.wave.total = Math.round(this.wave.total * diffOf(d).count);
     this.spawnTimer = 2.5;
+    // công trình phòng thủ
+    this.turrets = Array.from({ length: Math.min(d.turrets || 0, TURRET.max) }, (_, i) => ({ ...TURRET.slots[i], ang: Math.PI * 0.02, cd: 0.5, heat: 0, overheat: 0, recoil: 0 }));
+    this.mines = Array.from({ length: d.mines || 0 }, (_, i) => ({ x: 300 + ((i * 47) % 260) + rand(-10, 10), y: rand(LANE_MIN + 4, LANE_MAX - 4) }));
+    d.mines = 0;
     // lịch thả dù tiếp tế trong đêm
     const span = Math.max(30, this.wave.total * this.wave.interval);
     for (let i = 0; i < (this.mods.airdrops || 0); i++) this.dropTimes.push(8 + (span * (i + 0.5)) / this.mods.airdrops + rand(-4, 4));
@@ -198,17 +206,21 @@ export class Game {
 
   endNight() {
     const d = this.data;
-    const bonus = 100 + d.night * 30;
+    const df = diffOf(d);
+    const bonus = Math.round((100 + d.night * 30) * df.reward);
     d.cash += bonus;
+    d.mines = (d.mines || 0) + this.mines.filter((m) => !m.done).length; // mìn chưa nổ được thu lại
     // hồi phục thương tích, thu nhập từ người ở trại, kỹ năng buổi sáng
     for (const id of Object.keys(d.mates)) if (d.mates[id].injured > 0 && !this.stats.injured.includes(id)) d.mates[id].injured--;
     const squad = d.squad || [];
     const campers = d.crew.filter((id) => !squad.includes(id) && !(d.mates[id]?.injured > 0));
     const campIncome = Math.round(campers.length * CAMP_INCOME * (1 + d.night * 0.04));
     d.cash += campIncome;
+    const upkeep = Math.min(d.cash, Math.round(d.crew.length * UPKEEP * df.upkeep * (1 + d.night * 0.03)));
+    d.cash -= upkeep;
     let extraGrenade = false;
     if (hasPerk(d, 'hung') && d.grenades < GRENADE.max) { d.grenades++; extraGrenade = true; }
-    const info = { night: d.night, bonus, campIncome, campers: campers.length, extraGrenade, ...this.stats };
+    const info = { night: d.night, bonus, campIncome, upkeep, campers: campers.length, extraGrenade, ...this.stats };
     const wasFinale = d.night === CAMPAIGN_NIGHTS && !d.endless;
     const transition = !d.endless && [ACT_LENGTH, STAGE_LENGTH, 30].includes(d.night) ? d.night : 0;
     d.night += 1;
@@ -481,7 +493,7 @@ export class Game {
   }
 
   spawnBounty() {
-    const z = new Zombie('bounty', this.wave.hpMul);
+    const z = this.mk('bounty');
     this.zombies.push(z);
     this.extraSpawns++;
     this.bountySpawned = true;
@@ -561,7 +573,7 @@ export class Game {
     if (this.state !== 'night') return;
 
     const d = this.data;
-    let reward = rewarded ? Math.round(z.T.reward * (head ? 1.5 : 1)) : 0;
+    let reward = rewarded ? Math.round(z.T.reward * (head ? 1.5 : 1) * diffOf(d).reward) : 0;
     if (head && byPlayer && hasPerk(d, 'linh')) reward = Math.round(reward * 1.25);
     if (z.T.bounty) {
       this.texts.push({ x: z.x, y: z.foot - z.h - 34, text: 'CƯỚP LẠI HÒM TIẾP TẾ!', life: 2, max: 2, size: 18, color: '#ffcf4a' });
@@ -613,7 +625,7 @@ export class Game {
     }
     const x = z.x, y = z.foot - z.h * 0.45;
     if (z.x - z.w / 2 < BARRICADE_X + 70) {
-      this.damageBarricade(atWall ? z.T.dmg : z.T.dmg * 0.5, z.foot);
+      this.damageBarricade(atWall ? z.dmg : z.dmg * 0.5, z.foot);
       this.injureMate(atWall ? 0.35 : 0.15);
     }
     this.explode(x, y, { radius: 115, dmg: 160, toxic: true, byPlayer: !atWall, exclude: z });
@@ -677,7 +689,7 @@ export class Game {
     const b = z.boxes();
     this.projectiles.push({
       type: 'acid', x0: b.hx - b.hr, y0: b.hy + b.hr * 0.4, x1: BARRICADE_X - 2, y1: rand(BARRICADE_TOP + 15, LANE_MAX - 10),
-      t: 0, dur: 1.0, arc: 110, dmg: z.T.dmg,
+      t: 0, dur: 1.0, arc: 110, dmg: z.dmg,
     });
     sfx.spit();
   }
@@ -689,7 +701,7 @@ export class Game {
 
   // ---------- Trùm ----------
   spawnBoss() {
-    const z = new Zombie(bossTypeFor(this.data.night), this.wave.hpMul);
+    const z = this.mk(bossTypeFor(this.data.night));
     if (this.bossesSpawned > 0) { z.foot -= 22; z.x += 60; }
     z.phase2 = false;
     this.zombies.push(z);
@@ -707,7 +719,7 @@ export class Game {
     this.shake = Math.max(this.shake, 7);
     if (z && z.T.summoner && z.alive && this.state === 'night') { // gọi đàn
       for (let i = 0; i < 3; i++) {
-        const r = new Zombie(z.T.summoner === 'dog' ? 'dog' : 'runner', this.wave.hpMul);
+        const r = this.mk(z.T.summoner === 'dog' ? 'dog' : 'runner');
         r.x = z.x + 40 + i * 25;
         this.zombies.push(r);
         this.extraSpawns++;
@@ -765,12 +777,16 @@ export class Game {
     if (this.spawned < this.wave.total) {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) {
-        const z = new Zombie(this.pickType(), this.wave.hpMul);
-        z.speed *= this.wave.speedMul || 1;
-        this.zombies.push(z);
-        this.spawned++;
-        const burst = Math.random() < 0.18;
-        this.spawnTimer = burst ? 0.15 : this.wave.interval * rand(0.4, 1.6);
+        const df = diffOf(d);
+        // thỉnh thoảng cả bầy kéo đến cùng lúc
+        const pack = Math.random() < df.pack ? Math.min(this.wave.total - this.spawned, 2 + Math.floor(Math.random() * (2 + d.night / 6))) : 1;
+        for (let k = 0; k < pack; k++) {
+          const z = this.mk(this.pickType());
+          z.x += k * rand(18, 34);
+          this.zombies.push(z);
+          this.spawned++;
+        }
+        this.spawnTimer = (pack > 1 ? this.wave.interval * 2.2 : this.wave.interval * rand(0.4, 1.6)) * df.interval;
       }
     }
     if (this.wave.boss) {
@@ -802,6 +818,7 @@ export class Game {
     if (this.state !== 'night') return; // có thể vừa game over
 
     this.updateSurvivors(dt);
+    this.updateDefenses(dt);
     this.updateProjectiles(dt);
     this.updateCrates(dt);
     if (this.state !== 'night') return;
@@ -848,7 +865,7 @@ export class Game {
         if (s.burst >= burst) s.burst = 0;
         s.recoil = 4;
         const ox = sx + Math.cos(s.ang) * 34, oy = sy + Math.sin(s.ang) * 34;
-        const dmg = c.dmg * (1 + 0.35 * (lv - 1));
+        const dmg = c.dmg * (1 + 0.35 * (lv - 1)) * diffOf(this.data).mate;
         for (let k = 0; k < (c.pellets || 1); k++) {
           const miss = Math.random() < c.miss ? rand(-0.06, 0.06) : 0;
           const spread = c.pellets ? rand(-0.07, 0.07) : 0;
@@ -858,6 +875,51 @@ export class Game {
         sfx.ally();
       }
     }
+  }
+
+  // Tháp súng máy tự động + mìn
+  updateDefenses(dt) {
+    const lvl = Math.max(1, Math.min(3, this.data.turretLevel || 1)) - 1;
+    for (const t of this.turrets) {
+      t.recoil = Math.max(0, t.recoil - dt * 30);
+      if (t.overheat > 0) { t.overheat -= dt; if (Math.random() < 0.3) this.addParticle({ x: t.x + 10, y: t.y - 8, vx: rand(-10, 10), vy: rand(-40, -20), life: 0.8, color: '200,200,210', size: 4, kind: 'smoke' }); continue; }
+      let target = null;
+      for (const z of this.zombies) if (z.alive && z.x < W - 20 && (!target || z.x < target.x)) target = z;
+      if (!target) { t.heat = Math.max(0, t.heat - dt * 4); continue; }
+      const b = target.boxes();
+      const want = Math.atan2((b.by0 + b.by1) / 2 - t.y, target.x - t.x);
+      t.ang += (want - t.ang) * Math.min(1, dt * 10);
+      t.cd -= dt;
+      if (t.cd <= 0) {
+        t.cd = TURRET.rate[lvl];
+        t.heat++;
+        t.recoil = 3;
+        const ox = t.x + Math.cos(t.ang) * 26, oy = t.y + Math.sin(t.ang) * 26;
+        this.castRay(ox, oy, t.ang + rand(-0.035, 0.035), TURRET.dmg[lvl], 1, false, false, 'turret');
+        this.lights.push({ x: ox, y: oy, r: 120, life: 0.05, max: 0.05, color: '255,200,110', a: 0.25 });
+        sfx.turret();
+        if (t.heat >= TURRET.heat[lvl]) { t.heat = 0; t.overheat = TURRET.cool; }
+      }
+    }
+    for (const m of this.mines) {
+      if (m.done) continue;
+      for (const z of this.zombies) {
+        if (!z.alive) continue;
+        if (Math.abs(z.x - m.x) < z.w / 2 + 6 && Math.abs(z.foot - m.y) < 18) {
+          m.done = true;
+          this.explode(m.x, m.y - 8, { radius: MINE.radius, dmg: MINE.dmg });
+          break;
+        }
+      }
+    }
+  }
+
+  // Dây thép gai: làm chậm và cứa zombie sát hàng rào
+  slowAt(z, dt) {
+    const lv = this.state === 'night' && this.data ? this.data.wireLevel || 0 : 0;
+    if (!lv || z.x - z.w / 2 > WIRE.to || z.x < WIRE.from) return 1;
+    if (Math.random() < dt * 4) this.hitZombie(z, WIRE.dps[lv] * 0.25, false, z.x - z.w / 2, z.foot - 20, 1, false, { silent: true, noFx: true, kind: 'blast', src: 'wire' });
+    return z.T.heavy ? (1 + WIRE.slow[lv]) / 2 : WIRE.slow[lv];
   }
 
   updateCrates(dt) {
@@ -882,14 +944,14 @@ export class Game {
         z.phase2 = true;
         z.speed *= 1.7;
         this.texts.push({ x: W / 2, y: 180, text: 'MẪU THỂ SỐ 0 NỔI ĐIÊN!', life: 2.5, max: 2.5, size: 30, color: '#ff5a45' });
-        for (let k = 0; k < 2; k++) { const sc = new Zombie('screamer', this.wave.hpMul); sc.x = z.x + 80 + k * 40; this.zombies.push(sc); this.extraSpawns++; }
+        for (let k = 0; k < 2; k++) { const sc = this.mk('screamer'); sc.x = z.x + 80 + k * 40; this.zombies.push(sc); this.extraSpawns++; }
         sfx.roar();
         this.shake = Math.max(this.shake, 10);
       }
       if (!z.armorPhase && r < 0.25) {
         z.armorPhase = true;
         this.texts.push({ x: W / 2, y: 180, text: 'GIÁP XƯƠNG! DÙNG LỬA, ĐIỆN, CHẤT NỔ!', life: 3, max: 3, size: 24, color: '#ffcf4a' });
-        for (let k = 0; k < 4; k++) { const rv = new Zombie('reviver', this.wave.hpMul); rv.x = z.x + 60 + k * 35; this.zombies.push(rv); this.extraSpawns++; }
+        for (let k = 0; k < 4; k++) { const rv = this.mk('reviver'); rv.x = z.x + 60 + k * 35; this.zombies.push(rv); this.extraSpawns++; }
         sfx.roar();
         this.shake = Math.max(this.shake, 12);
       }
@@ -1012,6 +1074,15 @@ export class Game {
     }
   }
 
+  // Tạo zombie theo đêm hiện tại và độ khó
+  mk(type) {
+    const df = diffOf(this.data);
+    const z = new Zombie(type, this.wave.hpMul * df.hp);
+    z.speed *= (this.wave.speedMul || 1) * df.speed;
+    z.dmg *= (this.wave.dmgMul || 1) * df.dmg;
+    return z;
+  }
+
   pickType() {
     const wts = this.wave.weights;
     let sum = 0;
@@ -1049,6 +1120,7 @@ export class Game {
     drawHero(ctx, PLAYER_X, PLAYER_FOOT, this.aimAngle(aim), wid, WEAPONS[wid].len, this.recoil * 0.6, this.time);
     const hpRatio = inGame ? clamp(this.data.hp / barricadeMax(this.data.barricadeLevel), 0, 1) : 1;
     drawBarricade(ctx, hpRatio, this.scene);
+    if (inGame) this.drawDefenses(ctx);
 
     const sorted = [...this.zombies].sort((a, b) => (a.alive - b.alive) || (a.foot - b.foot));
     for (const z of sorted) z.draw(ctx);
@@ -1306,11 +1378,69 @@ export class Game {
   }
 
   // Đêm mất điện: tối đen, chỉ thấy quanh đèn pin và những nguồn sáng
+  drawDefenses(ctx) {
+    const d = this.data;
+    // dây thép gai trên mặt đất trước rào
+    const wl = d.wireLevel || 0;
+    if (wl) {
+      ctx.strokeStyle = wl > 1 ? 'rgba(190,195,205,0.85)' : 'rgba(160,165,175,0.75)';
+      ctx.lineWidth = 1.3;
+      for (const y of [LANE_MIN + 6, (LANE_MIN + LANE_MAX) / 2 + 4, LANE_MAX - 2]) {
+        ctx.beginPath();
+        for (let x = WIRE.from + 4; x < WIRE.to; x += 2) {
+          const a = (x - WIRE.from) * 0.5;
+          ctx.lineTo(x + Math.cos(a) * 4, y - 6 + Math.sin(a) * 6);
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#3a3026';
+        for (let x = WIRE.from + 10; x < WIRE.to; x += 30) ctx.fillRect(x, y - 14, 2, 14);
+      }
+    }
+    // mìn
+    for (const m of this.mines) {
+      if (m.done) continue;
+      ctx.fillStyle = '#2a2c24';
+      ctx.beginPath(); ctx.ellipse(m.x, m.y, 9, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#4a4c40'; ctx.fillRect(m.x - 3, m.y - 4, 6, 3);
+      if (Math.sin(this.time * 6 + m.x) > 0.5) { ctx.fillStyle = '#ff3a2a'; ctx.beginPath(); ctx.arc(m.x, m.y - 4, 1.6, 0, Math.PI * 2); ctx.fill(); }
+    }
+    // tháp súng
+    const lvl = Math.max(1, Math.min(3, d.turretLevel || 1));
+    for (const t of this.turrets) {
+      ctx.save();
+      ctx.translate(t.x, t.y); ctx.scale(1.4, 1.4); ctx.translate(-t.x, -t.y);
+      ctx.fillStyle = '#7c6e4d'; // bao cát kê chân
+      ctx.beginPath(); ctx.ellipse(t.x, t.y + 15, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#3a3f48'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.x - 10, t.y + 16); ctx.moveTo(t.x, t.y); ctx.lineTo(t.x + 10, t.y + 16); ctx.moveTo(t.x, t.y); ctx.lineTo(t.x, t.y + 16); ctx.stroke();
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.rotate(t.ang);
+      ctx.translate(-t.recoil, 0);
+      ctx.fillStyle = lvl === 3 ? '#6a7484' : '#565e6a';
+      ctx.fillRect(-10, -6, 24, 12);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(-10, -6, 24, 2);
+      ctx.fillStyle = '#e0b040'; ctx.fillRect(-2, -6, 3, 12);
+      ctx.fillStyle = '#1c1e22'; ctx.fillRect(12, -2.5, 16 + lvl * 2, 5);
+      if (lvl >= 2) ctx.fillRect(12, -6, 12, 2);
+      ctx.fillStyle = '#5a4a2a'; ctx.fillRect(-8, 5, 10, 7);
+      ctx.fillStyle = '#c9a24a'; for (let k = 0; k < 3; k++) ctx.fillRect(-7 + k * 3, 4, 1.6, 3);
+      ctx.restore();
+      ctx.restore();
+      // thanh nhiệt
+      const heatK = t.overheat > 0 ? 1 : t.heat / TURRET.heat[lvl - 1];
+      if (heatK > 0.05) {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(t.x - 14, t.y - 22, 28, 3);
+        ctx.fillStyle = t.overheat > 0 ? '#ff5a3a' : '#ffb040'; ctx.fillRect(t.x - 14, t.y - 22, 28 * heatK, 3);
+      }
+    }
+  }
+
   drawBlackout(ctx) {
     if (!this.mods.blackout) return;
     if (!this.darkCanvas) { this.darkCanvas = document.createElement('canvas'); this.darkCanvas.width = W; this.darkCanvas.height = H; }
     const g = this.darkCanvas.getContext('2d');
-    const vy = hasPerk(this.data, 'vy');
+    const vy = hasPerk(this.data, 'vy') || this.data.floodlight;
     g.globalCompositeOperation = 'source-over';
     g.clearRect(0, 0, W, H);
     g.fillStyle = `rgba(2,3,8,${0.92 * (1 - this.lightning * 0.8)})`;

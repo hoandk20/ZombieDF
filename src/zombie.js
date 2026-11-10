@@ -34,6 +34,7 @@ export class Zombie {
     this.deadT = 0;
     this.headless = false;
     this.helmet = T.helmet ? T.helmet * hpMul : 0;
+    this.dmg = T.dmg; // game nhân thêm theo đêm và độ khó
     this.burnT = 0;
     this.burnDps = 0;
   }
@@ -131,7 +132,7 @@ export class Zombie {
       this.roarT -= dt;
       if (this.roarT <= 0) { this.roarT = rand(6, 9); game.bossRoar(this); }
     }
-    const spd = this.speed * (this.buffT > 0 ? 1.5 : 1);
+    const spd = this.speed * (this.buffT > 0 ? 1.5 : 1) * (game.slowAt ? game.slowAt(this, dt) : 1);
     if (this.fleeing) { // kẻ mang hòm bỏ chạy
       this.x += spd * 1.15 * dt;
       this.phase += dt * (2 + spd * 0.06);
@@ -156,7 +157,7 @@ export class Zombie {
         if (this.T.screamer) { this.screamT = 1; game.scream(this); }
         else if (this.T.ranged) game.spitAcid(this);
         else if (this.T.bomber) { game.bloaterBurst(this, true); return; }
-        else game.damageBarricade(this.T.dmg, this.foot);
+        else game.damageBarricade(this.dmg, this.foot);
       }
     }
     if (!this.demo && Math.random() < dt * 0.04) game.sfx.groan();

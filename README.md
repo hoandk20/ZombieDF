@@ -36,8 +36,21 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
   không bị bắn vỡ đầu hoặc thiêu cháy (27).
 - Cứ 5 đêm một con trùm; vũ khí mới mở theo chương (súng bắn tỉa ở chương 3, súng điện ở chương 4).
 
+## Độ khó và phòng thủ
+
+- Chọn độ khó khi bắt đầu chiến dịch: **Dễ** (cân bằng bản đầu), **Thường** (đề xuất), **Khó**, **Ác mộng**.
+  Độ khó tăng máu, sát thương, tốc độ, số lượng zombie, tần suất kéo đến theo bầy; giảm tiền thưởng;
+  đồng đội khó tìm hơn và tốn nhiều khẩu phần hơn. Zombie cắn rào đau dần theo từng đêm.
+- Tab **Phòng thủ** trong cửa hàng:
+  - **Tháp súng máy tự động** (tối đa 2, nâng cấp 3 cấp): tự bắn con gần nhất, bắn liên tục sẽ quá nhiệt.
+  - **Mìn**: tự rải trước rào mỗi đêm, nổ khi zombie dẫm lên; mìn chưa nổ được thu lại.
+  - **Dây thép gai** (2 cấp): làm chậm và cứa zombie sát hàng rào.
+  - **Đèn pha chiến trường**: nhìn rõ trong đêm mất điện.
+
 ## Đội hình đồng đội
 
+- Đồng đội khó tìm: mỗi người chỉ xuất hiện từ một đêm nhất định (Lan từ đêm 2, Ông Tư 4, Bảo 6, Mai 8, Hùng 22,
+  Linh 24, Khoa 27, Vy 31), tỉ lệ tìm thấy thấp và giảm khi nhóm đông. Mỗi sáng tốn **khẩu phần** cho cả nhóm.
 - Tối đa **4 người trên hàng rào**; người còn lại **ở trại** và mỗi sáng kiếm thêm tiền.
 - Đồng đội **lên cấp** (★★★) khi tự tay hạ zombie: bắn mạnh hơn, nhanh hơn.
 - Khi hàng rào dưới 35% hoặc kẻ trương phình nổ sát rào, đồng đội có thể **bị thương** và phải nghỉ vài đêm

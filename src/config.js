@@ -28,6 +28,32 @@ export const SCENES = { 1: 'town', 2: 'harbor', 3: 'dam', 4: 'base' };
 export const sceneFor = (n) => SCENES[actFor(n)];
 export const MAX_SQUAD = 4;
 export const CAMP_INCOME = 35;
+export const UPKEEP = 18; // tiền khẩu phần mỗi đồng đội mỗi sáng
+
+// Độ khó: nhân với máu, sát thương, số lượng, tốc độ zombie và tiền thưởng
+export const DIFFICULTIES = {
+  easy:      { name: 'Dễ',      desc: 'Cân bằng như bản đầu. Hợp để làm quen.', hp: 0.9, dmg: 1, count: 1, speed: 1, reward: 1.1, recruit: 1.6, mate: 1, upkeep: 0.5, pack: 0.18, interval: 1 },
+  normal:    { name: 'Thường',  desc: 'Zombie khỏe, nhanh, kéo đến theo bầy. Đồng đội khó tìm.', hp: 1.6, dmg: 1.6, count: 1.35, speed: 1.3, reward: 0.85, recruit: 1, mate: 0.8, upkeep: 1, pack: 0.32, interval: 0.85 },
+  hard:      { name: 'Khó',     desc: 'Bầy đàn đông và hung hãn. Mỗi viên đạn đều quý.', hp: 2.0, dmg: 2.0, count: 1.5, speed: 1.45, reward: 0.75, recruit: 0.8, mate: 0.7, upkeep: 1.3, pack: 0.4, interval: 0.75 },
+  nightmare: { name: 'Ác mộng', desc: 'Dành cho người đã thắng. Gần như không thể.', hp: 2.6, dmg: 2.6, count: 1.7, speed: 1.6, reward: 0.65, recruit: 0.6, mate: 0.6, upkeep: 1.6, pack: 0.48, interval: 0.65 },
+};
+export const DIFF_ORDER = ['easy', 'normal', 'hard', 'nightmare'];
+export const diffOf = (d) => DIFFICULTIES[(d && d.difficulty) || 'normal'] || DIFFICULTIES.normal;
+
+// Công trình phòng thủ
+export const TURRET = {
+  max: 2,
+  price: 1800,
+  upgrade: [0, 1400, 2800],            // giá lên cấp 2, 3
+  dmg: [10, 15, 22],
+  rate: [0.13, 0.1, 0.08],
+  heat: [24, 32, 44],                  // số phát trước khi quá nhiệt
+  cool: 2.6,
+  slots: [{ x: 214, y: 392 }, { x: 176, y: 398 }],
+};
+export const MINE = { price: 130, max: 8, radius: 95, dmg: 240 };
+export const WIRE = { prices: [900, 2000], slow: [1, 0.62, 0.45], dps: [0, 5, 10], from: 238, to: 330 };
+export const FLOODLIGHT_PRICE = 700;
 
 export const WEAPONS = {
   pistol: {
@@ -161,7 +187,8 @@ export function waveFor(n) {
   return {
     total: Math.round(total),
     interval,
-    hpMul: 1 + Math.min(n - 1, 19) * 0.09 + Math.max(0, n - 20) * 0.06,
+    hpMul: 1 + Math.min(n - 1, 19) * 0.11 + Math.max(0, n - 20) * 0.07,
+    dmgMul: 1 + (n - 1) * 0.035,
     speedMul: m.rush ? 1.3 : 1,
     boss: isBossNight(n),
     mods: m,
