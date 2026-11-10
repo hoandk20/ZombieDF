@@ -43,6 +43,17 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 - 4 đồng đội mới ở màn 2: **Hùng** (cựu binh, súng máy), **Linh** (xạ thủ), **bác sĩ Khoa**, **Vy** (kỹ sư điện).
 - Thắng chiến dịch sẽ mở **chế độ vô tận** (cứ 5 đêm lại có một con trùm).
 
+## Không khí sinh tồn
+
+- **Cắt cảnh minh hoạ** cho mọi lần chuyển bản đồ và đoạn kết, vẽ động bằng canvas, khớp từng câu thoại.
+- Đêm tối hơn, **đèn pin** của Phong rọi theo hướng ngắm, máy quay rung như cầm tay, hạt nhiễu phim,
+  tro bụi bay, máu bắn lên màn hình khi rào bị đánh mạnh, màu nhạt dần khi rào sắp vỡ.
+- Âm thanh xa xăm theo từng bản đồ: tiếng hét, chó tru, súng nổ xa, kính vỡ, còi báo động, còi tàu.
+- **Đồ hộp**: cả nhóm ăn mỗi sáng; hết đồ ăn thì bị đói (nạp đạn chậm, bắn rung tay, đồng đội yếu đi).
+- **Sự kiện buổi sáng** với lựa chọn khó: người lạ xin ăn, tiếng khóc trẻ con, thùng cứu trợ giữa đường…
+- Zombie ghê rợn: **zombie nữ** tóc bết che mặt, váy rách; mắt sáng đồng tử đỏ, máu chảy từ mắt, vết thương
+  hở lộ xương, mảng sọ lộ, cụt tay, gân tím, đầu giật co quắp, rỏ máu trên đường đi.
+
 ## Giữ cho mỗi đêm không nhàm chán
 
 - **Dự báo đêm nay** hiện ở màn ban ngày. Các kiểu đêm đặc biệt:

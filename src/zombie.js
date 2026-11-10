@@ -35,6 +35,15 @@ export class Zombie {
     this.headless = false;
     this.helmet = T.helmet ? T.helmet * hpMul : 0;
     this.dmg = T.dmg; // game nhân thêm theo đêm và độ khó
+    // ngoại hình riêng: zombie nữ, cụt tay, lộ sọ, đầu giật
+    const plain = T.kind === 'upright' && !T.boss && !T.heavy && !T.armored && !T.shield && !T.bomber;
+    this.female = plain && Math.random() < 0.4;
+    this.dress = ['#5a3a44', '#3a4a5a', '#6a5a3a', '#4a2a2a', '#5a5a62', '#6a3a2a', '#7a6a6a'][Math.floor(Math.random() * 7)];
+    this.hairCol = ['#16100e', '#3a2418', '#5a4a3a', '#2a2a2a', '#6a6050'][Math.floor(Math.random() * 5)];
+    this.oneArm = plain && Math.random() < 0.15;
+    this.skull = !this.female && Math.random() < 0.35;
+    this.twitchT = rand(1.5, 5);
+    this.twitching = 0;
     this.burnT = 0;
     this.burnDps = 0;
     this.stunT = 0;
@@ -187,6 +196,14 @@ export class Zombie {
       }
     }
     if (!this.demo && Math.random() < dt * 0.04) game.sfx.groan();
+    // đầu giật co quắp
+    this.twitching = Math.max(0, this.twitching - dt);
+    this.twitchT -= dt;
+    if (this.twitchT <= 0) { this.twitchT = rand(2, 6); this.twitching = 0.4; }
+    // rỏ máu xuống đất khi đi
+    if (!this.demo && this.state === 'walk' && this.T.kind === 'upright' && Math.random() < dt * 0.7) {
+      game.addParticle({ x: this.x + rand(-4, 6), y: this.foot - this.h * 0.45, vx: 0, vy: 20, life: 1, color: '#5e0a0a', size: 2, g: 400, ground: this.foot + rand(-2, 2), decal: true });
+    }
   }
 
   // kind: 'bullet' | 'fire' | 'blast'. Giáp chỉ chặn đạn thường.
@@ -297,10 +314,10 @@ export class Zombie {
       const kx = dx + swing * 0.5 - 2 * s, ky = -h * 0.24;
       const fx = dx + swing, fy = -3 * s;
       ctx.strokeStyle = col;
-      ctx.lineWidth = w * 0.36;
+      ctx.lineWidth = w * 0.36 * legW;
       ctx.beginPath(); ctx.moveTo(hipX + dx, hipY); ctx.lineTo(kx, ky); ctx.lineTo(fx + 1 * s, fy - 7 * s); ctx.stroke();
       // gấu quần rách
-      ctx.fillStyle = col;
+      ctx.fillStyle = this.female ? 'rgba(0,0,0,0)' : col;
       ctx.beginPath();
       const hw = w * 0.2;
       ctx.moveTo(fx - hw, fy - 10 * s);
@@ -316,11 +333,21 @@ export class Zombie {
       ctx.fillStyle = 'rgba(110,20,15,0.6)';
       ctx.fillRect(fx - 11 * s, fy - 1 * s, 4 * s, 2 * s);
     };
-    leg(4 * s, -sw, shade(T.pants, -18));
+    const legCol = (c) => (this.female ? (flash ? '#ddd' : shade(T.skin, -22)) : c);
+    const legW = this.female ? 0.7 : 1;
+    leg(4 * s, -sw, legCol(shade(T.pants, -18)));
     ctx.translate(0, -bob);
 
     // ---- tay sau (buông thõng) ----
-    const arm = (offX, phase, col, sleeve) => {
+    const arm = (offX, phase, col, sleeve, front = false) => {
+      if (front && this.oneArm) { // cụt tay: mỏm cụt lộ xương
+        ctx.strokeStyle = sleeve; ctx.lineWidth = w * 0.26;
+        ctx.beginPath(); ctx.moveTo(shX + offX, shY + 2 * s); ctx.lineTo(shX + offX - 4 * s, shY + 14 * s); ctx.stroke();
+        ctx.fillStyle = '#6a0c0c'; ctx.beginPath(); ctx.arc(shX + offX - 4 * s, shY + 15 * s, w * 0.13, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#e0d6c0'; ctx.lineWidth = 2 * s;
+        ctx.beginPath(); ctx.moveTo(shX + offX - 4 * s, shY + 14 * s); ctx.lineTo(shX + offX - 6 * s, shY + 20 * s); ctx.stroke();
+        return;
+      }
       const lift = attacking ? Math.sin(this.swing * Math.PI) : 0;
       const dangle = walking ? Math.sin(phase) * 6 * s : 0;
       const ex = shX + offX - 6 * s + dangle - lift * 16 * s;
@@ -330,8 +357,11 @@ export class Zombie {
       ctx.strokeStyle = col;
       ctx.lineWidth = w * 0.17;
       ctx.beginPath(); ctx.moveTo(shX + offX, shY + 3 * s); ctx.lineTo(ex, ey); ctx.lineTo(hx2, hy2); ctx.stroke();
+      // gân tím nổi trên cẳng tay
+      ctx.strokeStyle = 'rgba(70,30,80,0.55)'; ctx.lineWidth = 0.9 * s;
+      ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo((ex + hx2) / 2 + 2 * s, (ey + hy2) / 2); ctx.lineTo(hx2 + 1 * s, hy2 - 3 * s); ctx.stroke();
       // tay áo rách tới khuỷu
-      ctx.strokeStyle = sleeve;
+      ctx.strokeStyle = this.female ? this.dress : sleeve;
       ctx.lineWidth = w * 0.26;
       ctx.beginPath(); ctx.moveTo(shX + offX, shY + 2 * s); ctx.lineTo((shX + offX + ex) / 2 + 1, (shY + ey) / 2 + 4 * s); ctx.stroke();
       // bàn tay + móng vuốt
@@ -349,7 +379,7 @@ export class Zombie {
     };
     arm(6 * s, this.phase + Math.PI, skinDark, shade(T.shirt, -20));
 
-    leg(-4 * s, sw, pants);
+    leg(-4 * s, sw, legCol(pants));
 
     // ---- thân: ngực trơ xương sườn, áo phanh ----
     const tw = w * 0.5;
@@ -382,8 +412,34 @@ export class Zombie {
       ctx.closePath();
       ctx.fill();
     };
-    flap(tw * 0.1, tw * 1.05, false);   // vạt sau (phía lưng)
-    flap(-tw * 1.05, -tw * 0.62, true); // vạt trước phanh ra
+    if (this.female) { // váy rách tả tơi, dài tới gối
+      ctx.fillStyle = flash ? '#ddd' : this.dress;
+      ctx.beginPath();
+      ctx.moveTo(shX - tw * 0.8, shY);
+      ctx.quadraticCurveTo(shX, shY - 4 * s, shX + tw * 0.85, shY);
+      ctx.lineTo(hipX + tw * 1.15, -h * 0.22);
+      const n = 7;
+      for (let k = 1; k <= n; k++) ctx.lineTo(hipX + tw * 1.15 - (tw * 2.4 * k) / n, -h * 0.22 + (k % 2 ? 9 : -2) * s + Math.sin(this.phase + k) * 1.5 * s);
+      ctx.lineTo(hipX - tw * 0.95, hipY + 4 * s);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.22)'; // nếp váy và chỗ rách
+      for (let k = 0; k < 3; k++) ctx.fillRect(hipX - tw * 0.5 + k * tw * 0.5, hipY + 4 * s, 1.5 * s, h * 0.2);
+      ctx.fillStyle = skinDark; // vai trần
+      ctx.beginPath(); ctx.ellipse(shX - tw * 0.1, shY + 1 * s, tw * 0.45, 3 * s, 0, 0, Math.PI * 2); ctx.fill();
+    } else {
+      flap(tw * 0.1, tw * 1.05, false);   // vạt sau (phía lưng)
+      flap(-tw * 1.05, -tw * 0.62, true); // vạt trước phanh ra
+    }
+    // vết thương hở lộ xương, máu chảy thành vệt
+    const wx = shX - tw * 0.15, wy = (shY + hipY) / 2 - 2 * s;
+    ctx.fillStyle = flash ? '#eee' : '#4a0606';
+    ctx.beginPath(); ctx.ellipse(wx, wy, 4.5 * s, 7 * s, 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = flash ? '#fff' : '#8a1a12';
+    ctx.beginPath(); ctx.ellipse(wx, wy, 2.6 * s, 5 * s, 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#d8ccb0'; ctx.lineWidth = 1.2 * s;
+    ctx.beginPath(); ctx.moveTo(wx - 2 * s, wy - 3 * s); ctx.lineTo(wx + 2 * s, wy + 3 * s); ctx.stroke();
+    ctx.strokeStyle = 'rgba(100,8,8,0.7)'; ctx.lineWidth = 1.6 * s;
+    for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(wx - 2 * s + k * 2 * s, wy + 5 * s); ctx.lineTo(wx - 2 * s + k * 2 * s, wy + (12 + k * 5 + Math.sin(this.phase + k) * 1.5) * s); ctx.stroke(); }
     // cổ áo
     ctx.fillStyle = shade(T.shirt, 12);
     ctx.beginPath(); ctx.moveTo(shX - tw * 0.6, shY - 1 * s); ctx.lineTo(shX - tw * 0.2, shY + 7 * s); ctx.lineTo(shX - tw * 0.05, shY - 2 * s); ctx.fill();
@@ -434,6 +490,19 @@ export class Zombie {
     ctx.lineWidth = w * 0.18;
     ctx.beginPath(); ctx.moveTo(shX - 1 * s, shY + 2 * s); ctx.lineTo(hx + r * 0.3, hy + r * 0.7); ctx.stroke();
     if (!this.headless) {
+      ctx.save();
+      if (this.twitching > 0) { // đầu giật co quắp
+        const a = Math.sin(this.twitching * 60) * 0.28;
+        ctx.translate(hx + r * 0.3, hy + r * 0.8); ctx.rotate(a); ctx.translate(-(hx + r * 0.3), -(hy + r * 0.8));
+      }
+      if (this.female) { // tóc dài phía sau gáy
+        ctx.fillStyle = flash ? '#fff' : this.hairCol;
+        ctx.beginPath();
+        ctx.moveTo(hx - r * 0.2, hy - r * 1.05);
+        ctx.quadraticCurveTo(hx + r * 1.6, hy - r * 0.6, hx + r * 1.2 + Math.sin(this.phase) * 2 * s, hy + r * 2.6);
+        ctx.lineTo(hx + r * 0.2, hy + r * 1.4);
+        ctx.fill();
+      }
       ctx.fillStyle = skin;
       ctx.beginPath(); ctx.ellipse(hx, hy, r * 0.95, r * 1.08, -0.25, 0, Math.PI * 2); ctx.fill();
       // hàm dưới nhô ra
@@ -450,15 +519,48 @@ export class Zombie {
       // hốc mắt trũng
       ctx.fillStyle = 'rgba(30,18,12,0.85)';
       ctx.beginPath(); ctx.ellipse(hx - r * 0.5, hy - r * 0.12, r * 0.28, r * 0.22, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = T.boss ? '#ff3b2f' : '#e8d8b0';
-      if (T.boss) { ctx.shadowColor = '#ff2a10'; ctx.shadowBlur = 12; }
-      ctx.beginPath(); ctx.arc(hx - r * 0.56, hy - r * 0.1, r * 0.1, 0, Math.PI * 2); ctx.fill();
+      // mắt sáng nhợt, đồng tử đỏ
+      ctx.fillStyle = T.boss ? '#ff3b2f' : '#f2ecc8';
+      ctx.shadowColor = T.boss ? '#ff2a10' : 'rgba(255,240,180,0.8)'; ctx.shadowBlur = T.boss ? 12 : 5;
+      ctx.beginPath(); ctx.arc(hx - r * 0.56, hy - r * 0.1, r * 0.14, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
+      ctx.fillStyle = '#c01a10';
+      ctx.beginPath(); ctx.arc(hx - r * 0.6, hy - r * 0.1, r * 0.06, 0, Math.PI * 2); ctx.fill();
+      // máu chảy từ khoé mắt và loang quanh miệng
+      ctx.strokeStyle = 'rgba(120,8,8,0.85)'; ctx.lineWidth = 1.3 * s;
+      ctx.beginPath(); ctx.moveTo(hx - r * 0.5, hy + r * 0.02); ctx.lineTo(hx - r * 0.48, hy + r * 0.45); ctx.stroke();
+      ctx.fillStyle = 'rgba(110,8,8,0.6)';
+      ctx.beginPath(); ctx.ellipse(hx - r * 0.55, hy + r * 0.95, r * 0.4, r * 0.18, 0, 0, Math.PI * 2); ctx.fill();
       // gò má + tai
       ctx.fillStyle = skinDark;
       ctx.beginPath(); ctx.ellipse(hx + r * 0.25, hy + r * 0.05, r * 0.2, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      if (this.skull) { // mảng sọ lộ ra, nứt
+        ctx.fillStyle = flash ? '#fff' : '#d8ccb0';
+        ctx.beginPath(); ctx.ellipse(hx + r * 0.2, hy - r * 0.6, r * 0.45, r * 0.32, -0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#5a4030'; ctx.lineWidth = 0.9 * s;
+        ctx.beginPath(); ctx.moveTo(hx + r * 0.05, hy - r * 0.8); ctx.lineTo(hx + r * 0.25, hy - r * 0.55); ctx.lineTo(hx + r * 0.15, hy - r * 0.35); ctx.stroke();
+        ctx.fillStyle = 'rgba(110,8,8,0.75)'; // mép da rách lởm chởm
+        for (let k = 0; k < 7; k++) {
+          const ang = Math.PI * 0.9 + k * 0.32, ex = hx + r * 0.2 + Math.cos(ang) * r * 0.48, ey = hy - r * 0.6 + Math.sin(ang) * r * 0.34;
+          ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex + Math.cos(ang) * r * 0.16, ey + Math.sin(ang) * r * 0.16 + 1 * s); ctx.lineTo(ex + Math.cos(ang + 0.4) * r * 0.06, ey + Math.sin(ang + 0.4) * r * 0.06); ctx.fill();
+        }
+      }
+      if (this.female) { // tóc bết rủ xuống che nửa mặt
+        ctx.strokeStyle = flash ? '#fff' : this.hairCol;
+        ctx.lineWidth = 2.2 * s;
+        for (let k = 0; k < 9; k++) {
+          const x0 = hx - r * 0.9 + k * r * 0.22, y0 = hy - r * 0.95 + Math.abs(k - 4) * 0.4 * s;
+          const sway = Math.sin(this.phase * 1.3 + k) * 1.8 * s;
+          const len = k < 3 ? r * 2.6 : k < 5 ? r * 1.0 : r * 2.2; // chừa khe hở ở mắt
+          ctx.beginPath(); ctx.moveTo(x0, y0);
+          ctx.quadraticCurveTo(x0 - 2 * s + sway, y0 + len * 0.5, x0 - 1 * s + sway * 1.5, y0 + len);
+          ctx.stroke();
+        }
+        ctx.fillStyle = flash ? '#fff' : this.hairCol;
+        ctx.beginPath(); ctx.ellipse(hx, hy - r * 0.75, r * 1.0, r * 0.45, -0.2, Math.PI, 0); ctx.fill();
+      }
       // tóc lưa thưa
-      ctx.strokeStyle = flash ? '#fff' : '#3a2e22';
+      ctx.strokeStyle = flash ? '#fff' : this.female ? 'rgba(0,0,0,0)' : '#3a2e22';
       ctx.lineWidth = 1 * s;
       ctx.beginPath();
       for (let k = 0; k < 5; k++) {
@@ -474,6 +576,7 @@ export class Zombie {
         ctx.fillStyle = 'rgba(150,190,230,0.45)';
         ctx.fillRect(hx - r * 1.2, hy - r * 0.3, r * 0.9, r * 0.75);
       }
+      ctx.restore();
     } else {
       ctx.fillStyle = '#7a0d0d';
       ctx.beginPath(); ctx.ellipse(hx + r * 0.3, hy + r * 0.8, r * 0.55, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
@@ -523,7 +626,7 @@ export class Zombie {
     }
 
     // ---- tay trước ----
-    arm(-2 * s, this.phase, skin, shirt);
+    arm(-2 * s, this.phase, skin, this.female ? this.dress : shirt, true);
 
     if (T.shield) { // khiên chống đạn phía trước
       ctx.fillStyle = flash ? '#fff' : '#2a3038';
