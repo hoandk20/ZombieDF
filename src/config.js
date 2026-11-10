@@ -144,7 +144,7 @@ export const ZOMBIES = {
   riot:    { name: 'Cảnh sát bọc giáp', hp: 150, speed: 21, dmg: 9, atkRate: 1.3, h: 108, w: 34, reward: 40, skin: '#94866a', shirt: '#26324a', pants: '#1c2232', kind: 'upright', armored: true, helmet: 70 },
   bloater: { name: 'Kẻ trương phình', hp: 120, speed: 15, dmg: 55, atkRate: 0.5, h: 112, w: 56, reward: 30, skin: '#9c9460', shirt: '#55502c', pants: '#2c2a20', kind: 'upright', bomber: true },
   colossus:{ name: 'Quái Vật Cảng', hp: 6500, speed: 8, dmg: 80, atkRate: 2.4, h: 250, w: 98, reward: 1500, skin: '#6a5e48', shirt: '#2a2018', pants: '#1a1612', kind: 'upright', heavy: true, boss: true, summoner: true },
-  dog:     { name: 'Chó nhiễm bệnh', hp: 50, speed: 92, dmg: 4, atkRate: 0.55, h: 46, w: 62, reward: 20, skin: '#6b5a44', shirt: '#4a3c2c', pants: '#2e261c', kind: 'dog' },
+  dog:     { name: 'Chó nhiễm bệnh', hp: 50, speed: 184, dmg: 4, atkRate: 0.55, h: 46, w: 62, reward: 20, skin: '#6b5a44', shirt: '#4a3c2c', pants: '#2e261c', kind: 'dog' },
   screamer:{ name: 'Kẻ rú', hp: 110, speed: 22, dmg: 0, atkRate: 4, h: 106, w: 30, reward: 45, skin: '#b8a88a', shirt: '#5a2a3a', pants: '#2a2228', kind: 'upright', screamer: true },
   reviver: { name: 'Kẻ tái sinh', hp: 85, speed: 24, dmg: 7, atkRate: 1.2, h: 104, w: 32, reward: 30, skin: '#7a8a7a', shirt: '#2e3a3a', pants: '#22282a', kind: 'upright', revive: true },
   bounty:  { name: 'Kẻ mang hòm', hp: 320, speed: 44, dmg: 0, atkRate: 9, h: 104, w: 36, reward: 600, skin: '#a8946a', shirt: '#6a5020', pants: '#3a2c18', kind: 'upright', bounty: true },
