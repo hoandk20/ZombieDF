@@ -367,16 +367,18 @@ export class Game {
   flame(ang, w) {
     const { x: ox, y: oy } = this.muzzlePos(ang, w);
     const mul = this.playerMul();
-    const hit = new Set();
+    const near = new Map();
     for (let i = 0; i < 3; i++) {
       const a = ang + (i - 1) * w.spread * 0.8;
       const dx = Math.cos(a), dy = Math.sin(a);
       for (const z of this.zombies) {
-        if (!z.alive || hit.has(z)) continue;
+        if (!z.alive) continue;
         const h = z.rayHit(ox, oy, dx, dy);
-        if (h && h.t <= w.range) hit.add(z);
+        if (h && h.t <= w.range && (!near.has(z) || h.t < near.get(z))) near.set(z, h.t);
       }
     }
+    // lửa chỉ liếm tới vài con đầu tiên, những con phía sau được che
+    const hit = [...near.entries()].sort((p, q) => p[1] - q[1]).slice(0, w.pierce).map((e) => e[0]);
     for (const z of hit) {
       z.burnT = 3;
       z.burnDps = w.burn * mul;
