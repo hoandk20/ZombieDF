@@ -112,8 +112,8 @@ export const WEAPONS = {
     desc: 'Phun lửa tầm trung, đốt cháy cả đám. Xuyên giáp.',
   },
   launcher: {
-    id: 'launcher', name: 'Súng phóng lựu', dmg: 165, rate: 1.25, mag: 4, reload: 3.2,
-    pellets: 1, spread: 0.01, pierce: 1, auto: false, explosive: true, radius: 92,
+    id: 'launcher', name: 'Súng phóng lựu', dmg: 135, rate: 1.4, mag: 4, reload: 3.2,
+    pellets: 1, spread: 0.01, pierce: 1, auto: false, explosive: true, radius: 84,
     price: 6800, ammoPrice: 420, ammoPack: 6, shake: 5, len: 38, act: 2,
     desc: 'Bắn đạn nổ vào điểm ngắm. Dọn sạch bầy đàn.',
   },
