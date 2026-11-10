@@ -124,10 +124,10 @@ export const WEAPONS = {
     desc: 'Xuyên 6 mục tiêu trên một đường thẳng. Một phát một hàng.',
   },
   tesla: {
-    id: 'tesla', name: 'Súng điện', dmg: 60, rate: 0.32, mag: 30, reload: 2.4,
-    pellets: 1, spread: 0.02, pierce: 1, auto: true, chain: 5, chainRange: 130,
-    price: 12500, ammoPrice: 420, ammoPack: 40, shake: 1.5, len: 40, act: 4,
-    desc: 'Tia sét nhảy sang 4 con gần nhau. Xuyên giáp.',
+    id: 'tesla', name: 'Súng điện', dmg: 64, rate: 0.28, mag: 40, reload: 2.2,
+    pellets: 1, spread: 0.02, pierce: 1, auto: true, chain: 5, chainRange: 140,
+    price: 12500, ammoPrice: 380, ammoPack: 120, shake: 1.5, len: 40, act: 4,
+    desc: 'Tia sét nhảy sang 5 con gần nhau, làm tê liệt trong chốc lát. Xuyên giáp.',
   },
 };
 export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher', 'sniper', 'tesla'];

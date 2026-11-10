@@ -9,7 +9,9 @@ import {
 import {
   INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO,
   STAGE1_END, STAGE2_INTRO, ACT3_END, ACT4_INTRO, STAGE2_END, STAGE3_INTRO, ACT5_END, ACT6_INTRO, hasPerk,
+  storyFor,
 } from './story.js';
+import { setMet } from './cine.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
 import { weaponIcon, heroPortrait, characterPortrait } from './render.js';
@@ -219,12 +221,12 @@ export class UI {
     const save = loadGame();
     const fs = document.fullscreenEnabled ? '<button class="ghost" data-act="fullscreen">Toàn màn hình</button>' : '';
     const contLabel = save
-      ? (save.night > CAMPAIGN_NIGHTS && !save.endless ? 'Tiếp tục · Đã thắng chiến dịch' : `Tiếp tục · Đêm ${save.night}${save.endless ? ' (vô tận)' : `/${CAMPAIGN_NIGHTS}`} · ${diffOf(save).name}`)
+      ? (save.night > CAMPAIGN_NIGHTS && !save.endless ? 'Tiếp tục · Đã thắng chiến dịch' : `Tiếp tục · ${save.endless ? `Đêm ${save.night} (vô tận)` : `Màn ${stageFor(save.night)} · Đêm ${save.night - (stageFor(save.night) - 1) * STAGE_LENGTH}`} · ${diffOf(save).name}`)
       : '';
     this.root.innerHTML = `
       <div class="screen menu fade-in">
         <div class="menu-left">
-          <div class="eyebrow">3 màn · 60 đêm · Bến Sương → Thủ đô</div>
+          <div class="eyebrow">Một đài phát thanh · một hàng rào · Bến Sương</div>
           <h1 class="title"><span class="t1">BARRICADE</span><span class="t2">NIGHTS</span></h1>
           <p class="tagline">Hoàn, một kỹ sư IT giữ đài phát thanh cuối cùng. Giữ vững hàng rào cho đến khi được cứu.</p>
           <div class="menu-buttons">
@@ -313,6 +315,8 @@ export class UI {
   // ---------- Phim cốt truyện ----------
   playCutscene(lines, done, chapter = '', demo = false) {
     if (demo) this.game.state = 'cutscene'; // màn mở đầu: zombie diễn phía sau
+    lines = storyFor(lines, this.game.data?.met || []);
+    setMet(this.game.data?.met || []);
     this.cut = { lines, i: 0, done, chars: 0, timer: null };
     this.root.innerHTML = `
       <div class="screen cutscene fade-in" data-act="next">
@@ -639,6 +643,7 @@ export class UI {
       const chance = ((0.07 + Math.min(d.night * 0.004, 0.06)) * df.recruit) / (1 + d.crew.length * 0.3);
       if (Math.random() < chance || d.searchPity >= Math.round(11 / df.recruit)) {
         d.crew.push(next.id);
+        if (!(d.met || []).includes(next.id)) d.met = [...(d.met || []), next.id];
         d.mates[next.id] = { xp: 0, injured: 0 };
         if (d.squad.length < MAX_SQUAD) d.squad.push(next.id);
         d.searchPity = 0;
@@ -722,7 +727,7 @@ export class UI {
     const items = [
       { id: 'food', title: 'Đồ hộp × 3', desc: `Mỗi sáng cả nhóm ăn ${this.eatPerDay()} hộp. Hết đồ ăn thì bị đói: nạp đạn chậm, bắn rung tay. Đang có ${d.food || 0}.`, price: Math.round(70 * (1 + d.night * 0.03)), glyph: '🥫' },
       { id: 'grenade', icon: 'grenade', title: 'Lựu đạn', desc: `Nổ diện rộng, cực mạnh với bầy đàn. Đang có ${d.grenades}/${GRENADE.max}.`, price: GRENADE.price, disabled: d.grenades >= GRENADE.max },
-      { id: 'repair', title: 'Bộ sửa chữa', desc: `+25% độ bền ngay lập tức (${Math.ceil(d.hp)}/${max})`, price: repairKitPrice(d.night), disabled: d.hp >= max },
+      // bộ sửa chữa không bán bằng tiền nữa: muốn sửa rào thì phải bỏ giờ ban ngày ra sửa
       { id: 'barricade', title: `Gia cố hàng rào · cấp ${d.barricadeLevel + 1}`, desc: `Độ bền tối đa ${max} → ${barricadeMax(d.barricadeLevel + 1)}`, price: barricadeUpgradePrice(d.barricadeLevel) },
     ];
     const dl = d.dmgLevel || 0;
@@ -823,8 +828,8 @@ export class UI {
       return `<span class="${cls}${isBossNight(n) ? ' boss' : ''}" title="Đêm ${n}"></span>`;
     }).join('')}<em>${['', '🚁', '🚢', '🏔', '📡', '🚚', '🏥'][act]}</em></div>` : '';
 
-    const radioLines = DAWN_LOG[d.night - 1];
-    const radio = radioLines && !d.endless ? radioLines[radioLines.length - 1] : null;
+    const radioLines = storyFor(DAWN_LOG[d.night - 1], d.met || []);
+    const radio = radioLines.length && !d.endless ? radioLines[radioLines.length - 1] : null;
     const newFoe = { 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater', 22: 'dog', 24: 'screamer', 27: 'reviver', 32: 'shielder', 42: 'leaper', 44: 'burner', 52: 'splitter', 54: 'stalker' }[d.night];
     const mods = modsFor(d.night);
     const modList = Object.keys(MOD_INFO).filter((k) => mods[k]);

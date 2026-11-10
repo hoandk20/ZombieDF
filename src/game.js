@@ -422,7 +422,8 @@ export class Game {
       chain.forEach((z, i) => {
         const b = z.boxes();
         pts.push([z.x, (b.by0 + b.hy) / 2 + 10]);
-        this.hitZombie(z, w.dmg * mul * (1 - 0.12 * i), false, z.x, b.by0 + 10, 1, true, { silent: i > 0, kind: 'blast' });
+        this.hitZombie(z, w.dmg * mul * (1 - 0.08 * i), false, z.x, b.by0 + 10, 1, true, { silent: i > 0, kind: 'blast' });
+        if (z.alive && !z.T.boss) z.stunT = Math.max(z.stunT, 0.08); // giật tê liệt chốc lát
       });
     }
     this.bolts.push({ pts, life: 0.12, max: 0.12 });

@@ -292,7 +292,7 @@ const SHOTS = {
     ctx.fillStyle = 'rgba(255,220,160,0.35)'; ctx.fillRect(420, 230, 170, 140);
     ctx.save(); ctx.scale(1.5, 1.5); drawCharacter(ctx, 330, 246, -0.4, 'pistol', 22, 0, t, CHARACTERS.phong); ctx.restore();
     // Lan và Ông Tư ở lại dưới đất
-    ctx.save(); ctx.scale(1.5, 1.5); drawCharacter(ctx, 200, 280, 0.9, 'pistol', 22, 0, t, CHARACTERS.lan); drawCharacter(ctx, 160, 282, 0.7, 'rifle', 38, 0, t + 1, CHARACTERS.tu); ctx.restore();
+    ctx.save(); ctx.scale(1.5, 1.5); if (metHas('lan')) drawCharacter(ctx, 200, 280, 0.9, 'pistol', 22, 0, t, CHARACTERS.lan); if (metHas('tu')) drawCharacter(ctx, 160, 282, 0.7, 'rifle', 38, 0, t + 1, CHARACTERS.tu); ctx.restore();
     const close = ease((t - 4) / 2);
     ctx.fillStyle = '#24242c'; ctx.fillRect(420, 230, 170 * close, 140);
     for (let i = 0; i < 14; i++) { const a = (t * 2.5 + i / 14) % 1; ctx.fillStyle = `rgba(200,180,160,${0.25 * (1 - a)})`; ctx.beginPath(); ctx.arc(480 + Math.cos(i * 2) * a * 260, 425 + a * 20, 10 + a * 20, 0, TAU); ctx.fill(); }
@@ -327,7 +327,7 @@ const SHOTS = {
     sky(ctx, DAWN);
     sea(ctx, 360, t, '#3a2a40', 'rgba(255,200,150,');
     ship(ctx, 560, 380, 2.0);
-    ctx.save(); ctx.scale(1.25, 1.25); drawCharacter(ctx, 420, 254, -0.6, 'smg', 30, 0, t, CHARACTERS.bao); drawCharacter(ctx, 460, 254, -0.5, 'shotgun', 34, 0, t + 1, CHARACTERS.mai); ctx.restore();
+    ctx.save(); ctx.scale(1.25, 1.25); if (metHas('bao')) drawCharacter(ctx, 420, 254, -0.6, 'smg', 30, 0, t, CHARACTERS.bao); if (metHas('mai')) drawCharacter(ctx, 460, 254, -0.5, 'shotgun', 34, 0, t + 1, CHARACTERS.mai); ctx.restore();
     ctx.fillStyle = '#2a2830'; ctx.fillRect(0, 430, 260, H - 430);
     person(ctx, 180, 430, 0.7, '#0e0a10', 'stand', t);
   },
@@ -390,7 +390,8 @@ const SHOTS = {
     ctx.save(); ctx.beginPath(); ctx.rect(W / 2 - gap / 2, 80, gap, 400); ctx.clip();
     sky(ctx, DAWN);
     mountains(ctx, 33, 380, 80, '#2a2030');
-    for (const [px, ph] of [[420, 0], [540, 1.3]]) {
+    for (const [px, ph, id] of [[420, 0, 'hung'], [540, 1.3, 'linh']]) {
+      if (!metHas(id)) continue;
       person(ctx, px, 470, 0.9, '#0a080c', 'gun', t);
       if (Math.sin(t * 22 + ph) > 0.4) glow(ctx, px + 52, 396, 40, '255,200,100', 0.8);
     }
@@ -411,7 +412,7 @@ const SHOTS = {
     g.addColorStop(0, 'rgba(255,245,210,0.3)'); g.addColorStop(1, 'rgba(255,245,210,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(260, 220); ctx.lineTo(260 + Math.cos(a) * 600 - 60, 220 + Math.sin(a) * 300 + 60); ctx.lineTo(260 + Math.cos(a) * 600 + 60, 220 + Math.sin(a) * 300 - 60); ctx.fill();
     ground(ctx, 420, '#2c2e33', '#141518');
-    ctx.save(); ctx.scale(1.4, 1.4); drawCharacter(ctx, 170, 330, 0.2, 'pistol', 22, 0, t, CHARACTERS.khoa); drawCharacter(ctx, 205, 332, 0.4, 'smg', 30, 0, t + 1, CHARACTERS.vy); drawCharacter(ctx, 110, 334, 0, 'rifle', 44, 0, t, CHARACTERS.phong); ctx.restore();
+    ctx.save(); ctx.scale(1.4, 1.4); if (metHas('khoa')) drawCharacter(ctx, 170, 330, 0.2, 'pistol', 22, 0, t, CHARACTERS.khoa); if (metHas('vy')) drawCharacter(ctx, 205, 332, 0.4, 'smg', 30, 0, t + 1, CHARACTERS.vy); drawCharacter(ctx, 110, 334, 0, 'rifle', 44, 0, t, CHARACTERS.phong); ctx.restore();
   },
   // Hết màn 2
   zeroFalls(ctx, t) {
@@ -473,7 +474,7 @@ const SHOTS = {
     for (let i = 0; i < 5; i++) { ctx.fillStyle = '#1e1e26'; ctx.fillRect(230 + i * 120, 250, 30, 150); ctx.fillStyle = 'rgba(255,220,140,0.6)'; ctx.fillRect(236 + i * 120, 270, 18, 12); }
     ctx.fillStyle = '#e8e8e8'; ctx.font = 'bold 14px sans-serif'; ctx.fillText('TRẠM THU PHÍ · CỬA NGÕ THỦ ĐÔ', 330, 242);
     truck(ctx, 420, 420, 1.2, '#4a3a28');
-    ctx.save(); ctx.scale(1.3, 1.3); drawCharacter(ctx, 400, 324, 0.2, 'shotgun', 34, 0, t, CHARACTERS.tuan); ctx.restore();
+    if (metHas('tuan')) { ctx.save(); ctx.scale(1.3, 1.3); drawCharacter(ctx, 400, 324, 0.2, 'shotgun', 34, 0, t, CHARACTERS.tuan); ctx.restore(); }
     const k = (t * 0.08) % 1;
     ctx.save(); ctx.translate(lerp(-100, W + 100, k), 120); ctx.fillStyle = '#1a1620';
     ctx.beginPath(); ctx.moveTo(-40, 0); ctx.lineTo(40, 0); ctx.lineTo(50, -4); ctx.lineTo(-40, -6); ctx.fill(); ctx.fillRect(-8, -24, 14, 44); ctx.restore();
@@ -528,6 +529,11 @@ const SHOTS = {
     radioWaves(ctx, 300, 220, t, '255,230,180');
   },
 };
+
+// đồng đội đã từng gặp: chỉ những người này mới xuất hiện trong cắt cảnh
+let MET = new Set();
+export function setMet(list) { MET = new Set(list || []); }
+const metHas = (id) => MET.has(id);
 
 export function hasShot(id) { return !!SHOTS[id]; }
 

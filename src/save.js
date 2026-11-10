@@ -22,6 +22,7 @@ export function newSave() {
     floodlight: false,
     food: 8,
     threat: 1,
+    met: [],
     hungry: false,
     eventDay: 0,
     shockerLevel: 0,
@@ -66,6 +67,8 @@ export function loadGame() {
     }
     if ((d.v || 0) < 4 && out.endless && out.night <= 61 && out.night > 40) out.endless = false; // bản 60 đêm
     out.v = 4;
+    // những đồng đội đã từng gặp (để cắt cảnh không nhắc tới người chưa gặp)
+    if (!Array.isArray(out.met)) out.met = [...new Set([...(out.crew || []), ...Object.keys(out.mates || {})])];
     if (!Array.isArray(out.squad)) out.squad = out.crew.slice(0, 4);
     out.mates = out.mates || {};
     for (const id of out.crew) out.mates[id] = { xp: 0, injured: 0, ...(out.mates[id] || {}) };
