@@ -112,16 +112,16 @@ export const WEAPONS = {
     desc: 'Phun lửa tầm trung, đốt cháy cả đám. Xuyên giáp.',
   },
   launcher: {
-    id: 'launcher', name: 'Súng phóng lựu', dmg: 135, rate: 1.4, mag: 4, reload: 3.2,
-    pellets: 1, spread: 0.01, pierce: 1, auto: false, explosive: true, radius: 84,
+    id: 'launcher', name: 'Súng phóng lựu', dmg: 150, rate: 1.4, mag: 4, reload: 3.2,
+    pellets: 1, spread: 0.01, pierce: 1, auto: false, explosive: true, radius: 88,
     price: 6800, ammoPrice: 420, ammoPack: 6, shake: 5, len: 38, act: 2,
     desc: 'Bắn đạn nổ vào điểm ngắm. Dọn sạch bầy đàn.',
   },
   sniper: {
-    id: 'sniper', name: 'Súng bắn tỉa', dmg: 280, rate: 1.25, mag: 5, reload: 2.6,
-    pellets: 1, spread: 0, pierce: 8, auto: false, heavyTracer: true,
+    id: 'sniper', name: 'Súng bắn tỉa', dmg: 240, rate: 1.25, mag: 5, reload: 2.6,
+    pellets: 1, spread: 0, pierce: 5, auto: false, heavyTracer: true,
     price: 9000, ammoPrice: 380, ammoPack: 18, shake: 6, len: 50, act: 3,
-    desc: 'Xuyên 8 mục tiêu trên một đường thẳng. Một phát một hàng.',
+    desc: 'Xuyên 5 mục tiêu trên một đường thẳng. Một phát một hàng.',
   },
   tesla: {
     id: 'tesla', name: 'Súng điện', dmg: 46, rate: 0.36, mag: 30, reload: 2.4,
