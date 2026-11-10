@@ -8,7 +8,7 @@ import {
 import { SURVIVORS, NIGHT_TITLES, MATE_COMBAT, hasPerk } from './story.js';
 import { Zombie, roundRect } from './zombie.js';
 import { makeBackground, drawBarricade, drawHero, drawCharacter, CHARACTERS } from './render.js';
-import { sfx, initAudio, setMood, heartbeat } from './audio.js';
+import { sfx, initAudio, setMood, heartbeat, reloadSound, cancelReload } from './audio.js';
 import { saveGame } from './save.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -254,6 +254,7 @@ export class Game {
   switchWeapon(id) {
     if (!id || !this.data.weapons[id] || id === this.data.current) return;
     this.data.current = id;
+    if (this.reloadT > 0) cancelReload();
     this.reloadT = 0;
     this.cooldown = 0.2;
     sfx.click();
@@ -275,7 +276,7 @@ export class Game {
     if (this.state !== 'night' || this.reloadT > 0 || !this.canReload()) return false;
     this.reloadTotal = this.weapon.reload * reloadMul(this.data.reloadLevel);
     this.reloadT = this.reloadTotal;
-    sfx.reload();
+    reloadSound(this.data.current, this.reloadTotal);
     return true;
   }
 

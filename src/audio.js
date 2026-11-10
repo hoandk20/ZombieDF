@@ -64,6 +64,7 @@ function noise(dur, freq, vol, type = 'lowpass', q = 1, delay = 0) {
   src.connect(f).connect(g).connect(sfxBus);
   src.start(t, Math.random() * 1.2);
   src.stop(t + dur);
+  return src;
 }
 
 function tone(f0, f1, dur, vol, type = 'square', delay = 0, bus = null) {
@@ -79,6 +80,160 @@ function tone(f0, f1, dur, vol, type = 'square', delay = 0, bus = null) {
   o.connect(g).connect(bus || sfxBus);
   o.start(t);
   o.stop(t + dur);
+  return o;
+}
+
+// ---------- Âm thanh cơ khí cho nạp đạn ----------
+let reloadNodes = [];
+const keep = (n) => { if (n) reloadNodes.push(n); };
+const RV = 2.2; // âm lượng chung của tiếng cơ khí
+
+// tiếng "tách" kim loại: xung nhiễu rất ngắn qua bộ lọc cộng hưởng + tiếng ngân cao
+function click(delay, pitch = 1, vol = 0.32) {
+  vol *= RV;
+  keep(noise(0.025, 3200 * pitch, vol, 'bandpass', 8, delay));
+  keep(noise(0.012, 6500 * pitch, vol * 0.6, 'highpass', 1, delay));
+  keep(tone(4200 * pitch, 3000 * pitch, 0.03, vol * 0.12, 'triangle', delay));
+}
+// tiếng "cộp" nặng: băng đạn/đạn chạm vào thân súng
+function thunk(delay, pitch = 1, vol = 0.4) {
+  vol *= RV;
+  keep(noise(0.07, 520 * pitch, vol, 'lowpass', 2, delay));
+  keep(tone(170 * pitch, 85 * pitch, 0.06, vol * 0.5, 'sine', delay));
+  keep(noise(0.02, 2600 * pitch, vol * 0.35, 'bandpass', 6, delay + 0.005));
+}
+// tiếng kim loại trượt/rít (băng đạn tuột ra, khoá nòng kéo lùi)
+function slide(delay, dur, f0, f1, vol = 0.14) {
+  if (!ctx || !soundOn) return;
+  vol *= RV;
+  const t = ctx.currentTime + delay;
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuf;
+  const f = ctx.createBiquadFilter();
+  f.type = 'bandpass';
+  f.Q.value = 5;
+  f.frequency.setValueAtTime(f0, t);
+  f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t + dur * 0.3);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(f).connect(g).connect(sfxBus);
+  src.start(t, Math.random());
+  src.stop(t + dur);
+  keep(src);
+}
+// kéo khoá nòng / bơm shotgun: lùi về (trượt + tách) rồi bật tới (tách mạnh)
+function rack(delay, pitch = 1, heavy = false) {
+  slide(delay, 0.09, 1800 * pitch, 3200 * pitch, heavy ? 0.22 : 0.14);
+  click(delay + 0.07, pitch * 0.9, heavy ? 0.42 : 0.32);
+  slide(delay + 0.14, 0.07, 3000 * pitch, 1500 * pitch, heavy ? 0.2 : 0.12);
+  click(delay + 0.2, pitch * 1.1, heavy ? 0.5 : 0.38);
+  if (heavy) thunk(delay + 0.2, 0.8, 0.3);
+}
+
+// Thu âm một đoạn hiệu ứng ra mảng mẫu (dùng để kiểm tra và nghe thử)
+export async function renderOffline(seconds, fn) {
+  const saved = { ctx, master, sfxBus, soundOn, noiseBuf, reloadNodes };
+  const off = new OfflineAudioContext(1, Math.ceil(44100 * seconds), 44100);
+  ctx = off;
+  master = off.createGain(); master.gain.value = 0.55; master.connect(off.destination);
+  sfxBus = off.createGain(); sfxBus.connect(master);
+  soundOn = true;
+  noiseBuf = off.createBuffer(1, off.sampleRate * 2, off.sampleRate);
+  const nd = noiseBuf.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  reloadNodes = [];
+  try { fn(); } finally {
+    ({ ctx, master, sfxBus, soundOn, noiseBuf, reloadNodes } = saved);
+  }
+  const buf = await off.startRendering();
+  return buf.getChannelData(0);
+}
+
+export function cancelReload() {
+  for (const n of reloadNodes) { try { n.stop(); } catch { /* đã dừng */ } }
+  reloadNodes = [];
+}
+
+// Chuỗi âm thanh nạp đạn theo từng loại súng, trải đều trong thời gian nạp `dur`
+export function reloadSound(id, dur) {
+  if (!ctx || !soundOn) return;
+  cancelReload();
+  const T = (k) => dur * k;
+  switch (id) {
+    case 'pistol': // bấm nút tháo băng, băng tuột, lắp băng, kéo khoá nòng
+      click(T(0.02), 1.2, 0.25);
+      slide(T(0.06), 0.12, 2400, 1200, 0.1);
+      thunk(T(0.5), 1.25, 0.32);
+      click(T(0.52), 1.3, 0.3);
+      rack(T(0.74), 1.15);
+      break;
+    case 'shotgun': { // nhét từng viên vào ống đạn rồi bơm
+      const shells = 5;
+      for (let i = 0; i < shells; i++) {
+        const d = T(0.08 + (i * 0.62) / shells);
+        slide(d, 0.06, 1400, 900, 0.08);
+        thunk(d + 0.05, 1.0, 0.3);
+        click(d + 0.06, 0.8, 0.18);
+      }
+      rack(T(0.8), 0.75, true);
+      break;
+    }
+    case 'smg':
+    case 'lmg':
+    case 'rifle': { // tháo băng, đập băng mới vào, kéo tay khoá nòng
+      const p = id === 'lmg' ? 0.8 : id === 'rifle' ? 0.95 : 1.1;
+      click(T(0.03), p * 1.1, 0.28);
+      slide(T(0.06), 0.18, 2600 * p, 1100 * p, 0.12);
+      thunk(T(0.12), 0.7 * p, 0.2); // băng cũ rơi
+      if (id === 'lmg') { slide(T(0.3), 0.25, 900, 1600, 0.1); click(T(0.4), 0.9, 0.25); } // dây đạn
+      slide(T(0.46), 0.1, 1200 * p, 2000 * p, 0.1);
+      thunk(T(0.55), p, 0.42);
+      click(T(0.56), p * 1.15, 0.36);
+      rack(T(0.78), p, id === 'lmg');
+      break;
+    }
+    case 'sniper': { // mở khoá nòng, nạp từng viên, đẩy khoá nòng
+      click(T(0.03), 0.9, 0.3);
+      slide(T(0.06), 0.14, 1500, 2600, 0.16);
+      click(T(0.14), 0.8, 0.36);
+      for (let i = 0; i < 4; i++) { thunk(T(0.28 + i * 0.1), 1.3, 0.22); click(T(0.29 + i * 0.1), 1.4, 0.16); }
+      slide(T(0.8), 0.12, 2600, 1400, 0.16);
+      click(T(0.86), 0.9, 0.42);
+      click(T(0.9), 0.7, 0.36);
+      break;
+    }
+    case 'flamer': { // xì van khí, đổi bình, khoá bình
+      click(T(0.04), 0.7, 0.3);
+      keep(noise(Math.max(0.3, T(0.35)), 2200, 0.16, 'highpass', 0.7, T(0.06)));
+      thunk(T(0.5), 0.6, 0.45);
+      slide(T(0.62), 0.25, 600, 1800, 0.12);
+      click(T(0.86), 0.6, 0.4);
+      thunk(T(0.88), 0.7, 0.25);
+      break;
+    }
+    case 'launcher': { // bẻ nòng, nhét đạn, đóng nòng
+      click(T(0.03), 0.6, 0.36);
+      thunk(T(0.06), 0.55, 0.42);
+      slide(T(0.4), 0.16, 900, 600, 0.12);
+      thunk(T(0.5), 0.6, 0.38);
+      thunk(T(0.82), 0.5, 0.5);
+      click(T(0.83), 0.55, 0.45);
+      break;
+    }
+    case 'tesla': { // tháo pin, lắp pin, tiếng sạc điện rít lên
+      click(T(0.03), 1.2, 0.28);
+      thunk(T(0.35), 1.1, 0.3);
+      click(T(0.37), 1.3, 0.3);
+      keep(tone(220, 1800, Math.max(0.3, T(0.45)), 0.08, 'sawtooth', T(0.42)));
+      keep(tone(225, 1820, Math.max(0.3, T(0.45)), 0.05, 'square', T(0.42)));
+      click(T(0.9), 1.6, 0.3);
+      break;
+    }
+    default:
+      click(T(0.05)); thunk(T(0.5)); rack(T(0.75));
+  }
 }
 
 // ---------- Nhạc nền: drone u ám + gió, đổi theo "mood" ----------
@@ -177,9 +332,9 @@ export const sfx = {
   ricochet() { if (throttle('rico', 90)) return; tone(2400, 1600, 0.06, 0.08, 'square'); },
   leap() { if (throttle('leap', 300)) return; noise(0.25, 700, 0.2, 'bandpass', 2); },
   ally() { if (throttle('ally', 80)) return; noise(0.12, 1800, 0.3); tone(170, 60, 0.07, 0.1); },
-  reload() { tone(900, 650, 0.05, 0.12); tone(500, 420, 0.06, 0.12, 'square', 0.18); },
-  reloadDone() { tone(1200, 900, 0.05, 0.12, 'square'); },
-  empty() { tone(1300, 1200, 0.03, 0.12); },
+  reload() { click(0, 1, 0.25); },
+  reloadDone() { reloadNodes = []; },
+  empty() { if (throttle('empty', 120)) return; click(0, 1.3, 0.3); keep(null); }, // tiếng "tạch" khô của cò súng
   hit() { if (throttle('hit', 35)) return; noise(0.07, 700, 0.28); },
   headshot() { if (throttle('hs', 40)) return; noise(0.1, 500, 0.4); tone(300, 80, 0.08, 0.15, 'triangle'); },
   barricade() { if (throttle('bar', 120)) return; noise(0.14, 380, 0.35, 'lowpass', 2); },
