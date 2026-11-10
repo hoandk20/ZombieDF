@@ -613,7 +613,8 @@ export class UI {
         }
       }
     }
-    for (let i = 0; i < this.alloc.scav; i++) if (Math.random() < 0.55) cans += 1 + (Math.random() < 0.25 ? 1 : 0);
+    // đồ ăn hiếm dần: giờ lục lọi sau kém hơn giờ trước, đông người thì lục được thêm chút
+    for (let i = 0; i < this.alloc.scav; i++) if (Math.random() < 0.4 * Math.pow(0.85, i) * (1 + d.crew.length * 0.1)) cans += 1 + (Math.random() < 0.1 ? 1 : 0);
     if (this.alloc.scav) {
       d.cash += cash;
       d.food = (d.food || 0) + cans;
