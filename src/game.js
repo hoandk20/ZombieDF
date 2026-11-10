@@ -1310,6 +1310,10 @@ export class Game {
     drawBarricade(ctx, hpRatio, this.scene);
     if (inGame) { this.drawDefenses(ctx); this.drawDefenses2(ctx); }
 
+    // chỉ ~20 con gần hàng rào nhất được vẽ đầy đủ bóng khối
+    const byX = this.zombies.filter((z) => z.alive).sort((a, b) => a.x - b.x);
+    const nDetail = this.settings.hq === false ? 0 : 20;
+    byX.forEach((z, i) => { z.detail = i < nDetail; });
     const sorted = [...this.zombies].sort((a, b) => (a.alive - b.alive) || (a.foot - b.foot));
     for (const z of sorted) z.draw(ctx);
 

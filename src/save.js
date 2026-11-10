@@ -77,7 +77,7 @@ export function clearSave() {
 }
 
 export function loadSettings() {
-  const def = { sound: true, music: true, shake: true };
+  const def = { sound: true, music: true, shake: true, hq: true };
   try { return { ...def, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') }; }
   catch { return def; }
 }

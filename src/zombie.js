@@ -1,6 +1,85 @@
 import { ZOMBIES, BARRICADE_X, LANE_MIN, LANE_MAX, W } from './config.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
+// ---------- vẽ khối: chi thuôn có viền, vệt sáng trăng và bóng đổ ----------
+const OUTLINE = 'rgba(10,6,6,0.78)';
+const LIGHT = { x: 0.6, y: -0.8 }; // trăng ở phía trên bên phải
+function tubePath(ctx, x0, y0, x1, y1, w0, w1, caps = true) {
+  const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+  ctx.beginPath();
+  ctx.moveTo(x0 + nx * w0 / 2, y0 + ny * w0 / 2);
+  ctx.lineTo(x1 + nx * w1 / 2, y1 + ny * w1 / 2);
+  ctx.lineTo(x1 - nx * w1 / 2, y1 - ny * w1 / 2);
+  ctx.lineTo(x0 - nx * w0 / 2, y0 - ny * w0 / 2);
+  ctx.closePath();
+  if (caps) {
+    ctx.moveTo(x0 + w0 / 2, y0); ctx.arc(x0, y0, w0 / 2, 0, Math.PI * 2);
+    ctx.moveTo(x1 + w1 / 2, y1); ctx.arc(x1, y1, w1 / 2, 0, Math.PI * 2);
+  }
+  return { nx, ny };
+}
+// một đoạn tay/chân: viền tối → màu chính → bóng phía khuất → vệt sáng phía trăng
+function seg(ctx, x0, y0, x1, y1, w0, w1, col, o, flat = false) {
+  if (LITE) { ctx.fillStyle = col; tubePath(ctx, x0, y0, x1, y1, w0, w1); ctx.fill(); return; }
+  ctx.fillStyle = OUTLINE;
+  const { nx, ny } = tubePath(ctx, x0, y0, x1, y1, w0 + o * 2, w1 + o * 2);
+  ctx.fill();
+  ctx.fillStyle = col;
+  tubePath(ctx, x0, y0, x1, y1, w0, w1);
+  ctx.fill();
+  if (flat) return;
+  const side = nx * LIGHT.x + ny * LIGHT.y > 0 ? 1 : -1;
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  tubePath(ctx, x0 - nx * side * w0 * 0.32, y0 - ny * side * w0 * 0.32, x1 - nx * side * w1 * 0.32, y1 - ny * side * w1 * 0.32, w0 * 0.34, w1 * 0.34, false);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,245,220,0.15)';
+  tubePath(ctx, x0 + nx * side * w0 * 0.3, y0 + ny * side * w0 * 0.3, x1 + nx * side * w1 * 0.3, y1 + ny * side * w1 * 0.3, w0 * 0.22, w1 * 0.22, false);
+  ctx.fill();
+}
+// cả một chi nhiều đốt: vẽ viền tất cả các đốt trước rồi mới tô, để khớp nối liền mạch
+let LITE = false; // vẽ gọn cho zombie ở xa
+function limb(ctx, pts, ws, col, o, flat = false) {
+  if (LITE) { ctx.fillStyle = col; for (let i = 0; i < pts.length - 1; i++) { tubePath(ctx, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], ws[i], ws[i + 1]); ctx.fill(); } return; }
+  ctx.fillStyle = OUTLINE;
+  for (let i = 0; i < pts.length - 1; i++) { tubePath(ctx, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], ws[i] + o * 2, ws[i + 1] + o * 2); ctx.fill(); }
+  ctx.fillStyle = col;
+  for (let i = 0; i < pts.length - 1; i++) { tubePath(ctx, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], ws[i], ws[i + 1]); ctx.fill(); }
+  if (flat) return;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], w0 = ws[i], w1 = ws[i + 1];
+    const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    const side = nx * LIGHT.x + ny * LIGHT.y > 0 ? 1 : -1;
+    ctx.fillStyle = 'rgba(0,0,0,0.17)';
+    tubePath(ctx, x0 - nx * side * w0 * 0.3, y0 - ny * side * w0 * 0.3, x1 - nx * side * w1 * 0.3, y1 - ny * side * w1 * 0.3, w0 * 0.38, w1 * 0.38, false); ctx.fill();
+    ctx.fillStyle = 'rgba(255,245,220,0.16)';
+    tubePath(ctx, x0 + nx * side * w0 * 0.32, y0 + ny * side * w0 * 0.32, x1 + nx * side * w1 * 0.32, y1 + ny * side * w1 * 0.32, w0 * 0.2, w1 * 0.2, false); ctx.fill();
+  }
+}
+
+// tô một hình đã dựng path bằng màu chuyển sáng tối theo chiều ngang + viền
+const gradCache = new Map();
+function shadeFill(ctx, x0, x1, col, flash, o) {
+  if (LITE) { ctx.fillStyle = col; ctx.fill(); return; }
+  if (flash) ctx.fillStyle = col;
+  else {
+    // màu chuyển theo toạ độ cục bộ của zombie nên dùng lại được giữa các khung hình
+    const key = `${x0.toFixed(1)}|${x1.toFixed(1)}|${col}`;
+    let g = gradCache.get(key);
+    if (!g) {
+      g = ctx.createLinearGradient(x0, 0, x1, 0);
+      g.addColorStop(0, shade(col, -34));
+      g.addColorStop(0.55, col);
+      g.addColorStop(0.92, shade(col, 16));
+      g.addColorStop(1, shade(col, 34));
+      if (gradCache.size > 4000) gradCache.clear();
+      gradCache.set(key, g);
+    }
+    ctx.fillStyle = g;
+  }
+  ctx.fill();
+  ctx.strokeStyle = OUTLINE; ctx.lineWidth = o; ctx.stroke();
+}
+
 // vị trí đầu (tỉ lệ theo chiều cao) cho dáng còng lưng; dùng chung cho hitbox và hình vẽ
 const HEAD_X = 0.17, HEAD_Y = 0.86, HEAD_R = 0.105;
 
@@ -44,6 +123,7 @@ export class Zombie {
     this.skull = !this.female && Math.random() < 0.35;
     this.twitchT = rand(1.5, 5);
     this.twitching = 0;
+    this.detail = true; // game tắt bớt chi tiết cho con ở xa khi quá đông
     this.burnT = 0;
     this.burnDps = 0;
     this.stunT = 0;
@@ -257,7 +337,9 @@ export class Zombie {
     if (this.reviveT > 0) ctx.translate(Math.sin(this.reviveT * 40) * 1.5, 0); // co giật trước khi đứng dậy
     if (this.jumpY) ctx.translate(0, this.jumpY);
     if (this.T.stalker && this.alive && this.hitT <= 0 && this.burnT <= 0) ctx.globalAlpha *= Math.max(0.07, Math.min(1, (560 - this.x) / 220));
+    LITE = !this.detail;
     if (this.T.kind === 'crawl') this.drawCrawl(ctx); else if (this.T.kind === 'dog') this.drawDog(ctx); else this.drawUpright(ctx);
+    LITE = false;
     ctx.restore();
     if (this.alive && this.buffT > 0) { // bị kích động bởi tiếng rú
       const b = this.boxes();
@@ -313,9 +395,11 @@ export class Zombie {
     const leg = (dx, swing, col) => {
       const kx = dx + swing * 0.5 - 2 * s, ky = -h * 0.24;
       const fx = dx + swing, fy = -3 * s;
-      ctx.strokeStyle = col;
-      ctx.lineWidth = w * 0.36 * legW;
-      ctx.beginPath(); ctx.moveTo(hipX + dx, hipY); ctx.lineTo(kx, ky); ctx.lineTo(fx + 1 * s, fy - 7 * s); ctx.stroke();
+      const o = 1.1 * s;
+      const W0 = w * 0.42 * legW, W1 = w * 0.3 * legW, W2 = w * 0.22 * legW;
+      limb(ctx, [[hipX + dx, hipY], [kx, ky], [fx + 1 * s, fy - 7 * s]], [W0, W1, W2], col, o, flash || !this.detail); // đùi + cẳng chân
+      ctx.fillStyle = this.female ? 'rgba(255,240,220,0.18)' : 'rgba(0,0,0,0.22)'; // xương bánh chè / mảng quần sờn
+      ctx.beginPath(); ctx.ellipse(kx - W1 * 0.12, ky, W1 * 0.32, W1 * 0.26, 0, 0, Math.PI * 2); ctx.fill();
       // gấu quần rách
       ctx.fillStyle = this.female ? 'rgba(0,0,0,0)' : col;
       ctx.beginPath();
@@ -325,11 +409,11 @@ export class Zombie {
       ctx.lineTo(fx + hw, fy - 10 * s);
       ctx.fill();
       // cổ chân + bàn chân trần, ngón chân hướng về phía trước (trái)
-      ctx.strokeStyle = skinDark;
-      ctx.lineWidth = w * 0.16;
-      ctx.beginPath(); ctx.moveTo(fx + 1 * s, fy - 8 * s); ctx.lineTo(fx - 1 * s, fy - 1 * s); ctx.stroke();
-      ctx.fillStyle = skin;
-      ctx.beginPath(); ctx.ellipse(fx - 4 * s, fy, 8 * s, 3 * s, 0, 0, Math.PI * 2); ctx.fill();
+      seg(ctx, fx + 1 * s, fy - 8 * s, fx - 1 * s, fy - 1 * s, w * 0.16, w * 0.15, skinDark, o, true);
+      ctx.beginPath(); ctx.ellipse(fx - 4 * s, fy, 8 * s, 3 * s, 0, 0, Math.PI * 2);
+      shadeFill(ctx, fx - 12 * s, fx + 4 * s, flash ? '#ddd' : T.skin, flash, o);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      for (let k = 0; k < 3; k++) ctx.fillRect(fx - 11 * s + k * 2.4 * s, fy - 0.5 * s, 0.8 * s, 2 * s); // kẽ ngón chân
       ctx.fillStyle = 'rgba(110,20,15,0.6)';
       ctx.fillRect(fx - 11 * s, fy - 1 * s, 4 * s, 2 * s);
     };
@@ -354,19 +438,27 @@ export class Zombie {
       const ey = shY + 26 * s - lift * 20 * s;
       const hx2 = ex - 7 * s - lift * 18 * s;
       const hy2 = ey + 24 * s - lift * 26 * s;
-      ctx.strokeStyle = col;
-      ctx.lineWidth = w * 0.17;
-      ctx.beginPath(); ctx.moveTo(shX + offX, shY + 3 * s); ctx.lineTo(ex, ey); ctx.lineTo(hx2, hy2); ctx.stroke();
+      const o = 1 * s;
+      limb(ctx, [[shX + offX, shY + 3 * s], [ex, ey], [hx2, hy2]], [w * 0.21, w * 0.15, w * 0.11], col, o, flash || !this.detail); // bắp tay + cẳng tay gầy
+      ctx.fillStyle = 'rgba(255,240,220,0.22)'; // khuỷu tay xương xẩu
+      ctx.beginPath(); ctx.arc(ex + 1 * s, ey, w * 0.07, 0, Math.PI * 2); ctx.fill();
       // gân tím nổi trên cẳng tay
       ctx.strokeStyle = 'rgba(70,30,80,0.55)'; ctx.lineWidth = 0.9 * s;
       ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo((ex + hx2) / 2 + 2 * s, (ey + hy2) / 2); ctx.lineTo(hx2 + 1 * s, hy2 - 3 * s); ctx.stroke();
       // tay áo rách tới khuỷu
-      ctx.strokeStyle = this.female ? this.dress : sleeve;
-      ctx.lineWidth = w * 0.26;
-      ctx.beginPath(); ctx.moveTo(shX + offX, shY + 2 * s); ctx.lineTo((shX + offX + ex) / 2 + 1, (shY + ey) / 2 + 4 * s); ctx.stroke();
-      // bàn tay + móng vuốt
-      ctx.fillStyle = col;
-      ctx.beginPath(); ctx.arc(hx2, hy2, 3.4 * s, 0, Math.PI * 2); ctx.fill();
+      seg(ctx, shX + offX, shY + 2 * s, (shX + offX + ex) / 2 + 1, (shY + ey) / 2 + 4 * s, w * 0.3, w * 0.27, this.female ? this.dress : sleeve, o, flash || !this.detail);
+      // bàn tay xương + móng vuốt
+      ctx.beginPath(); ctx.arc(hx2, hy2, 3.6 * s, 0, Math.PI * 2);
+      shadeFill(ctx, hx2 - 4 * s, hx2 + 4 * s, col, true, o);
+      ctx.strokeStyle = OUTLINE;
+      ctx.lineWidth = 2.6 * s;
+      ctx.beginPath();
+      for (let k = 0; k < 4; k++) {
+        const a = Math.PI * 0.55 + k * 0.22 - lift * 0.9;
+        ctx.moveTo(hx2, hy2);
+        ctx.lineTo(hx2 + Math.cos(a) * 8 * s, hy2 + Math.sin(a) * 8 * s);
+      }
+      ctx.stroke();
       ctx.strokeStyle = col;
       ctx.lineWidth = 1.4 * s;
       ctx.beginPath();
@@ -383,11 +475,14 @@ export class Zombie {
 
     // ---- thân: ngực trơ xương sườn, áo phanh ----
     const tw = w * 0.5;
-    ctx.fillStyle = skinDark;
     ctx.beginPath();
     ctx.moveTo(hipX - tw * 0.8, hipY + 4 * s); ctx.lineTo(shX - tw, shY + 2 * s);
     ctx.quadraticCurveTo(shX, shY - 5 * s, shX + tw, shY); ctx.lineTo(hipX + tw * 0.85, hipY + 4 * s);
-    ctx.closePath(); ctx.fill();
+    ctx.closePath();
+    shadeFill(ctx, shX - tw, hipX + tw, flash ? '#ddd' : shade(T.skin, -30), flash, 1.2 * s);
+    // xương ức và hõm bụng tạo khối
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.beginPath(); ctx.ellipse((shX + hipX) / 2 - tw * 0.1, (shY + hipY) / 2 + 10 * s, tw * 0.35, 7 * s, 0.2, 0, Math.PI * 2); ctx.fill();
     // xương sườn
     ctx.strokeStyle = 'rgba(40,25,15,0.55)';
     ctx.lineWidth = 1.3 * s;
@@ -398,7 +493,7 @@ export class Zombie {
     }
     // áo: vạt sau + vạt trước, gấu rách
     const flap = (x0, x1, front) => {
-      ctx.fillStyle = front ? shirt : shade(T.shirt, -15);
+      const flapCol = front ? shirt : (flash ? '#ccc' : shade(T.shirt, -15));
       ctx.beginPath();
       ctx.moveTo(shX + x0, shY - 1 * s);
       ctx.lineTo(shX + x1, shY - 2 * s);
@@ -410,10 +505,9 @@ export class Zombie {
       }
       ctx.lineTo(hipX + x0 * 0.85, hipY + 8 * s);
       ctx.closePath();
-      ctx.fill();
+      shadeFill(ctx, shX + Math.min(x0, x1), shX + Math.max(x0, x1), flapCol, flash, 1.1 * s);
     };
     if (this.female) { // váy rách tả tơi, dài tới gối
-      ctx.fillStyle = flash ? '#ddd' : this.dress;
       ctx.beginPath();
       ctx.moveTo(shX - tw * 0.8, shY);
       ctx.quadraticCurveTo(shX, shY - 4 * s, shX + tw * 0.85, shY);
@@ -421,7 +515,8 @@ export class Zombie {
       const n = 7;
       for (let k = 1; k <= n; k++) ctx.lineTo(hipX + tw * 1.15 - (tw * 2.4 * k) / n, -h * 0.22 + (k % 2 ? 9 : -2) * s + Math.sin(this.phase + k) * 1.5 * s);
       ctx.lineTo(hipX - tw * 0.95, hipY + 4 * s);
-      ctx.closePath(); ctx.fill();
+      ctx.closePath();
+      shadeFill(ctx, hipX - tw * 1.2, hipX + tw * 1.2, flash ? '#ddd' : this.dress, flash, 1.1 * s);
       ctx.fillStyle = 'rgba(0,0,0,0.22)'; // nếp váy và chỗ rách
       for (let k = 0; k < 3; k++) ctx.fillRect(hipX - tw * 0.5 + k * tw * 0.5, hipY + 4 * s, 1.5 * s, h * 0.2);
       ctx.fillStyle = skinDark; // vai trần
@@ -486,9 +581,7 @@ export class Zombie {
     }
 
     // ---- cổ + đầu hói, hàm nhô, mắt trũng ----
-    ctx.strokeStyle = skinDark;
-    ctx.lineWidth = w * 0.18;
-    ctx.beginPath(); ctx.moveTo(shX - 1 * s, shY + 2 * s); ctx.lineTo(hx + r * 0.3, hy + r * 0.7); ctx.stroke();
+    seg(ctx, shX - 1 * s, shY + 2 * s, hx + r * 0.3, hy + r * 0.7, w * 0.2, w * 0.16, skinDark, 1 * s, flash || !this.detail);
     if (!this.headless) {
       ctx.save();
       if (this.twitching > 0) { // đầu giật co quắp
@@ -503,10 +596,25 @@ export class Zombie {
         ctx.lineTo(hx + r * 0.2, hy + r * 1.4);
         ctx.fill();
       }
-      ctx.fillStyle = skin;
-      ctx.beginPath(); ctx.ellipse(hx, hy, r * 0.95, r * 1.08, -0.25, 0, Math.PI * 2); ctx.fill();
-      // hàm dưới nhô ra
-      ctx.beginPath(); ctx.moveTo(hx - r * 0.95, hy + r * 0.25); ctx.lineTo(hx - r * 0.85, hy + r * 1.05); ctx.lineTo(hx + r * 0.1, hy + r * 1.1); ctx.lineTo(hx + r * 0.4, hy + r * 0.5); ctx.fill();
+      const headFill = flash ? skin : (this._headG || (this._headG = (() => {
+        const g = ctx.createRadialGradient(hx + r * 0.35, hy - r * 0.45, r * 0.1, hx, hy, r * 1.35);
+        g.addColorStop(0, shade(T.skin, 26)); g.addColorStop(0.55, T.skin); g.addColorStop(1, shade(T.skin, -40));
+        return g;
+      })()));
+      // hàm dưới nhô ra (vẽ trước để đầu phủ lên, có viền)
+      ctx.beginPath(); ctx.moveTo(hx - r * 0.95, hy + r * 0.25); ctx.lineTo(hx - r * 0.85, hy + r * 1.05); ctx.lineTo(hx + r * 0.1, hy + r * 1.1); ctx.lineTo(hx + r * 0.4, hy + r * 0.5); ctx.closePath();
+      ctx.fillStyle = flash ? skin : shade(T.skin, -22); ctx.fill();
+      if (this.detail) { ctx.strokeStyle = OUTLINE; ctx.lineWidth = 1.1 * s; ctx.stroke(); }
+      ctx.beginPath(); ctx.ellipse(hx, hy, r * 0.95, r * 1.08, -0.25, 0, Math.PI * 2);
+      ctx.fillStyle = this.detail ? headFill : skin; ctx.fill();
+      if (this.detail) {
+        ctx.strokeStyle = OUTLINE; ctx.lineWidth = 1.2 * s; ctx.stroke();
+        // viền sáng trăng sau gáy + bóng dưới cằm
+        ctx.strokeStyle = 'rgba(255,245,215,0.35)'; ctx.lineWidth = 1.3 * s;
+        ctx.beginPath(); ctx.ellipse(hx, hy, r * 0.88, r * 1.0, -0.25, -Math.PI * 0.45, Math.PI * 0.1); ctx.stroke();
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath(); ctx.ellipse(hx - r * 0.25, hy + r * 1.02, r * 0.55, r * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+      }
       // miệng + răng
       ctx.fillStyle = '#2a1410';
       ctx.beginPath(); ctx.moveTo(hx - r * 1.0, hy + r * 0.45); ctx.lineTo(hx - r * 0.2, hy + r * 0.5); ctx.lineTo(hx - r * 0.25, hy + r * 0.85); ctx.lineTo(hx - r * 0.9, hy + r * 0.8); ctx.fill();
@@ -520,10 +628,11 @@ export class Zombie {
       ctx.fillStyle = 'rgba(30,18,12,0.85)';
       ctx.beginPath(); ctx.ellipse(hx - r * 0.5, hy - r * 0.12, r * 0.28, r * 0.22, 0, 0, Math.PI * 2); ctx.fill();
       // mắt sáng nhợt, đồng tử đỏ
+      // quầng sáng giả bằng vòng tròn mờ (shadowBlur rất tốn khi vẽ hàng trăm con)
+      ctx.fillStyle = T.boss ? 'rgba(255,50,30,0.35)' : 'rgba(255,240,180,0.22)';
+      ctx.beginPath(); ctx.arc(hx - r * 0.56, hy - r * 0.1, r * (T.boss ? 0.42 : 0.28), 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = T.boss ? '#ff3b2f' : '#f2ecc8';
-      ctx.shadowColor = T.boss ? '#ff2a10' : 'rgba(255,240,180,0.8)'; ctx.shadowBlur = T.boss ? 12 : 5;
       ctx.beginPath(); ctx.arc(hx - r * 0.56, hy - r * 0.1, r * 0.14, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
       ctx.fillStyle = '#c01a10';
       ctx.beginPath(); ctx.arc(hx - r * 0.6, hy - r * 0.1, r * 0.06, 0, Math.PI * 2); ctx.fill();
       // máu chảy từ khoé mắt và loang quanh miệng

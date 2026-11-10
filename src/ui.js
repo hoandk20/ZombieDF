@@ -208,7 +208,7 @@ export class UI {
   }
 
   toggleBtn(key) {
-    const labels = { sound: 'Âm thanh', music: 'Nhạc nền', shake: 'Rung màn hình' };
+    const labels = { sound: 'Âm thanh', music: 'Nhạc nền', shake: 'Rung màn hình', hq: 'Đồ hoạ chi tiết' };
     const on = this.settings[key];
     return `<button class="toggle ${on ? 'on' : ''}" data-act="toggle" data-arg="${key}"><span>${labels[key]}</span><b>${on ? 'BẬT' : 'TẮT'}</b></button>`;
   }
@@ -426,7 +426,7 @@ export class UI {
         <div class="panel small">
           <h2>Tạm dừng</h2>
           <button class="primary" data-act="resume">Tiếp tục chiến đấu</button>
-          ${this.toggleBtn('sound')}${this.toggleBtn('music')}${this.toggleBtn('shake')}
+          ${this.toggleBtn('sound')}${this.toggleBtn('music')}${this.toggleBtn('shake')}${this.toggleBtn('hq')}
           <button class="ghost" data-act="quit">Về menu (đêm này sẽ chơi lại từ đầu)</button>
         </div>
       </div>`;
