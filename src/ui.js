@@ -754,7 +754,7 @@ export class UI {
         if (!d.floodlight) out.push({ id: 'floodlight', title: 'Đèn pha chiến trường', desc: 'Đêm mất điện vẫn nhìn rõ quanh hàng rào và điểm ngắm.', price: FLOODLIGHT_PRICE, glyph: '☀' });
       } else if (k === 'shocker') {
         const sl = d.shockerLevel || 0;
-        if (sl < 2) out.push({ id: 'shocker', title: sl ? 'Nâng cấp bẫy điện · cấp 2' : 'Bẫy điện', desc: 'Tấm điện trước rào phóng điện định kỳ, làm tê liệt và gây sát thương mọi con đứng trên đó.', stats: `ST ${SHOCKER.dmg[sl + 1]} · mỗi ${SHOCKER.every[sl + 1]} giây`, price: SHOCKER.prices[sl], glyph: 'ϟ', tag: sl ? '' : 'MỚI' });
+        if (sl < 2) out.push({ id: 'shocker', title: sl ? 'Nâng cấp bẫy điện · cấp 2' : 'Bẫy điện', desc: 'Tấm điện đặt xa phía trước rào, phóng điện định kỳ, làm tê liệt và gây sát thương mọi con đứng trên đó trước khi chúng kịp tới gần.', stats: `ST ${SHOCKER.dmg[sl + 1]} · mỗi ${SHOCKER.every[sl + 1]} giây`, price: SHOCKER.prices[sl], glyph: 'ϟ', tag: sl ? '' : 'MỚI' });
       } else if (k === 'flameTurret') {
         if (!d.flameTurret) out.push({ id: 'flameTurret', title: 'Tháp phun lửa', desc: 'Phun lửa vào mọi con lại gần rào, đốt cháy theo thời gian. Kẻ cháy miễn nhiễm.', stats: `tầm ${FLAME_TURRET.range}px · đốt ${FLAME_TURRET.burn}/giây`, price: FLAME_TURRET.price, glyph: '♨', tag: 'MỚI' });
       } else if (k === 'mortar') {
