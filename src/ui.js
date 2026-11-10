@@ -4,10 +4,11 @@ import {
   ZOMBIES, dmgUpgradePrice, MAX_DMG_LVL, stageFor, STAGE_LENGTH, STAGE_NAMES, SCENES, MAX_SQUAD,
   modsFor, MOD_INFO, mateLevel, MATE_XP, CAMP_INCOME,
   DIFFICULTIES, DIFF_ORDER, diffOf, UPKEEP, TURRET, MINE, WIRE, FLOODLIGHT_PRICE,
+  SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE, DEFENSES_BY_ACT, ALL_DEFENSES, resetDefenses,
 } from './config.js';
 import {
   INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO,
-  STAGE1_END, STAGE2_INTRO, ACT3_END, ACT4_INTRO, hasPerk,
+  STAGE1_END, STAGE2_INTRO, ACT3_END, ACT4_INTRO, STAGE2_END, STAGE3_INTRO, ACT5_END, ACT6_INTRO, hasPerk,
 } from './story.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
@@ -154,7 +155,7 @@ export class UI {
     this.root.innerHTML = `
       <div class="screen menu fade-in">
         <div class="menu-left">
-          <div class="eyebrow">2 màn · 40 đêm · Bến Sương → Hồng Sơn</div>
+          <div class="eyebrow">3 màn · 60 đêm · Bến Sương → Thủ đô</div>
           <h1 class="title"><span class="t1">BARRICADE</span><span class="t2">NIGHTS</span></h1>
           <p class="tagline">Phong, người giữ trạm phát thanh cuối cùng. Giữ vững hàng rào cho đến khi được cứu.</p>
           <div class="menu-buttons">
@@ -223,7 +224,7 @@ export class UI {
               <p>Chia ${DAY_HOURS} giờ cho sửa rào, lục lọi tiền và đạn, hoặc tìm người sống sót. Mỗi người có một kỹ năng riêng và sẽ bắn hỗ trợ bạn.</p>
               <p>Chỉ 4 người được đứng trên rào, người còn lại ở trại kiếm thêm tiền. Đồng đội lên cấp khi hạ zombie và có thể bị thương khi rào sắp vỡ: hãy đưa người khác lên thay.</p>
               <p>Mỗi màn có 20 đêm. Chú ý <b>dự báo đêm nay</b>: mất điện, thả dù tiếp tế, kẻ mang hòm…</p>
-              <p>Tab <b>Phòng thủ</b>: tháp súng máy tự động, mìn, dây thép gai, đèn pha. Từ độ khó Thường, rất khó trụ nếu thiếu chúng.</p>
+              <p>Tab <b>Phòng thủ</b>: mỗi chương có bộ công trình riêng (mìn, dây thép gai, tháp súng, bẫy điện, tháp phun lửa, súng cối, tháp Tesla, drone). Sang chương mới, đồng đội và công trình đều phải làm lại từ đầu.</p>
             </div>
             <div><h4>Điều khiển</h4>
               <table class="keys">
@@ -380,7 +381,11 @@ export class UI {
   // Chuyển chương / chuyển màn
   showInterlude(info) {
     const n = info.transition;
-    const end = { 10: [ACT1_END, 'Hết chương 1 · Bình minh thứ mười'], 20: [STAGE1_END, 'Hết màn 1 · Bình minh thứ hai mươi'], 30: [ACT3_END, 'Hết chương 3 · Bình minh thứ ba mươi'] }[n];
+    const end = {
+      10: [ACT1_END, 'Hết chương 1 · Bình minh thứ mười'], 20: [STAGE1_END, 'Hết màn 1 · Bình minh thứ hai mươi'],
+      30: [ACT3_END, 'Hết chương 3 · Bình minh thứ ba mươi'], 40: [STAGE2_END, 'Hết màn 2 · Bình minh thứ bốn mươi'],
+      50: [ACT5_END, 'Hết chương 5 · Bình minh thứ năm mươi'],
+    }[n];
     setTimeout(() => this.playCutscene(end[0], () => this.playActIntro(actFor(n + 1), info), end[1]), 600);
   }
 
@@ -388,8 +393,14 @@ export class UI {
     const g = this.game;
     g.setScene(SCENES[act]);
     g.state = 'day';
-    const lines = { 2: ACT2_INTRO, 3: STAGE2_INTRO, 4: ACT4_INTRO }[act] || [];
-    const title = act === 3 ? `Màn 2 · ${STAGE_NAMES[2]} · Chương 3 · ${ACT_NAMES[3]}` : `Chương ${act} · ${ACT_NAMES[act]}`;
+    const lines = { 2: ACT2_INTRO, 3: STAGE2_INTRO, 4: ACT4_INTRO, 5: STAGE3_INTRO, 6: ACT6_INTRO }[act] || [];
+    const stageStart = { 3: 2, 5: 3 }[act];
+    const title = stageStart ? `Màn ${stageStart} · ${STAGE_NAMES[stageStart]} · Chương ${act} · ${ACT_NAMES[act]}` : `Chương ${act} · ${ACT_NAMES[act]}`;
+    // chương mới: đồng đội cũ đã ở lại phía sau, công trình phòng thủ phải dựng lại từ đầu
+    if (act > (g.data.seenAct || 1) && !g.data.endless) {
+      g.data.crew = []; g.data.squad = []; g.data.mates = {}; g.data.searchPity = 0;
+      resetDefenses(g.data);
+    }
     this.playCutscene(lines, () => {
       g.data.seenAct = Math.max(g.data.seenAct || 1, act);
       saveGame(g.data);
@@ -398,7 +409,7 @@ export class UI {
   }
 
   showVictoryStory(info) {
-    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Kết thúc · Bình minh thứ bốn mươi'), 600);
+    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Kết thúc · Bình minh thứ sáu mươi'), 600);
   }
 
   showVictory() {
@@ -409,7 +420,7 @@ export class UI {
         <div class="panel small victory">
           <div class="eyebrow">Chiến dịch hoàn thành</div>
           <h2 class="big-title gold">BẠN ĐÃ SỐNG SÓT</h2>
-          <p class="story-line">Bốn mươi đêm, từ Bến Sương tới Hồng Sơn. Phong${d.crew.length ? ` cùng ${d.crew.length} người đồng hành` : ''} đã giữ trạm sống sót đủ lâu để vắc-xin được phát đi khắp đất nước.</p>
+          <p class="story-line">Sáu mươi đêm, từ Bến Sương tới thủ đô. Phong đã mang thùng mẫu đến Bệnh viện Trung ương, và vắc-xin bắt đầu được sản xuất cho cả đất nước.</p>
           <div class="stat-row">
             <div><b>${d.totalKills}</b><span>zombie đã hạ</span></div>
             <div><b>${d.headshots || 0}</b><span>headshot</span></div>
@@ -525,14 +536,15 @@ export class UI {
 
   nextRecruitHint() {
     const d = this.game.data;
-    const next = SURVIVORS.filter((s) => !d.crew.includes(s.id) && (s.from || 1) > d.night).sort((a, b) => a.from - b.from)[0];
+    const next = SURVIVORS.filter((s) => !d.crew.includes(s.id) && s.act === actFor(d.night) && (s.from || 1) > d.night).sort((a, b) => a.from - b.from)[0];
     return next ? `Chưa có ai quanh đây (có người mới từ đêm ${next.from})` : 'Quanh đây không còn ai';
   }
 
   availableRecruits() {
     const d = this.game.data;
-    const stage = d.endless ? 2 : stageFor(d.night);
-    return SURVIVORS.filter((s) => !d.crew.includes(s.id) && (s.stage || 1) <= stage && (d.endless || (s.from || 1) <= d.night));
+    // mỗi chương chỉ gặp được những người ở bản đồ đó
+    if (d.endless) return SURVIVORS.filter((s) => !d.crew.includes(s.id));
+    return SURVIVORS.filter((s) => !d.crew.includes(s.id) && s.act === actFor(d.night) && (s.from || 1) <= d.night);
   }
 
   // Đưa đồng đội lên hàng rào hoặc cho về trại
@@ -573,17 +585,7 @@ export class UI {
         return { id: 'a:' + id, icon: id, title: `Đạn ${w.name} +${w.ammoPack}`, desc: `Đang có ${d.weapons[id].reserve + d.weapons[id].mag} viên`, stats, price: w.ammoPrice, owned: true };
       });
     }
-    if (this.shopTab === 'defense') {
-      const out = [];
-      const tl = d.turretLevel || 1;
-      if ((d.turrets || 0) < TURRET.max) out.push({ id: 'turret', title: `Tháp súng máy tự động #${(d.turrets || 0) + 1}`, desc: 'Đặt trên hàng rào, tự bắn con gần nhất. Bắn liên tục sẽ quá nhiệt.', stats: `ST ${TURRET.dmg[tl - 1]} · ${Math.round(1 / TURRET.rate[tl - 1])} phát/giây`, price: TURRET.price, glyph: '⌖', tag: 'MỚI' });
-      if ((d.turrets || 0) > 0 && tl < 3) out.push({ id: 'turretUp', title: `Nâng cấp tháp súng · cấp ${tl + 1}`, desc: 'Mạnh hơn, bắn nhanh hơn, lâu quá nhiệt hơn (áp dụng cho mọi tháp).', stats: `ST ${TURRET.dmg[tl - 1]} → ${TURRET.dmg[tl]} · loạt ${TURRET.heat[tl - 1]} → ${TURRET.heat[tl]} phát`, price: TURRET.upgrade[tl], glyph: '⌖' });
-      out.push({ id: 'mines', title: 'Mìn × 2', desc: `Tự rải trước hàng rào mỗi đêm, nổ khi zombie dẫm lên. Mìn chưa nổ được thu lại. Đang có ${d.mines || 0}/${MINE.max}.`, price: MINE.price * 2, glyph: '✸', disabled: (d.mines || 0) + 2 > MINE.max });
-      const wl = d.wireLevel || 0;
-      if (wl < 2) out.push({ id: 'wire', title: `Dây thép gai · cấp ${wl + 1}`, desc: `Zombie sát hàng rào bị làm chậm ${Math.round((1 - WIRE.slow[wl + 1]) * 100)}% và bị cứa liên tục.`, price: WIRE.prices[wl], glyph: '✕' });
-      if (!d.floodlight) out.push({ id: 'floodlight', title: 'Đèn pha chiến trường', desc: 'Đêm mất điện vẫn nhìn rõ quanh hàng rào và điểm ngắm.', price: FLOODLIGHT_PRICE, glyph: '☀' });
-      return out;
-    }
+    if (this.shopTab === 'defense') return this.defenseItems();
     const items = [
       { id: 'grenade', icon: 'grenade', title: 'Lựu đạn', desc: `Nổ diện rộng, cực mạnh với bầy đàn. Đang có ${d.grenades}/${GRENADE.max}.`, price: GRENADE.price, disabled: d.grenades >= GRENADE.max },
       { id: 'repair', title: 'Bộ sửa chữa', desc: `+25% độ bền ngay lập tức (${Math.ceil(d.hp)}/${max})`, price: repairKitPrice(d.night), disabled: d.hp >= max },
@@ -597,6 +599,42 @@ export class UI {
       items.push({ id: 'reloadUp', title: `Luyện nạp đạn · cấp ${d.reloadLevel + 1}/${MAX_RELOAD_LVL}`, desc: 'Nạp đạn mọi loại súng nhanh hơn 12%', price: reloadUpgradePrice(d.reloadLevel) });
     }
     return items;
+  }
+
+  // Công trình phòng thủ của chương hiện tại
+  defenseItems() {
+    const d = this.game.data;
+    const avail = d.endless ? ALL_DEFENSES : DEFENSES_BY_ACT[actFor(d.night)] || [];
+    const out = [];
+    const tl = d.turretLevel || 1;
+    for (const k of avail) {
+      if (k === 'turret') {
+        if ((d.turrets || 0) < TURRET.max) out.push({ id: 'turret', title: `Tháp súng máy tự động #${(d.turrets || 0) + 1}`, desc: 'Đặt trên hàng rào, tự bắn con gần nhất. Bắn liên tục sẽ quá nhiệt.', stats: `ST ${TURRET.dmg[tl - 1]} · ${Math.round(1 / TURRET.rate[tl - 1])} phát/giây`, price: TURRET.price, glyph: '⌖' });
+        if ((d.turrets || 0) > 0 && tl < 3) out.push({ id: 'turretUp', title: `Nâng cấp tháp súng · cấp ${tl + 1}`, desc: 'Mạnh hơn, bắn nhanh hơn, lâu quá nhiệt hơn.', stats: `ST ${TURRET.dmg[tl - 1]} → ${TURRET.dmg[tl]}`, price: TURRET.upgrade[tl], glyph: '⌖' });
+      } else if (k === 'mines') {
+        out.push({ id: 'mines', title: 'Mìn × 2', desc: `Tự rải trước rào mỗi đêm, nổ khi zombie dẫm lên. Kẻ nhảy bật qua được. Đang có ${d.mines || 0}/${MINE.max}.`, price: MINE.price * 2, glyph: '✸', disabled: (d.mines || 0) + 2 > MINE.max });
+      } else if (k === 'wire') {
+        const wl = d.wireLevel || 0;
+        if (wl < 2) out.push({ id: 'wire', title: `Dây thép gai · cấp ${wl + 1}`, desc: `Zombie sát rào bị làm chậm ${Math.round((1 - WIRE.slow[wl + 1]) * 100)}% và bị cứa liên tục.`, price: WIRE.prices[wl], glyph: '✕' });
+      } else if (k === 'floodlight') {
+        if (!d.floodlight) out.push({ id: 'floodlight', title: 'Đèn pha chiến trường', desc: 'Đêm mất điện vẫn nhìn rõ quanh hàng rào và điểm ngắm.', price: FLOODLIGHT_PRICE, glyph: '☀' });
+      } else if (k === 'shocker') {
+        const sl = d.shockerLevel || 0;
+        if (sl < 2) out.push({ id: 'shocker', title: sl ? 'Nâng cấp bẫy điện · cấp 2' : 'Bẫy điện', desc: 'Tấm điện trước rào phóng điện định kỳ, làm tê liệt và gây sát thương mọi con đứng trên đó.', stats: `ST ${SHOCKER.dmg[sl + 1]} · mỗi ${SHOCKER.every[sl + 1]} giây`, price: SHOCKER.prices[sl], glyph: 'ϟ', tag: sl ? '' : 'MỚI' });
+      } else if (k === 'flameTurret') {
+        if (!d.flameTurret) out.push({ id: 'flameTurret', title: 'Tháp phun lửa', desc: 'Phun lửa vào mọi con lại gần rào, đốt cháy theo thời gian. Kẻ cháy miễn nhiễm.', stats: `tầm ${FLAME_TURRET.range}px · đốt ${FLAME_TURRET.burn}/giây`, price: FLAME_TURRET.price, glyph: '♨', tag: 'MỚI' });
+      } else if (k === 'mortar') {
+        const ml = d.mortarLevel || 0;
+        if (ml < 2) out.push({ id: 'mortar', title: ml ? 'Nâng cấp súng cối · cấp 2' : 'Súng cối tự động', desc: 'Tự bắn đạn nổ vào chỗ bầy đàn đông nhất ở xa.', stats: `ST ${MORTAR.dmg[ml + 1]} · mỗi ${MORTAR.every[ml + 1]} giây`, price: MORTAR.prices[ml], glyph: '☄', tag: ml ? '' : 'MỚI' });
+      } else if (k === 'teslaTower') {
+        const t2 = d.teslaLevel || 0;
+        if (t2 < 2) out.push({ id: 'teslaTower', title: t2 ? 'Nâng cấp tháp Tesla · cấp 2' : 'Tháp Tesla', desc: 'Sét nhảy qua 5 con gần nhau. Xuyên giáp, xuyên khiên.', stats: `ST ${TESLA_TOWER.dmg[t2 + 1]} · mỗi ${TESLA_TOWER.every[t2 + 1]} giây`, price: TESLA_TOWER.prices[t2], glyph: '⚡', tag: t2 ? '' : 'MỚI' });
+      } else if (k === 'drone') {
+        if ((d.drones || 0) < DRONE.max) out.push({ id: 'drone', title: `Drone chiến đấu #${(d.drones || 0) + 1}`, desc: 'Bay lượn trên chiến trường, bắn con gần nhất. Hết băng thì tự nạp.', stats: `ST ${DRONE.dmg} · băng ${DRONE.mag}`, price: DRONE.price, glyph: '✈', tag: 'MỚI' });
+      }
+    }
+    if (!out.length) out.push({ id: 'none', title: 'Đã dựng hết công trình của chương này', desc: 'Sang chương mới sẽ có công trình phòng thủ khác.', price: 0, glyph: '✓', disabled: true });
+    return out;
   }
 
   buy(id) {
@@ -617,6 +655,11 @@ export class UI {
     else if (id === 'mines') d.mines = (d.mines || 0) + 2;
     else if (id === 'wire') d.wireLevel = (d.wireLevel || 0) + 1;
     else if (id === 'floodlight') d.floodlight = true;
+    else if (id === 'shocker') d.shockerLevel = (d.shockerLevel || 0) + 1;
+    else if (id === 'flameTurret') d.flameTurret = 1;
+    else if (id === 'mortar') d.mortarLevel = (d.mortarLevel || 0) + 1;
+    else if (id === 'teslaTower') d.teslaLevel = (d.teslaLevel || 0) + 1;
+    else if (id === 'drone') d.drones = (d.drones || 0) + 1;
     else if (id.startsWith('w:')) {
       const w = id.slice(2);
       d.weapons[w] = { mag: WEAPONS[w].mag, reserve: WEAPONS[w].mag * 2 };
@@ -641,11 +684,11 @@ export class UI {
       const n = actStart + i + 1;
       const cls = n < d.night ? 'done' : n === d.night ? 'next' : '';
       return `<span class="${cls}${isBossNight(n) ? ' boss' : ''}" title="Đêm ${n}"></span>`;
-    }).join('')}<em>${['', '🚁', '🚢', '🏔', '📡'][act]}</em></div>` : '';
+    }).join('')}<em>${['', '🚁', '🚢', '🏔', '📡', '🚚', '🏥'][act]}</em></div>` : '';
 
     const radioLines = DAWN_LOG[d.night - 1];
     const radio = radioLines && !d.endless ? radioLines[radioLines.length - 1] : null;
-    const newFoe = { 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater', 22: 'dog', 24: 'screamer', 27: 'reviver' }[d.night];
+    const newFoe = { 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater', 22: 'dog', 24: 'screamer', 27: 'reviver', 32: 'shielder', 42: 'leaper', 44: 'burner', 52: 'splitter', 54: 'stalker' }[d.night];
     const mods = modsFor(d.night);
     const modList = Object.keys(MOD_INFO).filter((k) => mods[k]);
     const forecast = modList.length ? `<div class="forecast"><span class="radio-tag">DỰ BÁO ĐÊM NAY</span>${modList.map((k) => `<div><b>${MOD_INFO[k].icon} ${MOD_INFO[k].name}${k === 'airdrops' ? ` ×${mods.airdrops}` : ''}</b> ${MOD_INFO[k].desc}</div>`).join('')}</div>` : '';
@@ -677,9 +720,9 @@ export class UI {
     let shopBody;
     if (this.shopTab === 'crew') {
       const onWall = d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length;
-      const stage = d.endless ? 2 : stageFor(d.night);
+      const curAct = actFor(d.night);
       shopBody = `<div class="squad-head">Trên hàng rào: <b>${onWall}/${MAX_SQUAD}</b> · Người ở trại kiếm thêm ~$${Math.round(CAMP_INCOME * (1 + d.night * 0.04))} mỗi sáng · Khẩu phần ~$${Math.round(UPKEEP * diffOf(d).upkeep * (1 + d.night * 0.03))}/người/ngày · Bị thương phải nghỉ vài đêm</div>`
-      + SURVIVORS.filter((s) => (s.stage || 1) <= stage || d.crew.includes(s.id)).map((s) => {
+      + SURVIVORS.filter((s) => d.crew.includes(s.id) || (!d.endless && s.act === curAct)).map((s) => {
         const has = d.crew.includes(s.id);
         if (!has) {
           return `<div class="crew-card unknown"><div class="crew-unknown">?</div>

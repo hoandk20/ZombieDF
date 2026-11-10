@@ -3,7 +3,7 @@ import {
   WEAPONS, WEAPON_ORDER, HEADSHOT_MUL, SURVIVOR_SLOTS, GRENADE, CAMPAIGN_NIGHTS, ACT_LENGTH,
   waveFor, weatherFor, barricadeMax, reloadMul, actFor, bossTypeFor, dmgMul,
   sceneFor, stageFor, bossCountFor, STAGE_LENGTH, CAMP_INCOME, mateLevel,
-  diffOf, UPKEEP, TURRET, MINE, WIRE,
+  diffOf, UPKEEP, TURRET, MINE, WIRE, SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE,
 } from './config.js';
 import { SURVIVORS, NIGHT_TITLES, MATE_COMBAT, hasPerk } from './story.js';
 import { Zombie, roundRect } from './zombie.js';
@@ -75,6 +75,7 @@ export class Game {
     this.grenadeArmed = false;
     this.stats = { kills: 0, headshots: 0, earned: 0, bestStreak: 0, damage: 0, combo: 0, crates: 0, injured: [] };
     this.extraSpawns = 0;
+    this.drones = [];
     this.turrets = [];
     this.mines = [];
     this.crates = [];
@@ -171,12 +172,18 @@ export class Game {
     this.wave.total = Math.round(this.wave.total * diffOf(d).count);
     this.spawnTimer = 2.5;
     // công trình phòng thủ
+    this.shock = { t: 1, zapT: 0 };
+    this.flameT = { heat: 0, cool: 0, ang: 0 };
+    this.mortarT = 2;
+    this.teslaT = 1;
+    this.drones = Array.from({ length: Math.min(d.drones || 0, DRONE.max) }, (_, i) => ({ x: 300 + i * 140, y: 230 - i * 20, cd: 0.5, ammo: DRONE.mag, reload: 0, ph: i * 2 }));
     this.turrets = Array.from({ length: Math.min(d.turrets || 0, TURRET.max) }, (_, i) => ({ ...TURRET.slots[i], ang: Math.PI * 0.02, cd: 0.5, heat: 0, overheat: 0, recoil: 0 }));
     this.mines = Array.from({ length: d.mines || 0 }, (_, i) => ({ x: 300 + ((i * 47) % 260) + rand(-10, 10), y: rand(LANE_MIN + 4, LANE_MAX - 4) }));
     d.mines = 0;
     // lịch thả dù tiếp tế trong đêm
     const span = Math.max(30, this.wave.total * this.wave.interval);
-    for (let i = 0; i < (this.mods.airdrops || 0); i++) this.dropTimes.push(8 + (span * (i + 0.5)) / this.mods.airdrops + rand(-4, 4));
+    const drops = (this.mods.airdrops || 0) + (hasPerk(d, 'ngoc') ? 1 : 0);
+    for (let i = 0; i < drops; i++) this.dropTimes.push(8 + (span * (i + 0.5)) / drops + rand(-4, 4));
     this.maxHp = barricadeMax(d.barricadeLevel);
     for (const id of Object.keys(d.weapons)) {
       // đầu đêm: nạp đầy băng từ kho đạn
@@ -218,17 +225,18 @@ export class Game {
     d.cash += campIncome;
     const upkeep = Math.min(d.cash, Math.round(d.crew.length * UPKEEP * df.upkeep * (1 + d.night * 0.03)));
     d.cash -= upkeep;
+    if (hasPerk(d, 'tuan')) d.hp = Math.min(barricadeMax(d.barricadeLevel), d.hp + barricadeMax(d.barricadeLevel) * 0.1);
     let extraGrenade = false;
     if (hasPerk(d, 'hung') && d.grenades < GRENADE.max) { d.grenades++; extraGrenade = true; }
     const info = { night: d.night, bonus, campIncome, upkeep, campers: campers.length, extraGrenade, ...this.stats };
     const wasFinale = d.night === CAMPAIGN_NIGHTS && !d.endless;
-    const transition = !d.endless && [ACT_LENGTH, STAGE_LENGTH, 30].includes(d.night) ? d.night : 0;
+    const transition = !d.endless && [10, 20, 30, 40, 50].includes(d.night) ? d.night : 0;
     d.night += 1;
     d.dayUsed = false;
     saveGame(d);
     setMood('day');
     if (wasFinale || transition) { this.weather = { rain: false, lightning: false, fog: 0.1, bloodMoon: false }; this.victoryT = 0; }
-    this.interKind = transition === 10 ? 'heli' : transition === 20 ? 'ship' : 'dawn';
+    this.interKind = { 10: 'heli', 20: 'ship', 40: 'broadcast' }[transition] || 'dawn';
     info.transition = transition;
     this.setState(wasFinale ? 'victory' : transition ? 'interlude' : 'day', info);
   }
@@ -537,6 +545,12 @@ export class Game {
     if (!z.alive) return;
     const res = z.hurt(dmg, head, this, opts.kind || 'bullet');
     const killed = res === true;
+    if (res === 'shield') {
+      for (let i = 0; i < 4; i++) this.addParticle({ x, y, vx: rand(20, 140), vy: rand(-120, 0), life: 0.25, color: '#ffe8a0', size: 2 });
+      if (Math.random() < 0.15) this.texts.push({ x: z.x, y: z.foot - z.h - 6, text: 'KHIÊN! BẮN VÀO ĐẦU', life: 0.8, max: 0.8, size: 12, color: '#c8d8f0' });
+      if (!opts.silent) sfx.ricochet();
+      return;
+    }
     if (res === 'revive') this.texts.push({ x: z.x, y: z.foot - z.h - 6, text: 'NÓ SẼ ĐỨNG DẬY…', life: 1, max: 1, size: 12, color: '#c0e0a0' });
     if (res === 'helmet') {
       this.texts.push({ x: z.x, y: z.foot - z.h - 6, text: 'VỠ MŨ!', life: 0.8, max: 0.8, size: 14, color: '#9fc8ff' });
@@ -569,6 +583,15 @@ export class Game {
     }
     if (z.T.ranged) this.splashAcid(z.x, z.foot - z.h * 0.45, 14, z.foot);
     if (z.T.bomber && !z.burst) this.bloaterBurst(z, false);
+    if (z.T.splitter && this.state === 'night') { // tách thành 2 con non
+      for (let k = 0; k < 2; k++) { const c = this.mk('spawnling'); c.x = z.x + (k ? 18 : -6); c.foot = Math.min(LANE_MAX, Math.max(LANE_MIN, z.foot + (k ? 8 : -8))); this.zombies.push(c); this.extraSpawns++; }
+      this.texts.push({ x: z.x, y: z.foot - z.h, text: 'PHÂN THÂN!', life: 0.8, max: 0.8, size: 13, color: '#c8a8e8' });
+    }
+    if (z.T.burner) { // nổ tung thành lửa, đốt những con xung quanh
+      for (let i = 0; i < 12; i++) this.addParticle({ x: z.x, y: z.foot - 50, vx: rand(-140, 140), vy: rand(-200, -40), life: 0.6, color: '', size: rand(4, 8), kind: 'flame' });
+      for (const o of this.zombies) if (o.alive && o !== z && Math.abs(o.x - z.x) < 80) { o.burnT = 2.5; o.burnDps = 14; }
+      this.lights.push({ x: z.x, y: z.foot - 50, r: 180, life: 0.4, max: 0.4, color: '255,140,40', a: 0.4 });
+    }
     if (z.T.boss) this.bossDown(z);
     if (this.state !== 'night') return;
 
@@ -624,9 +647,10 @@ export class Game {
       this.onKill(z, false, false, false);
     }
     const x = z.x, y = z.foot - z.h * 0.45;
-    if (z.x - z.w / 2 < BARRICADE_X + 70) {
-      this.damageBarricade(atWall ? z.dmg : z.dmg * 0.5, z.foot);
-      this.injureMate(atWall ? 0.35 : 0.15);
+    // chỉ làm hỏng rào khi nổ ngay sát rào (trước đây nổ cách gần 100px vẫn trừ máu)
+    if (atWall || z.x - z.w / 2 < BARRICADE_X + 18) {
+      this.damageBarricade(atWall ? z.dmg : z.dmg * 0.4, z.foot);
+      this.injureMate(atWall ? 0.35 : 0.1);
     }
     this.explode(x, y, { radius: 115, dmg: 160, toxic: true, byPlayer: !atWall, exclude: z });
   }
@@ -660,7 +684,7 @@ export class Game {
   explode(x, y, opts = {}) {
     const R = opts.radius || GRENADE.radius;
     const byPlayer = opts.byPlayer !== false;
-    const base = (opts.dmg || GRENADE.dmg) * (byPlayer ? this.playerMul() : 1);
+    const base = (opts.dmg || GRENADE.dmg) * (byPlayer ? this.playerMul() : 1) * (opts.grenade && hasPerk(this.data, 'ha') ? 1.5 : 1);
     for (const z of this.zombies) {
       if (!z.alive || z === opts.exclude) continue;
       const cy = z.foot - z.h * 0.4;
@@ -689,7 +713,7 @@ export class Game {
     const b = z.boxes();
     this.projectiles.push({
       type: 'acid', x0: b.hx - b.hr, y0: b.hy + b.hr * 0.4, x1: BARRICADE_X - 2, y1: rand(BARRICADE_TOP + 15, LANE_MAX - 10),
-      t: 0, dur: 1.0, arc: 110, dmg: z.dmg,
+      t: 0, dur: 1.0, arc: 110, dmg: z.T.dmg * (1 + this.data.night * 0.02) * Math.min(1.3, diffOf(this.data).dmg),
     });
     sfx.spit();
   }
@@ -701,7 +725,7 @@ export class Game {
 
   // ---------- Trùm ----------
   spawnBoss() {
-    const z = this.mk(bossTypeFor(this.data.night));
+    const z = this.mk(bossTypeFor(this.data.night, this.bossesSpawned));
     if (this.bossesSpawned > 0) { z.foot -= 22; z.x += 60; }
     z.phase2 = false;
     this.zombies.push(z);
@@ -740,6 +764,7 @@ export class Game {
 
   damageBarricade(dmg, foot) {
     if (this.state !== 'night') return;
+    if (hasPerk(this.data, 'dat')) dmg *= 0.85;
     this.data.hp -= dmg;
     this.stats.damage += dmg;
     if (this.data.hp / this.maxHp < 0.35) this.injureMate(dmg / 320);
@@ -819,6 +844,7 @@ export class Game {
 
     this.updateSurvivors(dt);
     this.updateDefenses(dt);
+    this.updateDefenses2(dt);
     this.updateProjectiles(dt);
     this.updateCrates(dt);
     if (this.state !== 'night') return;
@@ -904,7 +930,7 @@ export class Game {
     for (const m of this.mines) {
       if (m.done) continue;
       for (const z of this.zombies) {
-        if (!z.alive) continue;
+        if (!z.alive || z.leaping) continue;
         if (Math.abs(z.x - m.x) < z.w / 2 + 6 && Math.abs(z.foot - m.y) < 18) {
           m.done = true;
           this.explode(m.x, m.y - 8, { radius: MINE.radius, dmg: MINE.dmg });
@@ -914,10 +940,116 @@ export class Game {
     }
   }
 
+  // Bẫy điện, tháp phun lửa, súng cối, tháp Tesla, drone
+  updateDefenses2(dt) {
+    const d = this.data;
+    const alive = this.zombies.filter((z) => z.alive);
+    // bẫy điện: phóng điện định kỳ, làm tê liệt mọi con trong vùng
+    const sl = d.shockerLevel || 0;
+    if (sl) {
+      this.shock.zapT = Math.max(0, this.shock.zapT - dt);
+      this.shock.t -= dt;
+      if (this.shock.t <= 0) {
+        const hit = alive.filter((z) => !z.leaping && z.x - z.w / 2 < SHOCKER.to && z.x > SHOCKER.from - 10);
+        if (hit.length) {
+          this.shock.t = SHOCKER.every[sl];
+          this.shock.zapT = 0.18;
+          for (const z of hit) {
+            z.stunT = SHOCKER.stun;
+            this.hitZombie(z, SHOCKER.dmg[sl], false, z.x, z.foot - 30, 1, false, { silent: true, noFx: true, kind: 'blast', src: 'shock' });
+            this.bolts.push({ pts: [[z.x, z.foot], [z.x + rand(-6, 6), z.foot - z.h * 0.6]], life: 0.15, max: 0.15 });
+          }
+          this.lights.push({ x: (SHOCKER.from + SHOCKER.to) / 2, y: 480, r: 200, life: 0.15, max: 0.15, color: '120,200,255', a: 0.4 });
+          sfx.tesla();
+        } else this.shock.t = 0.2;
+      }
+    }
+    // tháp phun lửa
+    if (d.flameTurret) {
+      const f = this.flameT;
+      const slot = FLAME_TURRET.slot;
+      if (f.cool > 0) f.cool -= dt;
+      else {
+        const near = alive.filter((z) => z.x - BARRICADE_X < FLAME_TURRET.range);
+        if (near.length) {
+          f.heat += dt;
+          const tgt = near.sort((a, b) => a.x - b.x)[0];
+          f.ang = Math.atan2(tgt.foot - 40 - slot.y, tgt.x - slot.x);
+          for (const z of near) { if (!z.T.burner) { z.burnT = 2; z.burnDps = FLAME_TURRET.burn; } }
+          if (Math.random() < 0.5) this.hitZombie(tgt, FLAME_TURRET.dmg, false, tgt.x, tgt.foot - 40, 1, false, { silent: true, noFx: true, kind: 'fire', src: 'flame' });
+          for (let i = 0; i < 2; i++) { const a = f.ang + rand(-0.12, 0.12), sp = rand(380, 480); this.addParticle({ x: slot.x + Math.cos(a) * 20, y: slot.y + Math.sin(a) * 20, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 10, life: FLAME_TURRET.range / sp, color: '', size: rand(5, 8), kind: 'flame' }); }
+          this.lights.push({ x: slot.x + 90, y: slot.y + 30, r: 200, life: 0.06, max: 0.06, color: '255,140,40', a: 0.2 });
+          sfx.flamer();
+          if (f.heat > FLAME_TURRET.spray) { f.heat = 0; f.cool = FLAME_TURRET.cool; }
+        } else f.heat = Math.max(0, f.heat - dt);
+      }
+    }
+    // súng cối: bắn vào chỗ đông nhất ở xa
+    const ml = d.mortarLevel || 0;
+    if (ml) {
+      this.mortarT -= dt;
+      if (this.mortarT <= 0) {
+        const far = alive.filter((z) => z.x > 380 && z.x < W - 10);
+        if (far.length) {
+          let best = far[0], bestN = 0;
+          for (const z of far) { const n = far.filter((o) => Math.abs(o.x - z.x) < 100).length; if (n > bestN) { bestN = n; best = z; } }
+          this.mortarT = MORTAR.every[ml];
+          const dist = best.x - MORTAR.x;
+          this.projectiles.push({ type: 'shell', x0: MORTAR.x, y0: MORTAR.y - 30, x1: best.x - 20, y1: best.foot - 6, t: 0, dur: 1.1, arc: 230 + dist * 0.15, w: { radius: MORTAR.radius, dmg: MORTAR.dmg[ml] } });
+          this.addParticle({ x: MORTAR.x, y: MORTAR.y - 34, vx: 10, vy: -40, life: 1, color: '160,160,160', size: 8, kind: 'smoke' });
+          sfx.launcher();
+        } else this.mortarT = 0.5;
+      }
+    }
+    // tháp Tesla: sét nhảy giữa các con
+    const tl = d.teslaLevel || 0;
+    if (tl) {
+      this.teslaT -= dt;
+      if (this.teslaT <= 0) {
+        const first = alive.filter((z) => z.x - TESLA_TOWER.x < TESLA_TOWER.range).sort((a, b) => a.x - b.x)[0];
+        if (first) {
+          this.teslaT = TESLA_TOWER.every[tl];
+          const chain = [first];
+          while (chain.length < TESLA_TOWER.chain + 1) {
+            const last = chain[chain.length - 1];
+            let next = null, bd = 150;
+            for (const z of alive) { if (chain.includes(z)) continue; const dd = Math.hypot(z.x - last.x, z.foot - last.foot); if (dd < bd) { bd = dd; next = z; } }
+            if (!next) break;
+            chain.push(next);
+          }
+          const pts = [[TESLA_TOWER.x, TESLA_TOWER.y - 34]];
+          chain.forEach((z, i) => { pts.push([z.x, z.foot - z.h * 0.55]); this.hitZombie(z, TESLA_TOWER.dmg[tl] * (1 - i * 0.12), false, z.x, z.foot - 40, 1, false, { silent: true, kind: 'blast', src: 'tesla' }); });
+          this.bolts.push({ pts, life: 0.14, max: 0.14 });
+          this.lights.push({ x: TESLA_TOWER.x, y: TESLA_TOWER.y - 34, r: 180, life: 0.12, max: 0.12, color: '120,200,255', a: 0.45 });
+          sfx.tesla();
+        } else this.teslaT = 0.3;
+      }
+    }
+    // drone chiến đấu
+    for (const dr of this.drones) {
+      dr.ph += dt;
+      dr.x += Math.sin(dr.ph * 0.9) * 20 * dt;
+      dr.y = 230 + Math.sin(dr.ph * 2.1) * 8 - (dr.ph % 1 === 0 ? 0 : 0);
+      if (dr.reload > 0) { dr.reload -= dt; if (dr.reload <= 0) dr.ammo = DRONE.mag; continue; }
+      const tgt = alive.filter((z) => z.x < W - 20).sort((a, b) => Math.abs(a.x - dr.x) - Math.abs(b.x - dr.x))[0];
+      if (!tgt) continue;
+      dr.cd -= dt;
+      if (dr.cd <= 0) {
+        dr.cd = DRONE.rate;
+        const b = tgt.boxes();
+        const ang = Math.atan2((b.by0 + b.by1) / 2 - dr.y, tgt.x - dr.x);
+        this.castRay(dr.x, dr.y + 6, ang + rand(-0.04, 0.04), DRONE.dmg, 1, false, false, 'drone');
+        this.lights.push({ x: dr.x, y: dr.y + 6, r: 80, life: 0.05, max: 0.05, color: '255,210,120', a: 0.25 });
+        sfx.turret();
+        if (--dr.ammo <= 0) dr.reload = DRONE.reload;
+      }
+    }
+  }
+
   // Dây thép gai: làm chậm và cứa zombie sát hàng rào
   slowAt(z, dt) {
     const lv = this.state === 'night' && this.data ? this.data.wireLevel || 0 : 0;
-    if (!lv || z.x - z.w / 2 > WIRE.to || z.x < WIRE.from) return 1;
+    if (!lv || z.leaping || z.x - z.w / 2 > WIRE.to || z.x < WIRE.from) return 1;
     if (Math.random() < dt * 4) this.hitZombie(z, WIRE.dps[lv] * 0.25, false, z.x - z.w / 2, z.foot - 20, 1, false, { silent: true, noFx: true, kind: 'blast', src: 'wire' });
     return z.T.heavy ? (1 + WIRE.slow[lv]) / 2 : WIRE.slow[lv];
   }
@@ -938,6 +1070,26 @@ export class Game {
   // Mẫu Thể Số 0: 3 giai đoạn
   updateBossPhases() {
     for (const z of this.bosses) {
+      if (z.alive && z.T.queen) {
+        z.broodT = (z.broodT ?? 4) - 1 / 30;
+        if (z.broodT <= 0) {
+          z.broodT = z.phase2 ? 3.5 : 5;
+          for (let k = 0; k < 3; k++) { const c = this.mk('spawnling'); c.x = z.x + 30 + k * 22; this.zombies.push(c); this.extraSpawns++; }
+          this.texts.push({ x: z.x, y: z.foot - z.h - 20, text: 'ĐẺ BẦY!', life: 1, max: 1, size: 16, color: '#c8a8e8' });
+        }
+        const r = z.hp / z.maxHp;
+        if (!z.phase2 && r < 0.5) {
+          z.phase2 = true; z.speed *= 1.5;
+          this.texts.push({ x: W / 2, y: 180, text: 'NỮ HOÀNG GỌI CẢ TỔ!', life: 2.5, max: 2.5, size: 28, color: '#ff5a45' });
+          for (let k = 0; k < 3; k++) { const st = this.mk('stalker'); st.x = z.x + 60 + k * 40; this.zombies.push(st); this.extraSpawns++; }
+          sfx.roar(); this.shake = Math.max(this.shake, 10);
+        }
+        if (!z.armorPhase && r < 0.2) {
+          z.armorPhase = true;
+          this.texts.push({ x: W / 2, y: 180, text: 'VỎ CỨNG! DÙNG LỬA, ĐIỆN, CHẤT NỔ!', life: 3, max: 3, size: 24, color: '#ffcf4a' });
+          sfx.roar(); this.shake = Math.max(this.shake, 12);
+        }
+      }
       if (!z.alive || !z.T.phases) continue;
       const r = z.hp / z.maxHp;
       if (!z.phase2 && r < 0.6) {
@@ -971,9 +1123,12 @@ export class Game {
       }
       if (k >= 1) {
         p.done = true;
-        if (p.type === 'grenade') this.explode(p.x1, p.y1);
+        if (p.type === 'grenade') this.explode(p.x1, p.y1, { grenade: true });
         else if (p.type === 'shell') this.explode(p.x1, p.y1, { radius: p.w.radius, dmg: p.w.dmg });
-        else { this.splashAcid(p.x1, p.y1, 10, LANE_MAX); sfx.acid(); this.damageBarricade(p.dmg, LANE_MAX); }
+        else {
+          this.splashAcid(p.x1, p.y1, 10, LANE_MAX); sfx.acid(); this.damageBarricade(p.dmg, LANE_MAX);
+          this.texts.push({ x: p.x1 + 6, y: p.y1 - 18, text: 'AXIT!', life: 0.8, max: 0.8, size: 13, color: '#c8f040' });
+        }
       }
     }
     this.projectiles = this.projectiles.filter((p) => !p.done);
@@ -1120,7 +1275,7 @@ export class Game {
     drawHero(ctx, PLAYER_X, PLAYER_FOOT, this.aimAngle(aim), wid, WEAPONS[wid].len, this.recoil * 0.6, this.time);
     const hpRatio = inGame ? clamp(this.data.hp / barricadeMax(this.data.barricadeLevel), 0, 1) : 1;
     drawBarricade(ctx, hpRatio, this.scene);
-    if (inGame) this.drawDefenses(ctx);
+    if (inGame) { this.drawDefenses(ctx); this.drawDefenses2(ctx); }
 
     const sorted = [...this.zombies].sort((a, b) => (a.alive - b.alive) || (a.foot - b.foot));
     for (const z of sorted) z.draw(ctx);
@@ -1157,10 +1312,16 @@ export class Game {
         ctx.fillStyle = '#888'; ctx.fillRect(-2, -8, 4, 3);
         ctx.restore();
       } else {
-        ctx.fillStyle = '#b6e83a';
-        ctx.shadowColor = '#a0ff30'; ctx.shadowBlur = 10;
-        ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0;
+        if (p.type === 'shell') {
+          ctx.fillStyle = '#2a2c30'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
+        } else { // viên axit: to, phát sáng, có vệt
+          ctx.fillStyle = 'rgba(180,240,60,0.35)';
+          ctx.beginPath(); ctx.arc(p.x + 8, p.y - 3, 6, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#c8f040';
+          ctx.shadowColor = '#a0ff30'; ctx.shadowBlur = 16;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+        }
       }
     }
 
@@ -1255,6 +1416,16 @@ export class Game {
       this.drawLight(ctx, 352, 285, 40, '255,240,190', 0.4);
       if (Math.sin(this.time * 3) > 0.6) this.drawLight(ctx, 870, 152, 26, '255,40,30', 0.7);
       this.drawLight(ctx, 38, 330, 70, '255,200,120', win * 0.8);
+    } else if (this.scene === 'highway') {
+      for (const [fx, fy] of [[420, 404], [700, 402], [880, 406]]) { // xe đang cháy
+        this.drawLight(ctx, fx, fy, 90, '255,130,40', 0.22 + Math.sin(this.time * 9 + fx) * 0.05 + Math.random() * 0.04);
+        if (Math.random() < 0.25) this.addParticle({ x: fx + rand(-12, 12), y: fy, vx: rand(-8, 8), vy: rand(-50, -25), life: 0.6, color: '', size: rand(3, 6), kind: 'flame' });
+      }
+      this.drawLight(ctx, 860, 400, 200, '255,150,90', 0.08);
+    } else if (this.scene === 'capital') {
+      if (Math.sin(this.time * 2.5) > 0.5) this.drawLight(ctx, 652, 72, 24, '255,40,30', 0.7);
+      this.drawLight(ctx, 465, 360, 50, '255,80,60', 0.2);
+      this.drawLight(ctx, 34, 360, 60, '120,160,255', 0.12 + (Math.sin(this.time * 6) > 0 ? 0.08 : 0));
     } else if (this.scene === 'dam') {
       for (let x = 330; x < W; x += 70) this.drawLight(ctx, x + 1, 268, 26, '255,210,120', 0.18 + Math.sin(this.time * 5 + x) * 0.03);
       this.drawLight(ctx, 29, 322, 70, '255,180,90', win);
@@ -1307,9 +1478,10 @@ export class Game {
     if (this.state === 'interlude') {
       if (this.interKind === 'heli') this.drawRescue(ctx);
       else if (this.interKind === 'ship') this.drawShip(ctx);
+      else if (this.interKind === 'broadcast') this.drawBroadcast(ctx);
       else this.drawDawn(ctx);
     }
-    if (this.state === 'victory') this.drawBroadcast(ctx);
+    if (this.state === 'victory') this.drawRescue(ctx);
 
     // viền tối + cảnh báo máu thấp
     const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H);
@@ -1436,6 +1608,60 @@ export class Game {
     }
   }
 
+  drawDefenses2(ctx) {
+    const d = this.data;
+    if (d.shockerLevel) { // tấm điện trên mặt đất
+      for (const y of [LANE_MIN + 8, (LANE_MIN + LANE_MAX) / 2 + 4, LANE_MAX - 2]) {
+        ctx.fillStyle = '#2a3440'; ctx.fillRect(SHOCKER.from + 6, y - 3, SHOCKER.to - SHOCKER.from - 12, 5);
+        ctx.fillStyle = this.shock.zapT > 0 ? '#bfe8ff' : 'rgba(110,190,255,0.5)';
+        for (let x = SHOCKER.from + 12; x < SHOCKER.to - 8; x += 20) ctx.fillRect(x, y - 4, 6, 2);
+      }
+      if (Math.random() < 0.1) this.addParticle({ x: rand(SHOCKER.from, SHOCKER.to), y: rand(LANE_MIN, LANE_MAX), vx: rand(-20, 20), vy: rand(-60, -20), life: 0.2, color: '#9fdcff', size: 2 });
+    }
+    if (d.flameTurret) {
+      const sl = FLAME_TURRET.slot;
+      ctx.save(); ctx.translate(sl.x, sl.y); ctx.scale(1.3, 1.3);
+      ctx.fillStyle = '#7c6e4d'; ctx.beginPath(); ctx.ellipse(0, 14, 13, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#b03a22'; roundRect(ctx, -9, -4, 10, 18, 3); ctx.fill();
+      ctx.rotate(this.flameT.ang);
+      ctx.fillStyle = '#3a3e46'; ctx.fillRect(-2, -4, 22, 8);
+      ctx.fillStyle = '#1c1e22'; ctx.fillRect(18, -3, 8, 6);
+      ctx.restore();
+      if (this.flameT.cool > 0) { ctx.fillStyle = '#ff5a3a'; ctx.fillRect(sl.x - 14, sl.y - 22, 28 * (this.flameT.cool / FLAME_TURRET.cool), 3); }
+    }
+    if (d.mortarLevel) {
+      ctx.save(); ctx.translate(MORTAR.x, MORTAR.y);
+      ctx.fillStyle = '#7c6e4d'; ctx.beginPath(); ctx.ellipse(0, 4, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.rotate(-1.05);
+      ctx.fillStyle = d.mortarLevel > 1 ? '#5a6050' : '#4a5040'; ctx.fillRect(-4, -6, 36, 12);
+      ctx.fillStyle = '#1c1e1a'; ctx.fillRect(30, -5, 4, 10);
+      ctx.restore();
+      ctx.strokeStyle = '#3a3e36'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(MORTAR.x + 4, MORTAR.y - 8); ctx.lineTo(MORTAR.x + 14, MORTAR.y + 4); ctx.stroke();
+    }
+    if (d.teslaLevel) { // cuộn Tesla trên đỉnh rào
+      const tx = TESLA_TOWER.x, ty = TESLA_TOWER.y;
+      ctx.fillStyle = '#2a2e36'; ctx.fillRect(tx - 5, ty - 30, 10, 48);
+      ctx.strokeStyle = '#b8823a'; ctx.lineWidth = 2;
+      for (let y = ty - 26; y < ty + 14; y += 5) { ctx.beginPath(); ctx.moveTo(tx - 7, y); ctx.lineTo(tx + 7, y + 2); ctx.stroke(); }
+      ctx.fillStyle = '#9aa4b0'; ctx.beginPath(); ctx.arc(tx, ty - 34, 8, 0, Math.PI * 2); ctx.fill();
+      const charge = 1 - Math.max(0, this.teslaT) / TESLA_TOWER.every[d.teslaLevel];
+      this.drawLight(ctx, tx, ty - 34, 30, '120,200,255', 0.15 + charge * 0.35);
+    }
+    for (const dr of this.drones) { // drone quadcopter
+      ctx.save(); ctx.translate(dr.x, dr.y);
+      ctx.fillStyle = '#2a2e36'; roundRect(ctx, -10, -4, 20, 8, 3); ctx.fill();
+      ctx.strokeStyle = '#2a2e36'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-16, -6); ctx.lineTo(16, -6); ctx.stroke();
+      ctx.strokeStyle = 'rgba(200,210,220,0.6)'; ctx.lineWidth = 1.5;
+      const bl = 8 * Math.abs(Math.cos(this.time * 40));
+      for (const rx of [-16, 16]) { ctx.beginPath(); ctx.moveTo(rx - bl, -8); ctx.lineTo(rx + bl, -8); ctx.stroke(); }
+      ctx.fillStyle = '#1a1c20'; ctx.fillRect(-2, 4, 6, 5);
+      ctx.fillStyle = dr.reload > 0 ? '#ffb040' : Math.sin(this.time * 8) > 0 ? '#ff3a2a' : '#5a1010';
+      ctx.beginPath(); ctx.arc(8, 0, 1.6, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
   drawBlackout(ctx) {
     if (!this.mods.blackout) return;
     if (!this.darkCanvas) { this.darkCanvas = document.createElement('canvas'); this.darkCanvas.width = W; this.darkCanvas.height = H; }
@@ -1459,7 +1685,8 @@ export class Game {
     if (vy) { hole(420, 470, 200, 0.8); hole(640, 470, 160, 0.5); } // đèn pha của Vy
     for (const l of this.lights) hole(l.x, l.y, l.r * 0.9, Math.min(1, l.a * 3 * (l.life / l.max)));
     for (const c of this.crates) hole(c.x, c.y - 20, 60, 0.8);
-    for (const z of this.zombies) if (z.burnT > 0 && z.alive) hole(z.x, z.foot - z.h / 2, 70, 0.8);
+    for (const z of this.zombies) if ((z.burnT > 0 || z.T.burner) && z.alive) hole(z.x, z.foot - z.h / 2, 70, 0.8);
+    for (const dr of this.drones) hole(dr.x, dr.y + 60, 90, 0.6);
     ctx.drawImage(this.darkCanvas, 0, 0);
   }
 

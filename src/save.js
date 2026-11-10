@@ -13,13 +13,18 @@ export function newSave() {
     reloadLevel: 0,
     dmgLevel: 0,
     seenAct: 1,
-    v: 3,
+    v: 4,
     difficulty: 'normal',
     turrets: 0,
     turretLevel: 1,
     mines: 0,
     wireLevel: 0,
     floodlight: false,
+    shockerLevel: 0,
+    flameTurret: 0,
+    mortarLevel: 0,
+    teslaLevel: 0,
+    drones: 0,
     crew: [],
     squad: [],
     mates: {},
@@ -55,7 +60,8 @@ export function loadGame() {
       out.seenAct = d.seenAct2 ? 2 : 1;
       if (out.night > 20 && out.seenAct < 2) out.seenAct = 2;
     }
-    out.v = 3;
+    if ((d.v || 0) < 4 && out.endless && out.night <= 61 && out.night > 40) out.endless = false; // bản 60 đêm
+    out.v = 4;
     if (!Array.isArray(out.squad)) out.squad = out.crew.slice(0, 4);
     out.mates = out.mates || {};
     for (const id of out.crew) out.mates[id] = { xp: 0, injured: 0, ...(out.mates[id] || {}) };

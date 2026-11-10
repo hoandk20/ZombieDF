@@ -1,6 +1,6 @@
 # Barricade Nights 🧟
 
-Game thủ thành chống zombie 2D (thể loại *barricade defense*), chiến dịch 2 màn × 20 đêm: đứng sau hàng rào, ngắm bắn
+Game thủ thành chống zombie 2D (thể loại *barricade defense*), chiến dịch 3 màn × 20 đêm (6 chương, 6 bản đồ): đứng sau hàng rào, ngắm bắn
 từng đợt zombie mỗi đêm, ban ngày thì sửa rào, đi lục lọi, tìm người sống sót và mua súng mới.
 
 Viết bằng **HTML5 Canvas + JavaScript thuần** (không dùng engine), đóng gói bằng **Vite** cho web
@@ -24,6 +24,22 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
   **Chương 3 · Đập Hồng Sơn** (núi rừng, đập thủy điện) và **Chương 4 · Căn cứ Hồng Sơn** (đèn pha, tháp canh,
   phòng thí nghiệm). Trùm: Kẻ Khổng Lồ (25), Bạo Chúa Rừng gọi đàn chó (30), hai Kẻ Khổng Lồ (35), Mẫu Thể Số 0
   ba giai đoạn (40). Kết thúc: Phong phát công thức vắc-xin trên mọi tần số.
+- **Màn 3 · Chuyến hàng cuối cùng (đêm 41–60):** mang thùng chủng gốc vắc-xin về Bệnh viện Trung ương.
+  **Chương 5 · Cao tốc Bắc Nam** (cầu vượt, xe bỏ hoang đang cháy) và **Chương 6 · Thủ đô** (nhà chọc trời,
+  tháp truyền hình, ga tàu điện ngầm). Trùm: Quái Vật Cảng (45), Cỗ Máy Nghiền lao húc, da thép (50),
+  Cỗ Máy Nghiền + Bạo Chúa Rừng (55), Nữ Hoàng Bầy Đàn đẻ bầy liên tục, 3 giai đoạn (60).
+- **Mỗi chương là một khởi đầu mới:** đồng đội cũ ở lại phía sau (có lý do trong cốt truyện), công trình
+  phòng thủ phải dựng lại. Mỗi chương có 2 đồng đội riêng, bộ công trình riêng và loại quái mới riêng.
+
+| Chương | Đồng đội | Công trình phòng thủ | Quái mới |
+|---|---|---|---|
+| 1 · Bến Sương | Lan, Ông Tư | Mìn, dây thép gai | Kẻ chạy, kẻ bò, gã khổng lồ, kẻ phun axit |
+| 2 · Cảng Vọng Hải | Bảo, Mai | Tháp súng máy, mìn, đèn pha | Cảnh sát bọc giáp, kẻ trương phình |
+| 3 · Đập Hồng Sơn | Hùng, Linh | Bẫy điện, dây thép gai, mìn | Chó nhiễm bệnh, kẻ rú, kẻ tái sinh |
+| 4 · Căn cứ Hồng Sơn | Bác sĩ Khoa, Vy | Tháp súng máy, tháp phun lửa, đèn pha | Lính mang khiên |
+| 5 · Cao tốc Bắc Nam | Tuấn, Ngọc | Súng cối tự động, dây thép gai, mìn | Kẻ nhảy (bật qua mìn), kẻ cháy (miễn nhiễm lửa) |
+| 6 · Thủ đô | Đạt, Hà | Tháp Tesla, drone chiến đấu, đèn pha | Kẻ phân thân, kẻ tàng hình |
+
 - 4 đồng đội mới ở màn 2: **Hùng** (cựu binh, súng máy), **Linh** (xạ thủ), **bác sĩ Khoa**, **Vy** (kỹ sư điện).
 - Thắng chiến dịch sẽ mở **chế độ vô tận** (cứ 5 đêm lại có một con trùm).
 
@@ -41,8 +57,10 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 - Chọn độ khó khi bắt đầu chiến dịch: **Dễ** (cân bằng bản đầu), **Thường** (đề xuất), **Khó**, **Ác mộng**.
   Độ khó tăng máu, sát thương, tốc độ, số lượng zombie, tần suất kéo đến theo bầy; giảm tiền thưởng;
   đồng đội khó tìm hơn và tốn nhiều khẩu phần hơn. Zombie cắn rào đau dần theo từng đêm.
-- Tab **Phòng thủ** trong cửa hàng:
+- Tab **Phòng thủ** trong cửa hàng (mỗi chương chỉ bán một số loại, xem bảng ở trên):
   - **Tháp súng máy tự động** (tối đa 2, nâng cấp 3 cấp): tự bắn con gần nhất, bắn liên tục sẽ quá nhiệt.
+  - **Bẫy điện**: phóng điện làm tê liệt mọi con trên tấm điện. **Tháp phun lửa**: đốt mọi con lại gần rào.
+  - **Súng cối tự động**: nã đạn nổ vào chỗ đông nhất. **Tháp Tesla**: sét nhảy 5 con. **Drone chiến đấu**: bay và bắn.
   - **Mìn**: tự rải trước rào mỗi đêm, nổ khi zombie dẫm lên; mìn chưa nổ được thu lại.
   - **Dây thép gai** (2 cấp): làm chậm và cứa zombie sát hàng rào.
   - **Đèn pha chiến trường**: nhìn rõ trong đêm mất điện.

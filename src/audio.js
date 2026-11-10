@@ -174,6 +174,8 @@ export const sfx = {
   hurt() { tone(400, 200, 0.25, 0.18, 'square'); },
   levelUp() { tone(523, 784, 0.18, 0.15, 'triangle'); tone(784, 1046, 0.22, 0.12, 'triangle', 0.15); },
   turret() { if (throttle('turret', 70)) return; noise(0.08, 2600, 0.28); tone(150, 70, 0.05, 0.1); },
+  ricochet() { if (throttle('rico', 90)) return; tone(2400, 1600, 0.06, 0.08, 'square'); },
+  leap() { if (throttle('leap', 300)) return; noise(0.25, 700, 0.2, 'bandpass', 2); },
   ally() { if (throttle('ally', 80)) return; noise(0.12, 1800, 0.3); tone(170, 60, 0.07, 0.1); },
   reload() { tone(900, 650, 0.05, 0.12); tone(500, 420, 0.06, 0.12, 'square', 0.18); },
   reloadDone() { tone(1200, 900, 0.05, 0.12, 'square'); },

@@ -37,6 +37,12 @@ export class Zombie {
     this.dmg = T.dmg; // game nhân thêm theo đêm và độ khó
     this.burnT = 0;
     this.burnDps = 0;
+    this.stunT = 0;
+    this.leapt = false;
+    this.leaping = false;
+    this.jumpY = 0;
+    this.chargeT = 4;
+    this.charging = 0;
   }
 
   get alive() { return this.state !== 'dead'; }
@@ -122,6 +128,21 @@ export class Zombie {
     }
     this.buffT = Math.max(0, this.buffT - dt);
     this.screamT = Math.max(0, this.screamT - dt);
+    if (this.stunT > 0) { this.stunT -= dt; return; } // bị bẫy điện làm tê liệt
+    if (this.leaping) { // kẻ nhảy đang bật qua mìn và dây thép gai
+      this.leapT += dt;
+      const k = Math.min(1, this.leapT / 0.7);
+      this.x = this.leapFrom + (this.targetX - this.leapFrom) * k;
+      this.jumpY = -Math.sin(k * Math.PI) * 95;
+      if (k >= 1) { this.leaping = false; this.jumpY = 0; this.state = 'attack'; this.x = this.targetX; }
+      return;
+    }
+    if (this.T.charger) { // Cỗ Máy Nghiền lao húc
+      this.chargeT -= dt;
+      if (this.charging > 0) this.charging -= dt;
+      else if (this.chargeT <= 0 && this.state === 'walk') { this.chargeT = 6.5; this.charging = 1.2; game.bossRoar(this); }
+    }
+    if (this.T.burner) this.burnT = 0;
     if (this.burnT > 0) {
       this.burnT -= dt;
       game.burnTick(this, this.burnDps * dt);
@@ -132,11 +153,16 @@ export class Zombie {
       this.roarT -= dt;
       if (this.roarT <= 0) { this.roarT = rand(6, 9); game.bossRoar(this); }
     }
-    const spd = this.speed * (this.buffT > 0 ? 1.5 : 1) * (game.slowAt ? game.slowAt(this, dt) : 1);
+    const spd = this.speed * (this.buffT > 0 ? 1.5 : 1) * (this.charging > 0 ? 4 : 1) * (game.slowAt ? game.slowAt(this, dt) : 1);
     if (this.fleeing) { // kẻ mang hòm bỏ chạy
       this.x += spd * 1.15 * dt;
       this.phase += dt * (2 + spd * 0.06);
       if (this.x > W + 70) game.bountyEscaped(this);
+      return;
+    }
+    if (this.state === 'walk' && this.T.leaper && !this.leapt && this.x < 580) {
+      this.leaping = true; this.leapt = true; this.leapT = 0; this.leapFrom = this.x;
+      game.sfx.leap && game.sfx.leap();
       return;
     }
     if (this.state === 'walk') {
@@ -166,6 +192,9 @@ export class Zombie {
   // kind: 'bullet' | 'fire' | 'blast'. Giáp chỉ chặn đạn thường.
   hurt(dmg, head, game, kind = 'bullet') {
     let result = false;
+    if (this.T.burner && kind === 'fire') return false; // kẻ cháy miễn nhiễm lửa
+    if (this.T.plated && kind === 'bullet') dmg *= 0.5;
+    if (this.T.shield && kind === 'bullet' && !head) { dmg *= 0.12; result = 'shield'; }
     if (this.T.armored && kind === 'bullet') {
       if (head && this.helmet > 0) {
         this.helmet -= dmg;
@@ -209,6 +238,8 @@ export class Zombie {
       ctx.fill();
     }
     if (this.reviveT > 0) ctx.translate(Math.sin(this.reviveT * 40) * 1.5, 0); // co giật trước khi đứng dậy
+    if (this.jumpY) ctx.translate(0, this.jumpY);
+    if (this.T.stalker && this.alive && this.hitT <= 0 && this.burnT <= 0) ctx.globalAlpha *= Math.max(0.07, Math.min(1, (560 - this.x) / 220));
     if (this.T.kind === 'crawl') this.drawCrawl(ctx); else if (this.T.kind === 'dog') this.drawDog(ctx); else this.drawUpright(ctx);
     ctx.restore();
     if (this.alive && this.buffT > 0) { // bị kích động bởi tiếng rú
@@ -219,11 +250,11 @@ export class Zombie {
       ctx.fillStyle = g;
       ctx.fillRect(b.hx - b.hr * 3, b.hy - b.hr * 3, b.hr * 6, b.hr * 6);
     }
-    if (this.burnT > 0 && this.alive) { // lửa bám trên người
+    if ((this.burnT > 0 || this.T.burner) && this.alive) { // lửa bám trên người
       const fh = this.T.kind === 'crawl' ? this.h : this.h * 0.8;
       for (let i = 0; i < 3; i++) {
         const fx = this.x + Math.sin(this.phase * 5 + i * 2) * this.w * 0.3;
-        const fy = this.foot - fh * (0.3 + i * 0.25);
+        const fy = this.foot - fh * (0.3 + i * 0.25) + this.jumpY;
         const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, 14);
         g.addColorStop(0, 'rgba(255,220,120,0.85)');
         g.addColorStop(0.5, 'rgba(255,110,30,0.5)');
@@ -477,8 +508,31 @@ export class Zombie {
       }
     }
 
+    if (T.plated) { // giáp thép
+      ctx.fillStyle = flash ? '#fff' : '#5a5e66';
+      for (let k = 0; k < 4; k++) { roundRect(ctx, shX - tw * 1.0 + k * 2 * s, shY + 4 * s + k * 15 * s, tw * 1.9, 10 * s, 2 * s); ctx.fill(); }
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      for (let k = 0; k < 4; k++) ctx.fillRect(shX - tw * 1.0 + k * 2 * s, shY + 4 * s + k * 15 * s, tw * 1.9, 2 * s);
+    }
+    if (T.queen) { // túi trứng sau lưng
+      const pulse = 1 + Math.sin(this.phase * 2) * 0.05;
+      ctx.fillStyle = flash ? '#fff' : 'rgba(170,110,190,0.85)';
+      ctx.beginPath(); ctx.ellipse(shX + tw * 1.4, (shY + hipY) / 2, tw * 1.1 * pulse, (hipY - shY) * 0.6 * pulse, -0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(90,40,110,0.6)';
+      for (let k = 0; k < 5; k++) { ctx.beginPath(); ctx.arc(shX + tw * (1 + (k % 3) * 0.35), shY + 20 * s + k * 12 * s, 4 * s, 0, Math.PI * 2); ctx.fill(); }
+    }
+
     // ---- tay trước ----
     arm(-2 * s, this.phase, skin, shirt);
+
+    if (T.shield) { // khiên chống đạn phía trước
+      ctx.fillStyle = flash ? '#fff' : '#2a3038';
+      roundRect(ctx, shX - tw * 2.1, shY - 2 * s, tw * 0.9, (hipY - shY) + 26 * s, 3 * s); ctx.fill();
+      ctx.fillStyle = 'rgba(150,190,230,0.35)';
+      ctx.fillRect(shX - tw * 2.0, shY + 4 * s, tw * 0.7, 10 * s);
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1.5 * s;
+      ctx.strokeRect(shX - tw * 2.1, shY - 2 * s, tw * 0.9, (hipY - shY) + 26 * s);
+    }
   }
 
   drawDog(ctx) {

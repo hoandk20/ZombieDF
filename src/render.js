@@ -47,6 +47,8 @@ export function makeBackground(bloodMoon = false, variant = 'town') {
   if (variant === 'harbor') drawHarbor(g, rnd);
   else if (variant === 'dam') drawDam(g, rnd);
   else if (variant === 'base') drawBase(g, rnd);
+  else if (variant === 'highway') drawHighway(g, rnd);
+  else if (variant === 'capital') drawCapital(g, rnd);
   else {
   // thành phố đổ nát phía xa
   let x = 240;
@@ -304,6 +306,105 @@ function drawBase(g, rnd) {
   g.fillStyle = '#e8c040'; for (let x = 8; x < 68; x += 12) g.fillRect(x, 300, 6, 6);
 }
 
+function carSilhouette(g, x, y, w, col, flipped) {
+  g.fillStyle = col;
+  if (flipped) { // xe lật ngửa
+    g.fillRect(x, y - 14, w, 14);
+    g.beginPath(); g.moveTo(x + w * 0.2, y); g.lineTo(x + w * 0.3, y + 10); g.lineTo(x + w * 0.75, y + 10); g.lineTo(x + w * 0.85, y); g.fill();
+    g.fillStyle = '#0c0c10'; g.beginPath(); g.arc(x + w * 0.2, y - 16, 6, 0, Math.PI * 2); g.arc(x + w * 0.8, y - 16, 6, 0, Math.PI * 2); g.fill();
+    return;
+  }
+  g.fillRect(x, y - 14, w, 12);
+  g.beginPath(); g.moveTo(x + w * 0.2, y - 14); g.lineTo(x + w * 0.32, y - 26); g.lineTo(x + w * 0.7, y - 26); g.lineTo(x + w * 0.82, y - 14); g.fill();
+  g.fillStyle = '#0c0c10'; g.beginPath(); g.arc(x + w * 0.22, y - 2, 6, 0, Math.PI * 2); g.arc(x + w * 0.78, y - 2, 6, 0, Math.PI * 2); g.fill();
+}
+
+function drawHighway(g, rnd) {
+  // ánh sáng mờ của thủ đô ở cuối đường
+  const glow = g.createRadialGradient(860, HORIZON, 10, 860, HORIZON, 260);
+  glow.addColorStop(0, 'rgba(255,150,90,0.25)');
+  glow.addColorStop(1, 'rgba(255,150,90,0)');
+  g.fillStyle = glow; g.fillRect(560, 160, 400, 260);
+  g.fillStyle = '#121225';
+  for (let x = 720; x < W; x += 18 + rnd() * 14) { const h = 30 + rnd() * 80; g.fillRect(x, HORIZON - 60 - h, 14 + rnd() * 10, h); }
+  // cầu vượt
+  g.fillStyle = '#1b1c26';
+  g.fillRect(240, 300, W - 240, 18);
+  g.fillStyle = '#15161e';
+  for (let x = 300; x < W; x += 160) g.fillRect(x, 318, 16, HORIZON - 318);
+  g.fillStyle = '#25262f'; g.fillRect(240, 296, W - 240, 4);
+  // biển báo xanh
+  g.fillStyle = '#1e5a3a'; g.fillRect(520, 248, 120, 40);
+  g.strokeStyle = '#d8e8d8'; g.lineWidth = 1.5; g.strokeRect(523, 251, 114, 34);
+  g.fillStyle = '#e8f0e8'; g.font = 'bold 11px sans-serif'; g.fillText('THỦ ĐÔ', 534, 266); g.fillText('112 km  ↑', 534, 280);
+  g.fillStyle = '#1b1c26'; g.fillRect(578, 288, 4, 10);
+  // xe bỏ hoang trên đường
+  const cols = ['#3a2a2a', '#2a3040', '#3a3a30', '#2a2a2e', '#402a1e'];
+  let x = 290;
+  while (x < W - 40) {
+    const w = 46 + rnd() * 26;
+    carSilhouette(g, x, HORIZON - 2, w, cols[Math.floor(rnd() * cols.length)], rnd() < 0.25);
+    x += w + 12 + rnd() * 70;
+  }
+  // mặt đường cao tốc
+  const ground = g.createLinearGradient(0, HORIZON, 0, H);
+  ground.addColorStop(0, '#2a2b2f');
+  ground.addColorStop(1, '#141417');
+  g.fillStyle = ground;
+  g.fillRect(0, HORIZON, W, H - HORIZON);
+  g.fillStyle = 'rgba(240,240,240,0.35)';
+  for (let px = 240; px < W; px += 70) g.fillRect(px, 466, 36, 3);
+  g.fillStyle = 'rgba(230,190,40,0.35)'; g.fillRect(240, 430, W - 240, 3);
+  g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1;
+  for (let i = 0; i < 14; i++) { const cx = 260 + rnd() * 680, cy = HORIZON + 10 + rnd() * 100; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + 20, cy + 6); g.lineTo(cx + 34, cy + 2); g.stroke(); }
+  // xe buýt lật sau lưng người chơi
+  g.fillStyle = '#5a4a1e'; g.fillRect(-10, 330, 90, 150);
+  g.fillStyle = '#3a3014'; for (let y = 345; y < 470; y += 26) g.fillRect(6, y, 60, 16);
+  g.fillStyle = 'rgba(160,200,230,0.25)'; for (let y = 345; y < 470; y += 26) g.fillRect(8, y + 2, 56, 10);
+}
+
+function drawCapital(g, rnd) {
+  // nhà chọc trời nhiều lớp
+  for (const [base, col, lit] of [[150, '#121428', 0.03], [210, '#0f1122', 0.06]]) {
+    let x = 230;
+    while (x < W) {
+      const bw = 40 + rnd() * 70, bh = HORIZON - base - rnd() * 120;
+      g.fillStyle = col; g.fillRect(x, HORIZON - bh, bw, bh);
+      for (let wy = HORIZON - bh + 8; wy < HORIZON - 10; wy += 11) for (let wx = x + 4; wx < x + bw - 5; wx += 8) {
+        if (rnd() < lit) { g.fillStyle = rnd() < 0.7 ? 'rgba(255,200,120,0.7)' : 'rgba(150,200,255,0.6)'; g.fillRect(wx, wy, 3, 5); }
+      }
+      x += bw + 4 + rnd() * 16;
+    }
+  }
+  // tháp truyền hình
+  g.fillStyle = '#0c0e1c';
+  g.beginPath(); g.moveTo(640, HORIZON); g.lineTo(652, 120); g.lineTo(664, HORIZON); g.fill();
+  g.beginPath(); g.ellipse(652, 160, 16, 8, 0, 0, Math.PI * 2); g.fill();
+  g.fillRect(650, 70, 4, 52);
+  // lối xuống tàu điện ngầm
+  g.fillStyle = '#1a1c26'; g.fillRect(420, 372, 90, 48);
+  g.fillStyle = '#0a0a10'; g.fillRect(432, 384, 66, 36);
+  g.fillStyle = '#c03030'; g.beginPath(); g.arc(465, 360, 11, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff'; g.font = 'bold 13px sans-serif'; g.fillText('M', 459, 365);
+  // cột đèn gãy
+  g.strokeStyle = '#1a1b24'; g.lineWidth = 3;
+  for (const lx of [330, 600, 820]) { g.beginPath(); g.moveTo(lx, HORIZON); g.lineTo(lx, 340); g.lineTo(lx + 16, 334); g.stroke(); }
+  // quảng trường lát đá
+  const ground = g.createLinearGradient(0, HORIZON, 0, H);
+  ground.addColorStop(0, '#2e2c2c');
+  ground.addColorStop(1, '#151414');
+  g.fillStyle = ground;
+  g.fillRect(0, HORIZON, W, H - HORIZON);
+  g.strokeStyle = 'rgba(0,0,0,0.28)'; g.lineWidth = 1;
+  for (let y = HORIZON + 12; y < H; y += 16) { g.beginPath(); g.moveTo(240, y); g.lineTo(W, y); g.stroke(); }
+  for (let x2 = 260; x2 < W; x2 += 34) { g.beginPath(); g.moveTo(x2, HORIZON); g.lineTo(x2 + 30, H); g.stroke(); }
+  // xe cứu thương sau lưng người chơi
+  g.fillStyle = '#d8d8d4'; g.fillRect(-6, 360, 84, 120);
+  g.fillStyle = '#c03030'; g.fillRect(-6, 410, 84, 10);
+  g.fillRect(30, 380, 8, 22); g.fillRect(23, 387, 22, 8);
+  g.fillStyle = '#3a6ad0'; g.fillRect(20, 352, 24, 8);
+}
+
 export function drawBarricade(ctx, ratio, variant = 'town') {
   const x0 = BARRICADE_BACK, x1 = BARRICADE_X, top = BARRICADE_TOP, bottom = LANE_MAX + 10;
   // bao cát
@@ -332,12 +433,17 @@ export function drawBarricade(ctx, ratio, variant = 'town') {
     ctx.save();
     ctx.translate((x0 + x1) / 2 + 2, p.y);
     ctx.rotate(p.a);
-    const plank = { harbor: i % 2 ? '#56636b' : '#6b5a46', dam: i % 2 ? '#7d7f7a' : '#6e706b', base: i % 2 ? '#4a5560' : '#566270' }[variant] || '#6b4a2b';
+    const plank = {
+      harbor: i % 2 ? '#56636b' : '#6b5a46', dam: i % 2 ? '#7d7f7a' : '#6e706b', base: i % 2 ? '#4a5560' : '#566270',
+      highway: ['#8a2a22', '#2a4a7a', '#c8c8c0', '#3a3a3e'][i % 4], capital: i % 2 ? '#8a8a84' : '#77776f',
+    }[variant] || '#6b4a2b';
     ctx.fillStyle = plank;
     ctx.fillRect(-44, -7, 88, 14);
     if (variant === 'harbor') { ctx.fillStyle = 'rgba(0,0,0,0.25)'; for (let r = -40; r < 44; r += 8) ctx.fillRect(r, -7, 2, 14); }
     if (variant === 'base') { ctx.fillStyle = '#e8c040'; for (let r = -40; r < 40; r += 14) { ctx.beginPath(); ctx.moveTo(r, 7); ctx.lineTo(r + 6, -7); ctx.lineTo(r + 10, -7); ctx.lineTo(r + 4, 7); ctx.fill(); } }
     if (variant === 'dam') { ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(-44, -1, 88, 2); }
+    if (variant === 'highway') { ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(-44, -7, 88, 2); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(-12, -3, 18, 6); }
+    if (variant === 'capital') { ctx.fillStyle = '#e8c030'; for (let r = -40; r < 40; r += 16) ctx.fillRect(r, -2, 8, 4); }
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.fillRect(-44, 4, 88, 3);
     ctx.fillStyle = '#c9c9c9';
@@ -465,6 +571,26 @@ export const CHARACTERS = {
     outfit: 'labcoat', top: '#f2f4f6', topShade: '#d6dadf', accent: '#4a6a9a',
     pants: '#3a3f4a', shoes: '#2a2420',
   },
+  tuan: {
+    skin: '#d4a070', hair: 'short', hairColor: '#1c1410', head: 'cap', stubble: true,
+    outfit: 'flannel', top: '#9a2e2a', topShade: '#7a2422', accent: '#2a1a18',
+    pants: '#3a4a6a', shoes: '#3a2a1c',
+  },
+  ngoc: {
+    female: true, skin: '#f8d6ba', hair: 'longStraight', hairColor: '#4a2a18', head: 'none',
+    outfit: 'press', top: '#f4f4f0', topShade: '#dcdcd4', accent: '#2a5aa0',
+    pants: '#8a7a5a', shoes: '#f0ece6', lips: '#e05a74', eyes: '#3a2214',
+  },
+  dat: {
+    skin: '#e0aa80', hair: 'short', hairColor: '#1a1410', head: 'fireHelmet',
+    outfit: 'firesuit', top: '#c8a060', topShade: '#a8844a', accent: '#e8e8a0',
+    pants: '#b89050', shoes: '#1a1612', gloves: '#3a2a1a',
+  },
+  ha: {
+    female: true, skin: '#f4d0b0', hair: 'braid', hairColor: '#120c0a', head: 'none',
+    outfit: 'tactical', top: '#22262e', topShade: '#1a1d24', accent: '#0e1014',
+    pants: '#1c1f26', shoes: '#0e0e10', lips: '#c84860', eyes: '#2a1a12', gloves: '#141416',
+  },
   vy: {
     female: true, skin: '#f6d0ae', hair: 'buns', hairColor: '#2a1810', head: 'hardhat',
     outfit: 'hivis', top: '#2e3a5a', topShade: '#26304a', accent: '#ff8a1e',
@@ -509,6 +635,8 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
     ctx.fill();
   } else if (C.hair === 'buns') {
     ctx.beginPath(); ctx.arc(hx - 11, hy - 5, 4.6, 0, Math.PI * 2); ctx.arc(hx - 9, hy + 4, 4.2, 0, Math.PI * 2); ctx.fill();
+  } else if (C.hair === 'braid') { // bím tóc thả sau lưng
+    for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.ellipse(hx - 11 - k * 0.6, hy + 2 + k * 4.5, 3.2, 2.6, 0.3, 0, Math.PI * 2); ctx.fill(); }
   } else if (C.hair === 'bob') {
     ctx.beginPath();
     ctx.moveTo(hx - 12, hy - 4);
@@ -596,6 +724,23 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
     ctx.fillStyle = shade(C.accent, -15); roundRect(ctx, x - 5, top + 19, 10, 7, 1.5); ctx.fill();
     ctx.fillStyle = 'rgba(20,15,10,0.45)'; ctx.beginPath(); ctx.ellipse(x + 3, top + 33, 4, 2.5, 0.4, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#9aa0a8'; ctx.fillRect(x + 9, foot - 44, 3, 14); ctx.fillRect(x + 7.5, foot - 46, 6, 4); // cờ lê
+  } else if (C.outfit === 'flannel') { // sơ mi caro
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1.2;
+    for (let k = -10; k <= 12; k += 5) { ctx.beginPath(); ctx.moveTo(x + k, top + 2); ctx.lineTo(x + k, foot - 40); ctx.stroke(); }
+    for (let yy = top + 6; yy < foot - 40; yy += 6) { ctx.beginPath(); ctx.moveTo(bx, yy); ctx.lineTo(bx + bw, yy); ctx.stroke(); }
+    ctx.fillStyle = '#2a2a2a'; ctx.fillRect(bx, foot - 39, bw, 4);
+  } else if (C.outfit === 'press') { // áo gi-lê báo chí + máy quay
+    ctx.fillStyle = C.accent;
+    roundRect(ctx, bx - 1, top + 4, bw + 2, 30, 3); ctx.fill();
+    ctx.fillStyle = '#f0f0f0'; ctx.font = 'bold 4.2px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('BÁO CHÍ', x, top + 18);
+    ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x - 9, top + 1); ctx.lineTo(x + 9, top + 30); ctx.stroke();
+    ctx.fillStyle = '#1e1e22'; roundRect(ctx, x + 5, top + 26, 9, 7, 1.5); ctx.fill();
+    ctx.fillStyle = '#5a8ad0'; ctx.beginPath(); ctx.arc(x + 12, top + 29.5, 2, 0, Math.PI * 2); ctx.fill();
+  } else if (C.outfit === 'firesuit') { // đồ chống cháy có sọc phản quang
+    ctx.fillStyle = C.accent; ctx.fillRect(bx, top + 18, bw, 3); ctx.fillRect(bx, top + 32, bw, 3);
+    ctx.fillStyle = '#c0c0c0'; ctx.fillRect(bx, top + 19, bw, 1);
+    ctx.fillStyle = '#c03028'; roundRect(ctx, bx - 4, top + 4, 6, 26, 2); ctx.fill(); // bình khí sau lưng
+    ctx.fillStyle = '#3a2a1a'; ctx.fillRect(bx, foot - 39, bw, 4);
   } else if (C.outfit === 'camo') {
     ctx.fillStyle = C.accent; // vằn rằn ri
     for (let k = 0; k < 7; k++) { ctx.beginPath(); ctx.ellipse(bx + 4 + (k * 7) % bw, top + 6 + k * 6, 4, 2.4, k, 0, Math.PI * 2); ctx.fill(); }
@@ -800,6 +945,16 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
     ctx.beginPath(); ctx.moveTo(hx - 10, hy - 7); ctx.quadraticCurveTo(hx - 10, hy - 19, hx + 1, hy - 19); ctx.quadraticCurveTo(hx + 11, hy - 19, hx + 11, hy - 7); ctx.fill();
     ctx.fillRect(hx - 11, hy - 8, 26, 3);
     ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(hx - 1, hy - 19, 3, 11);
+  } else if (C.head === 'cap') { // mũ lưỡi trai
+    ctx.fillStyle = '#2a4a7a';
+    ctx.beginPath(); ctx.moveTo(hx - 10, hy - 6); ctx.quadraticCurveTo(hx - 9, hy - 17, hx + 1, hy - 17); ctx.quadraticCurveTo(hx + 10, hy - 16, hx + 10, hy - 6); ctx.fill();
+    ctx.fillRect(hx + 4, hy - 8, 12, 3);
+    ctx.fillStyle = '#e8e8e8'; ctx.fillRect(hx - 3, hy - 14, 6, 4);
+  } else if (C.head === 'fireHelmet') { // mũ cứu hỏa
+    ctx.fillStyle = '#d8b030';
+    ctx.beginPath(); ctx.moveTo(hx - 11, hy - 6); ctx.quadraticCurveTo(hx - 10, hy - 20, hx + 1, hy - 20); ctx.quadraticCurveTo(hx + 12, hy - 19, hx + 11, hy - 6); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx - 14, hy - 4); ctx.lineTo(hx + 16, hy - 6); ctx.lineTo(hx + 14, hy - 3); ctx.lineTo(hx - 14, hy - 1); ctx.fill();
+    ctx.fillStyle = '#a02020'; ctx.fillRect(hx - 2, hy - 19, 5, 6);
   } else if (C.head === 'clip') {
     ctx.fillStyle = '#ff8fb0'; ctx.fillRect(hx + 3, hy - 9.5, 5, 1.8);
     ctx.fillStyle = '#ffc0d4'; ctx.beginPath(); ctx.arc(hx + 8.5, hy - 8.6, 1.6, 0, Math.PI * 2); ctx.fill();

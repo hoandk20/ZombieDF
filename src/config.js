@@ -17,14 +17,14 @@ export const SURVIVOR_SLOTS = [86, 54, 144, 24];
 
 export const HEADSHOT_MUL = 2.5;
 export const DAY_HOURS = 10;
-export const CAMPAIGN_NIGHTS = 40;
+export const CAMPAIGN_NIGHTS = 60;
 export const ACT_LENGTH = 10;
 export const STAGE_LENGTH = 20; // 20 đêm = 1 màn
-export const actFor = (n) => Math.min(4, Math.max(1, Math.ceil(n / ACT_LENGTH)));
-export const stageFor = (n) => Math.min(2, Math.max(1, Math.ceil(n / STAGE_LENGTH)));
-export const ACT_NAMES = { 1: 'Bến Sương', 2: 'Cảng Vọng Hải', 3: 'Đập Hồng Sơn', 4: 'Căn cứ Hồng Sơn' };
-export const STAGE_NAMES = { 1: 'Đường ra biển', 2: 'Mật mã Hồng Sơn' };
-export const SCENES = { 1: 'town', 2: 'harbor', 3: 'dam', 4: 'base' };
+export const actFor = (n) => Math.min(6, Math.max(1, Math.ceil(n / ACT_LENGTH)));
+export const stageFor = (n) => Math.min(3, Math.max(1, Math.ceil(n / STAGE_LENGTH)));
+export const ACT_NAMES = { 1: 'Bến Sương', 2: 'Cảng Vọng Hải', 3: 'Đập Hồng Sơn', 4: 'Căn cứ Hồng Sơn', 5: 'Cao tốc Bắc Nam', 6: 'Thủ đô' };
+export const STAGE_NAMES = { 1: 'Đường ra biển', 2: 'Mật mã Hồng Sơn', 3: 'Chuyến hàng cuối cùng' };
+export const SCENES = { 1: 'town', 2: 'harbor', 3: 'dam', 4: 'base', 5: 'highway', 6: 'capital' };
 export const sceneFor = (n) => SCENES[actFor(n)];
 export const MAX_SQUAD = 4;
 export const CAMP_INCOME = 35;
@@ -43,17 +43,36 @@ export const diffOf = (d) => DIFFICULTIES[(d && d.difficulty) || 'normal'] || DI
 // Công trình phòng thủ
 export const TURRET = {
   max: 2,
-  price: 1800,
-  upgrade: [0, 1400, 2800],            // giá lên cấp 2, 3
+  price: 3200,
+  upgrade: [0, 2600, 5200],            // giá lên cấp 2, 3
   dmg: [10, 15, 22],
   rate: [0.13, 0.1, 0.08],
   heat: [24, 32, 44],                  // số phát trước khi quá nhiệt
   cool: 2.6,
   slots: [{ x: 214, y: 392 }, { x: 176, y: 398 }],
 };
-export const MINE = { price: 130, max: 8, radius: 95, dmg: 240 };
-export const WIRE = { prices: [900, 2000], slow: [1, 0.62, 0.45], dps: [0, 5, 10], from: 238, to: 330 };
-export const FLOODLIGHT_PRICE = 700;
+export const MINE = { price: 180, max: 8, radius: 95, dmg: 240 };
+export const WIRE = { prices: [1400, 3000], slow: [1, 0.62, 0.45], dps: [0, 5, 10], from: 238, to: 330 };
+export const FLOODLIGHT_PRICE = 900;
+export const SHOCKER = { prices: [2800, 4200], every: [0, 1.8, 1.25], dmg: [0, 34, 52], stun: 0.6, from: 240, to: 350 };
+export const FLAME_TURRET = { price: 4200, range: 235, burn: 18, dmg: 5, spray: 3, cool: 2.2, slot: { x: 196, y: 386 } };
+export const MORTAR = { prices: [5200, 4800], every: [0, 3.6, 2.5], dmg: [0, 190, 260], radius: 115, x: 46, y: 468 };
+export const TESLA_TOWER = { prices: [6500, 5200], every: [0, 1.35, 0.9], dmg: [0, 70, 105], range: 430, chain: 4, x: 232, y: 352 };
+export const DRONE = { price: 4800, max: 2, dmg: 13, rate: 0.12, mag: 30, reload: 2.2 };
+
+// Mỗi chương (bản đồ) có bộ công trình phòng thủ riêng. Sang chương mới thì làm lại từ đầu.
+export const DEFENSES_BY_ACT = {
+  1: ['mines', 'wire'],
+  2: ['turret', 'mines', 'floodlight'],
+  3: ['shocker', 'wire', 'mines'],
+  4: ['turret', 'flameTurret', 'floodlight'],
+  5: ['mortar', 'wire', 'mines'],
+  6: ['teslaTower', 'drone', 'floodlight'],
+};
+export const ALL_DEFENSES = ['turret', 'mines', 'wire', 'floodlight', 'shocker', 'flameTurret', 'mortar', 'teslaTower', 'drone'];
+export function resetDefenses(d) {
+  Object.assign(d, { turrets: 0, turretLevel: 1, mines: 0, wireLevel: 0, floodlight: false, shockerLevel: 0, flameTurret: 0, mortarLevel: 0, teslaLevel: 0, drones: 0 });
+}
 
 export const WEAPONS = {
   pistol: {
@@ -130,6 +149,14 @@ export const ZOMBIES = {
   reviver: { name: 'Kẻ tái sinh', hp: 85, speed: 24, dmg: 7, atkRate: 1.2, h: 104, w: 32, reward: 30, skin: '#7a8a7a', shirt: '#2e3a3a', pants: '#22282a', kind: 'upright', revive: true },
   bounty:  { name: 'Kẻ mang hòm', hp: 320, speed: 44, dmg: 0, atkRate: 9, h: 104, w: 36, reward: 600, skin: '#a8946a', shirt: '#6a5020', pants: '#3a2c18', kind: 'upright', bounty: true },
   tyrant:  { name: 'Bạo Chúa Rừng', hp: 8500, speed: 9, dmg: 85, atkRate: 2.3, h: 240, w: 96, reward: 1800, skin: '#5e5a40', shirt: '#2a2a18', pants: '#1a1a12', kind: 'upright', heavy: true, boss: true, summoner: 'dog' },
+  shielder:{ name: 'Lính mang khiên', hp: 130, speed: 22, dmg: 9, atkRate: 1.3, h: 108, w: 36, reward: 40, skin: '#8a8a6a', shirt: '#3a4a2a', pants: '#2a3020', kind: 'upright', shield: true },
+  leaper:  { name: 'Kẻ nhảy', hp: 70, speed: 40, dmg: 8, atkRate: 0.9, h: 100, w: 28, reward: 30, skin: '#9a8c6a', shirt: '#4a3a30', pants: '#2a241c', kind: 'upright', leaper: true },
+  burner:  { name: 'Kẻ cháy', hp: 110, speed: 28, dmg: 13, atkRate: 1.1, h: 104, w: 32, reward: 35, skin: '#5a3a28', shirt: '#2a1a12', pants: '#1a120c', kind: 'upright', burner: true },
+  splitter:{ name: 'Kẻ phân thân', hp: 140, speed: 22, dmg: 8, atkRate: 1.2, h: 110, w: 40, reward: 30, skin: '#8a7a9a', shirt: '#3a2a4a', pants: '#2a2030', kind: 'upright', splitter: true },
+  spawnling:{ name: 'Con non', hp: 28, speed: 64, dmg: 3, atkRate: 0.7, h: 64, w: 22, reward: 6, skin: '#a090b0', shirt: '#4a3a5a', pants: '#2a2030', kind: 'upright' },
+  stalker: { name: 'Kẻ tàng hình', hp: 95, speed: 34, dmg: 10, atkRate: 1.0, h: 104, w: 28, reward: 45, skin: '#6a7a8a', shirt: '#2a3038', pants: '#1a1e24', kind: 'upright', stalker: true },
+  juggernaut:{ name: 'Cỗ Máy Nghiền', hp: 9500, speed: 9, dmg: 90, atkRate: 2.2, h: 205, w: 110, reward: 2600, skin: '#6a6050', shirt: '#2a2a2e', pants: '#18181c', kind: 'upright', heavy: true, boss: true, plated: true, charger: true },
+  queen:   { name: 'Nữ Hoàng Bầy Đàn', hp: 17000, speed: 8, dmg: 100, atkRate: 2.0, h: 245, w: 104, reward: 6000, skin: '#b0a0c0', shirt: '#3a2040', pants: '#1a1020', kind: 'upright', heavy: true, boss: true, queen: true, bomber: false },
   zero:    { name: 'Mẫu Thể Số 0', hp: 14000, speed: 10, dmg: 95, atkRate: 2.0, h: 232, w: 90, reward: 4000, skin: '#c8c0b4', shirt: '#3a1820', pants: '#1a1014', kind: 'upright', heavy: true, boss: true, phases: true },
   titan:   { name: 'Kẻ Khổng Lồ', hp: 3200, speed: 9, dmg: 60, atkRate: 2.2, h: 220, w: 86, reward: 600, skin: '#74664a', shirt: '#3a2418', pants: '#1f1b16', kind: 'upright', heavy: true, boss: true },
 };
@@ -137,14 +164,18 @@ export const ZOMBIES = {
 export function isBossNight(n) {
   return n >= 10 && n % 5 === 0;
 }
-export function bossTypeFor(n) {
+export function bossTypeFor(n, idx = 0) {
   if (n === 20) return 'colossus';
   if (n === 30) return 'tyrant';
   if (n === 40) return 'zero';
-  if (n > CAMPAIGN_NIGHTS) return ['titan', 'colossus', 'tyrant', 'zero'][Math.floor(n / 5) % 4];
+  if (n === 45) return 'colossus';
+  if (n === 50) return 'juggernaut';
+  if (n === 55) return idx === 0 ? 'juggernaut' : 'tyrant';
+  if (n === 60) return 'queen';
+  if (n > CAMPAIGN_NIGHTS) return ['titan', 'colossus', 'tyrant', 'zero', 'juggernaut', 'queen'][Math.floor(n / 5) % 6];
   return 'titan';
 }
-export const bossCountFor = (n) => (n === 35 ? 2 : 1); // đêm 35: hai Kẻ Khổng Lồ
+export const bossCountFor = (n) => (n === 35 || n === 55 ? 2 : 1); // đêm 35, 55: hai con trùm
 
 // Mỗi đêm một "điểm nhấn" để người chơi không chán
 const MODS = {
@@ -165,6 +196,22 @@ const MODS = {
   37: { blackout: true, bounty: true },
   38: { horde: true },
   39: { airdrops: 3, bounty: true },
+  41: { airdrops: 2 },
+  42: { rush: true },
+  43: { blackout: true },
+  44: { airdrops: 2, bounty: true },
+  46: { horde: true },
+  47: { blackout: true, airdrops: 1 },
+  48: { rush: true, bounty: true },
+  49: { airdrops: 3 },
+  51: { airdrops: 2 },
+  52: { blackout: true },
+  53: { horde: true, airdrops: 1 },
+  54: { bounty: true },
+  56: { blackout: true, rush: true },
+  57: { airdrops: 3, bounty: true },
+  58: { horde: true },
+  59: { blackout: true, airdrops: 2 },
 };
 export function modsFor(n) {
   if (n <= CAMPAIGN_NIGHTS) return { airdrops: 0, ...(MODS[n] || {}) };
@@ -180,14 +227,14 @@ export const MOD_INFO = {
 
 export function waveFor(n) {
   const m = modsFor(n);
-  let total = 10 + Math.min(n, 20) * 5 + Math.min(n, 12) ** 2 * 0.45 + Math.max(0, n - 20) * 1.5;
+  let total = 10 + Math.min(n, 20) * 5 + Math.min(n, 12) ** 2 * 0.45 + Math.max(0, Math.min(n, 40) - 20) * 1.5 + Math.max(0, n - 40) * 0.5;
   let interval = Math.max(0.3, 2.2 - n * 0.16);
   if (m.rush) total *= 0.8;
   if (m.horde) { total *= 1.35; interval *= 0.65; }
   return {
     total: Math.round(total),
     interval,
-    hpMul: 1 + Math.min(n - 1, 19) * 0.11 + Math.max(0, n - 20) * 0.07,
+    hpMul: 1 + Math.min(n - 1, 19) * 0.11 + Math.max(0, Math.min(n, 40) - 20) * 0.07 + Math.max(0, n - 40) * 0.05,
     dmgMul: 1 + (n - 1) * 0.035,
     speedMul: m.rush ? 1.3 : 1,
     boss: isBossNight(n),
@@ -203,15 +250,20 @@ export function waveFor(n) {
       dog: n >= 22 ? (m.horde ? 0.35 : 0.2) : 0,
       screamer: n >= 24 ? 0.07 : 0,
       reviver: n >= 27 ? 0.16 : 0,
+      shielder: n >= 32 ? 0.12 : 0,
+      leaper: n >= 42 ? 0.14 : 0,
+      burner: n >= 44 ? 0.12 : 0,
+      splitter: n >= 52 ? 0.13 : 0,
+      stalker: n >= 54 ? 0.11 : 0,
     },
   };
 }
 
 export function weatherFor(n) {
   return {
-    rain: (n >= 7 && n <= 10) || [16, 17, 19, 25, 28, 34, 35].includes(n) || (n > CAMPAIGN_NIGHTS && n % 3 === 0),
-    lightning: (n >= 7 && n <= 10) || [16, 17, 28, 34, 35].includes(n),
-    fog: n > 30 ? 0.12 : n > 20 ? (n === 28 ? 0.4 : 0.22) : n > 10 ? Math.min(0.2 + (n - 10) * 0.02, 0.38) : Math.min(0.08 + n * 0.02, 0.3),
+ rain: (n >= 7 && n <= 10) || [16, 17, 19, 25, 28, 34, 35, 46, 49, 55, 58].includes(n) || (n > CAMPAIGN_NIGHTS && n % 3 === 0),
+    lightning: (n >= 7 && n <= 10) || [16, 17, 28, 34, 35, 49, 58].includes(n),
+    fog: n > 50 ? 0.16 : n > 40 ? 0.2 : n > 30 ? 0.12 : n > 20 ? (n === 28 ? 0.4 : 0.22) : n > 10 ? Math.min(0.2 + (n - 10) * 0.02, 0.38) : Math.min(0.08 + n * 0.02, 0.3),
     bloodMoon: isBossNight(n),
   };
 }
