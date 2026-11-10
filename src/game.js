@@ -572,6 +572,7 @@ export class Game {
 
   hitZombie(z, dmg, head, x, y, dx, byPlayer, opts = {}) {
     if (!z.alive) return;
+    if (!head && (opts.kind || 'bullet') === 'bullet' && z.isLegShot(y)) dmg *= 0.7;
     const res = z.hurt(dmg, head, this, opts.kind || 'bullet');
     const killed = res === true;
     // bắn trúng tay / chân đủ đau thì rụng; nổ lớn xé xác

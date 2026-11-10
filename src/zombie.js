@@ -83,7 +83,7 @@ function shadeFill(ctx, x0, x1, col, flash, o) {
 // vị trí đầu (tỉ lệ theo chiều cao) cho dáng còng lưng; dùng chung cho hitbox và hình vẽ
 const HEAD_X = 0.17, HEAD_Y = 0.86, HEAD_R = 0.105;
 // tư thế nằm sấp khi mất cả hai chân: xoay thân và dịch về sau (theo tỉ lệ chiều cao)
-const LEGLESS = { rot: -1.38, tx: 0.66, ty: -0.1 };
+const LEGLESS = { rot: -1.0, tx: 0.6, ty: 0.1 }; // thân chống lên hai tay, đầu ngóc lên
 
 export class Zombie {
   constructor(type, hpMul = 1, demo = false) {
@@ -170,17 +170,20 @@ export class Zombie {
   canDismember() { return this.T.kind === 'upright' && !this.T.boss; }
 
   // Trúng đạn vào thân ở độ cao y (thế giới): cộng dồn sát thương lên tay / chân, đủ thì rụng
+  // bắn vào chân: ít sát thương hơn nhưng dễ làm đứt chân -> zombie thường còn sống để bò
+  isLegShot(y) { return this.canDismember() && !this.legless && this.legsLost < 2 && (this.foot + this.jumpY - y) / this.h < 0.44; }
   limbHit(dmg, y, game) {
     if (!this.canDismember()) return;
     const rel = (this.foot + this.jumpY - y) / this.h;
     const thr = this.maxHp * (this.T.heavy ? 0.5 : 0.34);
+    const legThr = this.maxHp * (this.T.heavy ? 0.35 : 0.2);
     if (this.legless) { // đang bò: chỉ còn tay để bắn rụng
       if (this.armsLost < 2 && !this.T.shield) { this.armDmg += dmg * 0.6; if (this.armDmg >= thr) { this.armDmg = 0; this.loseArm(game); } }
       return;
     }
     if (rel < 0.44 && this.legsLost < 2) {
       this.legDmg += dmg;
-      if (this.legDmg >= thr) { this.legDmg = 0; this.loseLeg(game); }
+      if (this.legDmg >= legThr) { this.legDmg = 0; this.loseLeg(game); }
     } else if (rel >= 0.48 && rel < 0.8 && this.armsLost < 2 && !this.T.shield) {
       this.armDmg += dmg * 0.7;
       if (this.armDmg >= thr) { this.armDmg = 0; this.loseArm(game); }
@@ -239,7 +242,7 @@ export class Zombie {
       const [hx, hy] = this.fromBody(-this.h * HEAD_X, -this.h * HEAD_Y);
       return {
         hx: this.x + hx, hy: this.foot + hy, hr: r,
-        bx0: this.x + hx + r * 0.6, by0: this.foot - this.h * 0.3,
+        bx0: this.x + hx + r * 0.6, by0: this.foot - this.h * 0.38,
         bx1: this.x + this.h * 0.3, by1: this.foot,
       };
     }
@@ -352,7 +355,8 @@ export class Zombie {
       return;
     }
     if (this.state === 'walk') {
-      this.x -= spd * dt;
+      // bò lết: mỗi lần tay bấu xuống thì kéo thân giật lên một đoạn
+      this.x -= spd * dt * (this.legless ? 0.35 + 1.5 * Math.abs(Math.sin(this.phase)) : 1);
       this.phase += dt * (2 + spd * 0.06);
       if (this.x <= this.targetX) {
         this.x = this.targetX;
@@ -377,6 +381,10 @@ export class Zombie {
     this.twitching = Math.max(0, this.twitching - dt);
     this.twitchT -= dt;
     if (this.twitchT <= 0) { this.twitchT = rand(2, 6); this.twitching = 0.4; }
+    // vệt máu kéo lê khi bò
+    if (this.legless && !this.demo && this.state === 'walk' && Math.random() < dt * 6) {
+      game.addParticle({ x: this.x + this.h * 0.2 + rand(-4, 4), y: this.foot - 3, vx: 0, vy: 10, life: 0.3, color: '#5e0a0a', size: rand(2.5, 4), g: 200, ground: this.foot + rand(-1, 2), decal: true });
+    }
     // rỏ máu xuống đất khi đi
     if (!this.demo && this.state === 'walk' && this.T.kind === 'upright' && Math.random() < dt * 0.7) {
       game.addParticle({ x: this.x + rand(-4, 6), y: this.foot - this.h * 0.45, vx: 0, vy: 20, life: 1, color: '#5e0a0a', size: 2, g: 400, ground: this.foot + rand(-2, 2), decal: true });
@@ -495,7 +503,7 @@ export class Zombie {
     const walking = this.state === 'walk';
     const attacking = this.state === 'attack';
     const sw = walking ? Math.sin(this.phase) * 12 * s : 0;
-    const bob = walking ? Math.abs(Math.sin(this.phase)) * 2.2 * s : 0;
+    const bob = walking ? Math.abs(Math.sin(this.phase)) * (this.legless ? 6 : 2.2) * s : 0;
     const hipY = -h * 0.47;
     const hipX = 0;
     const shX = -h * 0.1, shY = -h * 0.76;        // vai đổ về trước
@@ -569,7 +577,7 @@ export class Zombie {
         const cyc = Math.sin(phase);
         const hand = attacking
           ? [sx - h * 0.3, -h * (0.12 + 0.22 * Math.sin(this.swing * Math.PI))]
-          : [sx - h * (0.24 + 0.09 * cyc), -2 * s - Math.max(0, Math.cos(phase)) * 7 * s];
+          : [sx - h * (0.2 + 0.14 * cyc), -2 * s - Math.max(0, Math.cos(phase)) * 12 * s];
         const elbow = [(sx + hand[0]) / 2 + h * 0.02, Math.min(sy, hand[1]) - h * 0.1];
         [ex, ey] = this.toBody(elbow[0], elbow[1]);
         [hx2, hy2] = this.toBody(hand[0], hand[1]);
