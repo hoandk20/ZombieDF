@@ -2,15 +2,15 @@
 export const W = 960;
 export const H = 540;
 
-export const HORIZON = 420;          // đường chân trời / mép đất
-export const LANE_MIN = 418;         // vị trí chân zombie xa nhất
+export const HORIZON = 340;          // đường chân trời / mép đất
+export const LANE_MIN = 352;         // vị trí chân zombie xa nhất
 export const LANE_MAX = 532;         // vị trí chân zombie gần nhất
 export const BARRICADE_BACK = 158;   // mép sau hàng rào
 export const BARRICADE_X = 238;      // mép trước hàng rào (zombie dừng ở đây)
-export const BARRICADE_TOP = 400;
+export const BARRICADE_TOP = 336;
 
 export const PLAYER_X = 120;
-export const PLAYER_FOOT = 478;
+export const PLAYER_FOOT = 412; // đứng trên bục gỗ sau hàng rào
 export const SHOULDER = { x: PLAYER_X + 4, y: PLAYER_FOOT - 76 };
 
 export const SURVIVOR_SLOTS = [86, 54, 144, 24];
@@ -51,19 +51,19 @@ export const TURRET = {
   rate: [0.13, 0.1, 0.08],
   heat: [24, 32, 44],                  // số phát trước khi quá nhiệt
   cool: 2.6,
-  slots: [{ x: 214, y: 392 }, { x: 176, y: 398 }],
+  slots: [{ x: 214, y: 328 }, { x: 176, y: 334 }],
 };
 export const MINE = { price: 180, max: 8, radius: 80, dmg: 170 };
 export const WIRE = { prices: [1400, 3000], slow: [1, 0.62, 0.45], dps: [0, 5, 10], from: 238, to: 330 };
 export const FLOODLIGHT_PRICE = 900;
 export const SHOCKER = { prices: [2800, 4200], every: [0, 3, 2.2], dmg: [0, 18, 26], stun: 0.25, maxHit: [0, 5, 8], from: 450, to: 570 };
-export const FLAME_TURRET = { price: 4200, range: 330, burn: 18, dmg: 5, spray: 3, cool: 2.2, slot: { x: 196, y: 386 } };
+export const FLAME_TURRET = { price: 4200, range: 330, burn: 18, dmg: 5, spray: 3, cool: 2.2, slot: { x: 196, y: 322 } };
 export const MORTAR = { prices: [5200, 4800], every: [0, 4.2, 3.2], dmg: [0, 120, 170], radius: 90, x: 46, y: 468 };
-export const TESLA_TOWER = { prices: [6500, 5200], every: [0, 1.6, 1.15], dmg: [0, 45, 65], range: 430, chain: 3, x: 232, y: 352 };
+export const TESLA_TOWER = { prices: [6500, 5200], every: [0, 1.6, 1.15], dmg: [0, 45, 65], range: 430, chain: 3, x: 232, y: 288 };
 export const DRONE = { price: 4800, max: 2, dmg: 13, rate: 0.12, mag: 30, reload: 2.2 };
 // Vũ khí tự động mới
 export const SAW = { prices: [1500, 2600], dps: [0, 12, 22], from: 238, to: 305 };                       // lưỡi cưa quay sát rào
-export const SNIPER_NEST = { prices: [3600, 4200], every: [0, 2.6, 1.9], dmg: [0, 140, 200], pierce: 3, x: 186, y: 360 }; // ổ bắn tỉa tự động
+export const SNIPER_NEST = { prices: [3600, 4200], every: [0, 2.6, 1.9], dmg: [0, 140, 200], pierce: 3, x: 186, y: 296 }; // ổ bắn tỉa tự động
 export const GAS = { prices: [3000, 3800], every: [0, 6, 4.5], dps: [0, 20, 30], radius: 85, life: 4, slow: 0.8, x: 70, y: 470 }; // máy phóng khí độc
 export const ROCKET = { prices: [5600, 5000], every: [0, 5, 3.8], salvo: [0, 3, 4], dmg: [0, 95, 125], radius: 62, x: 100, y: 452 }; // giàn tên lửa
 

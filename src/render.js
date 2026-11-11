@@ -1,4 +1,8 @@
-import { W, H, HORIZON, BARRICADE_BACK, BARRICADE_X, BARRICADE_TOP, LANE_MAX } from './config.js';
+import { W, H, HORIZON as SCREEN_HZ, BARRICADE_BACK, BARRICADE_X, BARRICADE_TOP, LANE_MAX, PLAYER_FOOT } from './config.js';
+// Các bản đồ được vẽ theo đường chân trời gốc 420 rồi dịch lên cho khớp đường chân trời thật,
+// phần đất phía dưới được kéo dài thêm để dải đất zombie đi rộng hơn.
+const HORIZON = 420;
+const ART_SHIFT = HORIZON - SCREEN_HZ;
 import { roundRect } from './zombie.js';
 
 // PRNG cố định để nền giống nhau mỗi lần
@@ -9,10 +13,11 @@ function seeded(seed) {
 export function makeBackground(bloodMoon = false, variant = 'town') {
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
-  const g = c.getContext('2d');
+  let g = c.getContext('2d');
+  const fin = g;
   const rnd = seeded(1337);
 
-  const sky = g.createLinearGradient(0, 0, 0, HORIZON);
+  const sky = g.createLinearGradient(0, 0, 0, SCREEN_HZ);
   if (bloodMoon) {
     sky.addColorStop(0, '#0f0508');
     sky.addColorStop(0.6, '#2a0f18');
@@ -23,7 +28,7 @@ export function makeBackground(bloodMoon = false, variant = 'town') {
     sky.addColorStop(1, '#3a2742');
   }
   g.fillStyle = sky;
-  g.fillRect(0, 0, W, HORIZON);
+  g.fillRect(0, 0, W, SCREEN_HZ);
 
   for (let i = 0; i < 110; i++) {
     g.fillStyle = `rgba(255,255,255,${0.2 + rnd() * 0.7})`;
@@ -44,6 +49,9 @@ export function makeBackground(bloodMoon = false, variant = 'town') {
   g.beginPath(); g.arc(mx - 10, my - 8, 7, 0, Math.PI * 2); g.fill();
   g.beginPath(); g.arc(mx + 12, my + 10, 5, 0, Math.PI * 2); g.fill();
 
+  // lớp cảnh vật vẽ riêng rồi dịch lên
+  const art = document.createElement('canvas'); art.width = W; art.height = H;
+  g = art.getContext('2d');
   if (variant === 'harbor') drawHarbor(g, rnd);
   else if (variant === 'dam') drawDam(g, rnd);
   else if (variant === 'base') drawBase(g, rnd);
@@ -128,6 +136,41 @@ export function makeBackground(bloodMoon = false, variant = 'town') {
   fog.addColorStop(1, 'rgba(120,110,150,0)');
   g.fillStyle = fog;
   g.fillRect(0, HORIZON - 30, W, 70);
+  // dán cảnh vật đã dịch lên; phần đất mới phía dưới lấy màu dòng cuối, thêm vệt đường và cỏ cho đỡ trống
+  fin.drawImage(art, 0, -ART_SHIFT);
+  { // màu trung bình của dòng đất cuối cùng (tránh vệt sọc khi kéo dài)
+    const row = g.getImageData(0, H - 1, W, 1).data;
+    let r = 0, gg = 0, b = 0, n = 0;
+    for (let x = 240; x < W; x++) { r += row[x * 4]; gg += row[x * 4 + 1]; b += row[x * 4 + 2]; n++; }
+    fin.fillStyle = `rgb(${Math.round(r / n)},${Math.round(gg / n)},${Math.round(b / n)})`;
+    fin.fillRect(0, H - ART_SHIFT - 1, W, ART_SHIFT + 1);
+    const blend = fin.createLinearGradient(0, H - ART_SHIFT - 24, 0, H - ART_SHIFT + 6);
+    blend.addColorStop(0, 'rgba(0,0,0,0)'); blend.addColorStop(1, fin.fillStyle);
+    fin.fillStyle = blend; fin.fillRect(0, H - ART_SHIFT - 24, W, 30);
+  }
+  const ext = fin.createLinearGradient(0, H - ART_SHIFT - 40, 0, H);
+  ext.addColorStop(0, 'rgba(0,0,0,0)'); ext.addColorStop(1, 'rgba(0,0,0,0.25)');
+  fin.fillStyle = ext; fin.fillRect(0, H - ART_SHIFT - 40, W, ART_SHIFT + 40);
+  for (let k = 0; k < 140; k++) {
+    const gx = rnd() * W, gy = SCREEN_HZ + 30 + rnd() * (H - SCREEN_HZ - 30);
+    fin.fillStyle = variant === 'snow' ? `rgba(255,255,255,${0.15 + rnd() * 0.2})` : `rgba(0,0,0,${0.08 + rnd() * 0.14})`;
+    fin.fillRect(gx, gy, 6 + rnd() * 22, 1.5);
+  }
+  // bục gỗ phía sau hàng rào cho người chơi và đồng đội đứng
+  {
+    const top = PLAYER_FOOT - 2, x1 = BARRICADE_BACK + 6;
+    fin.fillStyle = '#3a2a1c'; fin.fillRect(-4, top, x1 + 4, 10);
+    fin.fillStyle = '#4e3824'; fin.fillRect(-4, top, x1 + 4, 4);
+    fin.fillStyle = '#2a1e14';
+    for (const px of [6, 56, 108, x1 - 10]) fin.fillRect(px, top + 10, 9, H - top);
+    fin.strokeStyle = '#2a1e14'; fin.lineWidth = 5;
+    for (let k = 0; k < 3; k++) { const a = 6 + k * 51; fin.beginPath(); fin.moveTo(a + 8, top + 14); fin.lineTo(a + 50, H - 4); fin.moveTo(a + 50, top + 14); fin.lineTo(a + 8, H - 4); fin.stroke(); }
+    fin.fillStyle = 'rgba(0,0,0,0.35)'; fin.fillRect(-4, top + 10, x1 + 4, 6);
+  }
+  if (variant !== 'snow') { // vạch kẻ đường thứ hai ở phần đất gần
+    fin.strokeStyle = 'rgba(200,190,120,0.12)'; fin.lineWidth = 3; fin.setLineDash([26, 22]);
+    fin.beginPath(); fin.moveTo(240, 505); fin.lineTo(W, 505); fin.stroke(); fin.setLineDash([]);
+  }
   return c;
 }
 
@@ -521,7 +564,7 @@ function drawCapital(g, rnd) {
 export function drawBarricade(ctx, ratio, variant = 'town') {
   const x0 = BARRICADE_BACK, x1 = BARRICADE_X, top = BARRICADE_TOP, bottom = LANE_MAX + 10;
   // bao cát
-  const rows = 7;
+  const rows = Math.ceil((bottom - top - 8) / 16.5);
   for (let row = 0; row < rows; row++) {
     const y = bottom - 15 - row * 16.5;
     if (ratio < 0.3 && row === rows - 1) continue;
@@ -539,7 +582,7 @@ export function drawBarricade(ctx, ratio, variant = 'town') {
   }
   // ván gỗ đóng phía trước
   const planks = [
-    { y: top + 6, a: -0.07 }, { y: top + 34, a: 0.05 }, { y: top + 64, a: -0.04 }, { y: top + 94, a: 0.05 },
+    ...[-0.07, 0.05, -0.04, 0.05, -0.06].map((a, i) => ({ y: top + 6 + i * ((bottom - top - 46) / 4), a })),
   ];
   planks.forEach((p, i) => {
     if (ratio < 0.15 * (i + 1) && i < 3) return; // ván rơi dần khi hỏng
