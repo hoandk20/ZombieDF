@@ -1073,12 +1073,13 @@ export class Game {
       this.shock.zapT = Math.max(0, this.shock.zapT - dt);
       this.shock.t -= dt;
       if (this.shock.t <= 0) {
-        const hit = alive.filter((z) => !z.leaping && z.x - z.w / 2 < SHOCKER.to && z.x > SHOCKER.from - 10);
+        // mỗi lần phóng chỉ giật được vài con gần rào nhất trong vùng
+        const hit = alive.filter((z) => !z.leaping && z.x - z.w / 2 < SHOCKER.to && z.x > SHOCKER.from - 10).sort((a, b) => a.x - b.x).slice(0, SHOCKER.maxHit[sl]);
         if (hit.length) {
           this.shock.t = SHOCKER.every[sl];
           this.shock.zapT = 0.18;
           for (const z of hit) {
-            z.stunT = SHOCKER.stun;
+            if (!z.T.boss) z.stunT = SHOCKER.stun;
             this.hitZombie(z, SHOCKER.dmg[sl], false, z.x, z.foot - 30, 1, false, { silent: true, noFx: true, kind: 'blast', src: 'shock' });
             this.bolts.push({ pts: [[z.x, z.foot], [z.x + rand(-6, 6), z.foot - z.h * 0.6]], life: 0.15, max: 0.15 });
           }
