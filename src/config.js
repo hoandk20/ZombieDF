@@ -3,8 +3,8 @@ export const W = 960;
 export const H = 540;
 
 export const HORIZON = 420;          // đường chân trời / mép đất
-export const LANE_MIN = 428;         // vị trí chân zombie xa nhất
-export const LANE_MAX = 530;         // vị trí chân zombie gần nhất
+export const LANE_MIN = 418;         // vị trí chân zombie xa nhất
+export const LANE_MAX = 532;         // vị trí chân zombie gần nhất
 export const BARRICADE_BACK = 158;   // mép sau hàng rào
 export const BARRICADE_X = 238;      // mép trước hàng rào (zombie dừng ở đây)
 export const BARRICADE_TOP = 400;
