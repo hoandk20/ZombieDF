@@ -167,7 +167,7 @@ export const ZOMBIES = {
   riot:    { name: 'Cảnh sát bọc giáp', hp: 150, speed: 21, dmg: 9, atkRate: 1.3, h: 108, w: 34, reward: 40, skin: '#94866a', shirt: '#26324a', pants: '#1c2232', kind: 'upright', armored: true, helmet: 70 },
   bloater: { name: 'Kẻ trương phình', hp: 120, speed: 15, dmg: 55, atkRate: 0.5, h: 112, w: 56, reward: 30, skin: '#9c9460', shirt: '#55502c', pants: '#2c2a20', kind: 'upright', bomber: true },
   colossus:{ name: 'Quái Vật Cảng', hp: 6500, speed: 8, dmg: 80, atkRate: 2.4, h: 250, w: 98, reward: 1500, skin: '#6a5e48', shirt: '#2a2018', pants: '#1a1612', kind: 'upright', heavy: true, boss: true, summoner: true },
-  dog:     { name: 'Chó nhiễm bệnh', hp: 50, speed: 184, dmg: 4, atkRate: 0.55, h: 46, w: 62, reward: 20, skin: '#6b5a44', shirt: '#4a3c2c', pants: '#2e261c', kind: 'dog' },
+  dog:     { name: 'Chó nhiễm bệnh', hp: 50, speed: 184, dmg: 3, atkRate: 0.55, h: 46, w: 62, reward: 20, skin: '#6b5a44', shirt: '#4a3c2c', pants: '#2e261c', kind: 'dog' },
   screamer:{ name: 'Kẻ rú', hp: 110, speed: 22, dmg: 0, atkRate: 4, h: 106, w: 30, reward: 45, skin: '#b8a88a', shirt: '#5a2a3a', pants: '#2a2228', kind: 'upright', screamer: true },
   reviver: { name: 'Kẻ tái sinh', hp: 85, speed: 24, dmg: 7, atkRate: 1.2, h: 104, w: 32, reward: 30, skin: '#7a8a7a', shirt: '#2e3a3a', pants: '#22282a', kind: 'upright', revive: true },
   bounty:  { name: 'Kẻ mang hòm', hp: 320, speed: 44, dmg: 0, atkRate: 9, h: 104, w: 36, reward: 600, skin: '#a8946a', shirt: '#6a5020', pants: '#3a2c18', kind: 'upright', bounty: true },
@@ -285,10 +285,10 @@ export function waveFor(n) {
   const st = n <= CAMPAIGN_NIGHTS ? stageFor(n) : Math.ceil(n / STAGE_LENGTH);
   const local = n <= CAMPAIGN_NIGHTS ? ((n - 1) % STAGE_LENGTH) + 1 : n;
   const up = n <= CAMPAIGN_NIGHTS ? st - 1 : 0;
-  let total = 10 + Math.min(local, 20) * 5 + Math.min(local, 12) ** 2 * 0.45 + up * 8 + (n > CAMPAIGN_NIGHTS ? (n - 20) * 1.2 : 0);
-  let interval = Math.max(0.3, 2.2 - local * 0.16 - up * 0.1);
+  let total = 10 + Math.min(local, 20) * 5 + Math.min(local, 12) ** 2 * 0.2 + up * 8 + (n > CAMPAIGN_NIGHTS ? (n - 20) * 1.2 : 0);
+  let interval = Math.max(0.55, 2.2 - local * 0.085 - up * 0.05); // ra quân đều đặn, không dồn cả đợt vào nửa phút đầu
   if (m.rush) total *= 0.8;
-  if (m.horde) { total *= 1.35; interval *= 0.65; }
+  if (m.horde) { total *= 1.25; interval *= 0.8; }
   // 3 đêm khởi động đầu mỗi màn mới: zombie yếu, ít quái nặng, thưởng nhiều để kịp tích tiền
   const grace = n <= CAMPAIGN_NIGHTS && st > 1 && local <= 3;
   const ramp = n <= CAMPAIGN_NIGHTS && st > 1 && local <= 5;
@@ -304,36 +304,63 @@ export function waveFor(n) {
     rewardMul: grace ? 1.4 : settle ? 1.15 : 1,
     total: Math.round(total),
     interval,
-    hpMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.11 + (up <= 2 ? up * 0.25 : 0.5 + (up - 2) * 0.12) : 1 + 19 * 0.11 + (n - 20) * 0.06) * gk * (settle ? (local === 11 ? 0.85 : 0.92) : 1),
+    hpMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.06 + (up <= 2 ? up * 0.25 : 0.5 + (up - 2) * 0.12) : 1 + 19 * 0.11 + (n - 20) * 0.06) * gk * (settle ? (local === 11 ? 0.85 : 0.92) : 1),
     dmgMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.02 + (up <= 2 ? up * 0.08 : 0.16 + (up - 2) * 0.03) : 1 + (n - 1) * 0.02) * (grace ? 0.75 : 1),
     speedMul: m.rush ? 1.3 : 1,
     boss: isBossNight(n),
     mods: m,
-    weights: {
-      walker: 1,
-      runner: n >= 2 ? Math.min(0.15 + 0.06 * n, 0.6) : 0,
-      crawler: n >= 3 ? 0.18 : 0,
-      brute: n >= 4 ? Math.min(0.03 + 0.012 * n, 0.14) : 0,
-      spitter: n >= 6 ? Math.min(0.06 + 0.006 * n, 0.12) : 0,
-      riot: n >= 11 ? Math.min(0.12 + 0.015 * (n - 11), 0.28) : 0,
-      bloater: n >= 12 ? Math.min(0.08 + 0.01 * (n - 12), 0.16) : 0,
-      dog: n >= 22 ? (m.horde ? 0.35 : 0.2) : 0,
-      screamer: n >= 24 ? 0.07 : 0,
-      reviver: n >= 27 ? 0.16 : 0,
-      shielder: n >= 32 ? 0.12 : 0,
-      leaper: n >= 42 ? 0.14 : 0,
-      burner: n >= 44 ? 0.12 : 0,
-      splitter: n >= 52 ? 0.13 : 0,
-      stalker: n >= 54 ? 0.11 : 0,
-      hazmat: n >= 62 ? 0.14 : 0,
-      brood: n >= 72 ? 0.1 : 0,
-      frost: n >= 82 ? 0.14 : 0,
-      signal: n >= 92 ? 0.08 : 0,
-    },
+    weights: rosterFor(n, m),
   };
-  if (grace) for (const k of ['brute', 'riot', 'spitter', 'bloater', 'shielder', 'burner', 'splitter', 'reviver', 'screamer', 'stalker', 'leaper', 'hazmat', 'brood', 'frost', 'signal']) w.weights[k] *= 0.25;
-  // màn sau đã có quá nhiều loại quái: giảm bớt loại cũ để loại mới nổi bật
-  if (n > 60) for (const k of ['crawler', 'riot', 'bloater', 'shielder', 'reviver']) w.weights[k] *= 0.6;
+  return w;
+}
+
+// Thứ tự xuất hiện các loại zombie: [loại, đêm đầu tiên gặp, tỉ lệ tối đa, số đêm để đạt tỉ lệ tối đa]
+export const ROSTER = [
+  ['runner', 2, 0.55, 6], ['crawler', 3, 0.18, 3], ['brute', 4, 0.13, 6], ['spitter', 6, 0.11, 4],
+  ['riot', 11, 0.26, 6], ['bloater', 12, 0.15, 5],
+  ['dog', 22, 0.2, 3], ['screamer', 24, 0.07, 2], ['reviver', 27, 0.15, 3],
+  ['shielder', 32, 0.12, 3],
+  ['leaper', 42, 0.14, 3], ['burner', 44, 0.12, 3],
+  ['splitter', 52, 0.13, 3], ['stalker', 54, 0.11, 3],
+  ['hazmat', 62, 0.14, 3],
+  ['brood', 72, 0.1, 3],
+  ['frost', 82, 0.14, 3],
+  ['signal', 92, 0.08, 3],
+];
+// Đêm một loại zombie (lại) xuất hiện. Màn 1: đúng đêm gặp đầu tiên. Từ màn 2 trở đi, người chơi bắt đầu lại
+// tay trắng nên loại cũ quay lại dần trong 10 đêm đầu màn (xác sống, kẻ chạy trước; loại khó sau), còn loại mới
+// của màn vẫn xuất hiện đúng đêm của nó.
+export function introNight(type, n) {
+  const e = ROSTER.find((r) => r[0] === type);
+  if (!e) return 1;
+  if (n > CAMPAIGN_NIGHTS) return e[1];
+  const start = (stageFor(n) - 1) * STAGE_LENGTH + 1;
+  if (e[1] >= start) return e[1];
+  const back = RETURNING[stageFor(n)] || [];
+  const k = back.indexOf(type);
+  if (k < 0) return Infinity; // loại cũ không quay lại ở màn này
+  return start + 1 + Math.floor((k * 9) / Math.max(1, back.length - 1));
+}
+// Những loại cũ quay lại ở mỗi màn, theo thứ tự quay lại: loại cơ bản trước, rồi các loại của màn ngay trước.
+// Nhờ vậy mỗi màn có bộ quái riêng, không dồn mọi loại vào cùng một đêm.
+export const RETURNING = {
+  2: ['runner', 'crawler', 'brute', 'spitter', 'riot', 'bloater'],
+  3: ['runner', 'crawler', 'brute', 'spitter', 'riot', 'dog', 'screamer', 'reviver', 'shielder'],
+  4: ['runner', 'crawler', 'brute', 'spitter', 'shielder', 'leaper', 'burner', 'splitter', 'stalker'],
+  5: ['runner', 'crawler', 'brute', 'spitter', 'dog', 'leaper', 'stalker', 'hazmat', 'brood'],
+};
+export function rosterFor(n, m = {}) {
+  const w = { walker: 1 };
+  const start = n <= CAMPAIGN_NIGHTS ? (stageFor(n) - 1) * STAGE_LENGTH + 1 : 1;
+  for (const [type, first, max, ramp] of ROSTER) {
+    const at = introNight(type, n);
+    if (n < at) { w[type] = 0; continue; }
+    let v = max * Math.min(1, (n - at + 1) / ramp); // mới xuất hiện thì lác đác vài con, đông dần
+    if (type === 'dog' && m.horde) v *= 1.75;
+    // loại cũ của các màn trước: ít hơn một chút để loại mới của màn nổi bật
+    if (first < start && start > STAGE_LENGTH && !['runner', 'crawler'].includes(type)) v *= 0.8;
+    w[type] = v;
+  }
   return w;
 }
 
@@ -377,7 +404,7 @@ export function nextThreat(d, dmgRatio) {
 export function eliteChance(n, threat) {
   const local = n <= CAMPAIGN_NIGHTS ? ((n - 1) % STAGE_LENGTH) + 1 : n;
   if (local < 9) return 0;
-  return Math.min(0.18, (0.03 + (local - 9) * 0.004 + (n > STAGE_LENGTH ? 0.02 : 0)) * threat);
+  return Math.min(0.1, (0.015 + (local - 9) * 0.003 + (n > STAGE_LENGTH ? 0.008 : 0)) * threat);
 }
 export const mateLevel = (xp) => (xp >= 60 ? 3 : xp >= 20 ? 2 : 1);
 export const MATE_XP = [0, 20, 60];
