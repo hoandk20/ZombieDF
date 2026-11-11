@@ -204,6 +204,7 @@ export function reloadSound(id, dur) {
       click(T(0.9), 0.7, 0.36);
       break;
     }
+    case 'cryo':
     case 'flamer': { // xì van khí, đổi bình, khoá bình
       click(T(0.04), 0.7, 0.3);
       keep(noise(Math.max(0.3, T(0.35)), 2200, 0.16, 'highpass', 0.7, T(0.06)));
@@ -222,6 +223,7 @@ export function reloadSound(id, dur) {
       click(T(0.83), 0.55, 0.45);
       break;
     }
+    case 'railgun':
     case 'tesla': { // tháo pin, lắp pin, tiếng sạc điện rít lên
       click(T(0.03), 1.2, 0.28);
       thunk(T(0.35), 1.1, 0.3);
@@ -324,6 +326,8 @@ export const sfx = {
   launcher() { noise(0.25, 600, 0.6); tone(140, 60, 0.18, 0.4, 'sine'); },
   sniper() { noise(0.55, 1400, 1.0); tone(260, 40, 0.35, 0.45, 'sawtooth'); },
   tesla() { if (throttle('tesla', 120)) return; noise(0.2, 4200, 0.35, 'highpass'); tone(900, 200, 0.15, 0.12, 'sawtooth'); },
+  cryo() { if (throttle('cryo', 90)) return; noise(0.2, 5200, 0.16, 'highpass'); },
+  railgun() { tone(200, 2400, 0.35, 0.12, 'sawtooth'); noise(0.5, 2600, 0.9); tone(90, 40, 0.4, 0.4, 'sine'); },
   scream() { if (throttle('scream', 600)) return; tone(900, 1400, 0.6, 0.12, 'sawtooth'); noise(0.6, 3000, 0.18, 'bandpass', 4); },
   plane() { if (throttle('plane', 3000)) return; tone(80, 70, 2.5, 0.08, 'sawtooth'); noise(2.5, 300, 0.12); },
   hurt() { tone(400, 200, 0.25, 0.18, 'square'); },
@@ -337,7 +341,9 @@ export const sfx = {
     const pool = ['scream', 'howl', 'gun', 'glass', 'groanFar'];
     if (scene === 'harbor') pool.push('horn', 'creak');
     if (scene === 'dam') pool.push('creak', 'howl');
-    if (scene === 'base' || scene === 'capital' || scene === 'highway') pool.push('siren');
+    if (scene === 'base' || scene === 'capital' || scene === 'highway' || scene === 'factory' || scene === 'airport' || scene === 'lighthouse') pool.push('siren');
+    if (scene === 'snow') pool.push('howl', 'howl');
+    if (scene === 'lighthouse') pool.push('horn');
     const k = pool[Math.floor(Math.random() * pool.length)];
     const t = ctx.currentTime;
     const far = (node, freq = 900) => { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq; node.connect(f); f.connect(sfxBus); return f; };

@@ -49,6 +49,10 @@ export function makeBackground(bloodMoon = false, variant = 'town') {
   else if (variant === 'base') drawBase(g, rnd);
   else if (variant === 'highway') drawHighway(g, rnd);
   else if (variant === 'capital') drawCapital(g, rnd);
+  else if (variant === 'factory') drawFactory(g, rnd);
+  else if (variant === 'airport') drawAirport(g, rnd);
+  else if (variant === 'snow') drawSnow(g, rnd);
+  else if (variant === 'lighthouse') drawLighthouse(g, rnd);
   else {
   // thành phố đổ nát phía xa
   let x = 240;
@@ -363,6 +367,115 @@ function drawHighway(g, rnd) {
   g.fillStyle = 'rgba(160,200,230,0.25)'; for (let y = 345; y < 470; y += 26) g.fillRect(8, y + 2, 56, 10);
 }
 
+function groundFill(g, top, bot) {
+  const gr = g.createLinearGradient(0, HORIZON, 0, H);
+  gr.addColorStop(0, top); gr.addColorStop(1, bot);
+  g.fillStyle = gr; g.fillRect(0, HORIZON, W, H - HORIZON);
+}
+
+// Chương 7: nhà máy dược Thành Nam
+function drawFactory(g, rnd) {
+  // ống khói và nhà xưởng
+  for (const [x, w, h] of [[300, 120, 120], [440, 160, 150], [630, 140, 110], [790, 170, 135]]) {
+    g.fillStyle = '#15161f'; g.fillRect(x, HORIZON - h, w, h);
+    g.fillStyle = '#1b1c26';
+    for (let k = 0; k < w; k += 22) { g.beginPath(); g.moveTo(x + k, HORIZON - h); g.lineTo(x + k + 11, HORIZON - h - 14); g.lineTo(x + k + 22, HORIZON - h); g.fill(); } // mái răng cưa
+    for (let wy = HORIZON - h + 20; wy < HORIZON - 16; wy += 22) for (let wx = x + 8; wx < x + w - 12; wx += 20) {
+      if (rnd() < 0.08) { g.fillStyle = 'rgba(255,190,110,0.55)'; g.fillRect(wx, wy, 10, 8); }
+    }
+  }
+  for (const [x, h] of [[480, 230], [520, 200], [700, 250]]) {
+    g.fillStyle = '#121219'; g.fillRect(x, HORIZON - h, 22, h);
+    g.fillStyle = '#8a2a22'; g.fillRect(x, HORIZON - h + 14, 22, 6); g.fillRect(x, HORIZON - h + 30, 22, 6);
+  }
+  // bồn chứa hóa chất
+  for (const x of [370, 600, 870]) {
+    g.fillStyle = '#1e2028'; g.beginPath(); g.ellipse(x, HORIZON - 40, 34, 40, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#c8b030'; g.fillRect(x - 34, HORIZON - 44, 68, 5);
+  }
+  // biển nhà máy
+  g.fillStyle = '#2a3a2e'; g.fillRect(560, 290, 140, 26);
+  g.fillStyle = '#d8e8d8'; g.font = 'bold 11px sans-serif'; g.fillText('NHÀ MÁY DƯỢC THÀNH NAM', 566, 307);
+  groundFill(g, '#2c2d2a', '#141412');
+  g.strokeStyle = 'rgba(200,180,60,0.25)'; g.lineWidth = 3;
+  for (let x = 260; x < W; x += 60) { g.beginPath(); g.moveTo(x, HORIZON + 50); g.lineTo(x + 30, HORIZON + 50); g.stroke(); }
+  // thùng hóa chất sau lưng người chơi
+  for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#3a5a8a' : '#c8b030'; g.fillRect(4 + i * 30, 400 - (i % 2) * 6, 26, 40); g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(4 + i * 30, 410, 26, 3); }
+}
+
+// Chương 8: sân bay Bắc Thành
+function drawAirport(g, rnd) {
+  // nhà ga và tháp không lưu
+  g.fillStyle = '#14151f'; g.fillRect(280, HORIZON - 70, 380, 70);
+  g.fillStyle = 'rgba(140,190,230,0.12)'; g.fillRect(290, HORIZON - 60, 360, 22);
+  g.fillStyle = '#121219'; g.fillRect(740, HORIZON - 200, 26, 200);
+  g.fillStyle = '#1a1c28'; g.beginPath(); g.moveTo(718, HORIZON - 200); g.lineTo(788, HORIZON - 200); g.lineTo(778, HORIZON - 236); g.lineTo(728, HORIZON - 236); g.fill();
+  g.fillStyle = 'rgba(140,220,255,0.35)'; g.fillRect(730, HORIZON - 230, 46, 18);
+  // máy bay vận tải đỗ
+  const plane = (x, y, s) => {
+    g.fillStyle = '#1e202a';
+    g.beginPath(); g.ellipse(x, y, 90 * s, 16 * s, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(x - 20 * s, y); g.lineTo(x + 30 * s, y + 46 * s); g.lineTo(x + 46 * s, y + 46 * s); g.lineTo(x + 20 * s, y); g.fill();
+    g.beginPath(); g.moveTo(x + 70 * s, y - 8 * s); g.lineTo(x + 92 * s, y - 40 * s); g.lineTo(x + 100 * s, y - 40 * s); g.lineTo(x + 92 * s, y - 4 * s); g.fill();
+  };
+  plane(520, HORIZON - 26, 1.1); plane(860, HORIZON - 20, 0.8);
+  // đèn đường băng
+  groundFill(g, '#28292d', '#121214');
+  for (let x = 250; x < W; x += 46) { g.fillStyle = rnd() < 0.5 ? 'rgba(120,200,255,0.8)' : 'rgba(255,220,120,0.8)'; g.fillRect(x, HORIZON + 8, 4, 3); }
+  g.fillStyle = 'rgba(255,255,255,0.18)'; for (let x = 260; x < W; x += 70) g.fillRect(x, HORIZON + 46, 40, 4);
+  // xe kéo hành lý sau lưng người chơi
+  g.fillStyle = '#d8a020'; g.fillRect(0, 404, 120, 30); g.fillStyle = '#1a1a1a'; g.beginPath(); g.arc(20, 438, 8, 0, Math.PI * 2); g.arc(96, 438, 8, 0, Math.PI * 2); g.fill();
+}
+
+// Chương 9: rừng tuyết biên giới
+function drawSnow(g, rnd) {
+  g.fillStyle = 'rgba(200,215,240,0.05)'; g.fillRect(0, 0, W, HORIZON);
+  // núi tuyết xa
+  for (const [base, amp, col, cap] of [[300, 120, '#3a4660', '#c8d4e4'], [360, 70, '#2a3448', '#a8b8cc']]) {
+    g.fillStyle = col; g.beginPath(); g.moveTo(230, HORIZON);
+    const pts = [];
+    for (let x = 230; x <= W + 40; x += 60) { const y = base - rnd() * amp; pts.push([x, y]); g.lineTo(x, y); }
+    g.lineTo(W + 40, HORIZON); g.fill();
+    g.fillStyle = cap; for (const [x, y] of pts) { g.beginPath(); g.moveTo(x - 12, y + 14); g.lineTo(x, y); g.lineTo(x + 12, y + 14); g.fill(); }
+  }
+  // rừng thông
+  const pine = (x, y, h, c) => { g.fillStyle = c; for (let k = 0; k < 3; k++) { const w = h * (0.32 - k * 0.07); g.beginPath(); g.moveTo(x - w, y - k * h * 0.28); g.lineTo(x, y - h - k * 4 + k * h * 0.1); g.lineTo(x + w, y - k * h * 0.28); g.fill(); } g.fillStyle = 'rgba(230,240,255,0.5)'; g.beginPath(); g.moveTo(x - 6, y - h * 0.7); g.lineTo(x, y - h - 2); g.lineTo(x + 6, y - h * 0.7); g.fill(); };
+  for (let x = 240; x < W; x += 28 + rnd() * 30) pine(x, HORIZON, 70 + rnd() * 80, '#0f1a1c');
+  // mặt tuyết
+  groundFill(g, '#c8d2de', '#7c8898');
+  g.fillStyle = 'rgba(255,255,255,0.35)'; for (let i = 0; i < 40; i++) g.fillRect(240 + rnd() * 720, HORIZON + rnd() * 120, 18 + rnd() * 30, 2);
+  // xác máy bay sau lưng người chơi
+  g.fillStyle = '#5a5e66'; g.beginPath(); g.moveTo(0, 440); g.lineTo(130, 420); g.lineTo(150, 400); g.lineTo(0, 396); g.fill();
+  g.fillStyle = 'rgba(140,190,230,0.4)'; g.fillRect(20, 404, 18, 10); g.fillRect(48, 404, 18, 10);
+}
+
+// Chương 10: Trạm Hải Đăng
+function drawLighthouse(g, rnd) {
+  // biển đen và đảo đá
+  g.fillStyle = '#0c1322'; g.fillRect(230, HORIZON - 60, W - 230, 60);
+  g.strokeStyle = 'rgba(160,190,220,0.12)'; g.lineWidth = 1;
+  for (let y = HORIZON - 54; y < HORIZON; y += 8) { g.beginPath(); g.moveTo(240, y); g.lineTo(W, y + rnd() * 2); g.stroke(); }
+  g.fillStyle = '#141820'; g.beginPath(); g.moveTo(560, HORIZON - 40); g.lineTo(620, HORIZON - 96); g.lineTo(780, HORIZON - 104); g.lineTo(880, HORIZON - 40); g.fill();
+  // ngọn hải đăng
+  g.fillStyle = '#d8d4cc'; g.beginPath(); g.moveTo(668, HORIZON - 100); g.lineTo(678, HORIZON - 250); g.lineTo(700, HORIZON - 250); g.lineTo(710, HORIZON - 100); g.fill();
+  g.fillStyle = '#9a2a22'; g.fillRect(672, HORIZON - 160, 34, 14); g.fillRect(675, HORIZON - 210, 29, 12);
+  g.fillStyle = '#2a2a30'; g.fillRect(672, HORIZON - 266, 34, 16);
+  g.fillStyle = 'rgba(255,240,180,0.8)'; g.fillRect(678, HORIZON - 262, 22, 8);
+  // cột ăng-ten khổng lồ
+  g.strokeStyle = '#1c2030'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(780, HORIZON - 100); g.lineTo(800, HORIZON - 330); g.lineTo(820, HORIZON - 100); g.stroke();
+  for (let y = HORIZON - 120; y > HORIZON - 320; y -= 20) { const k = (HORIZON - 100 - y) / 230; g.beginPath(); g.moveTo(780 + 20 * k, y); g.lineTo(820 - 20 * k, y - 10); g.stroke(); }
+  g.fillStyle = '#ff3a2a'; g.beginPath(); g.arc(800, HORIZON - 334, 4, 0, Math.PI * 2); g.fill();
+  // bến tàu và cửa trạm bê tông
+  groundFill(g, '#2a2c30', '#121316');
+  g.fillStyle = '#20222a'; g.fillRect(320, HORIZON - 50, 160, 50);
+  g.fillStyle = '#0a0b0e'; g.fillRect(370, HORIZON - 36, 60, 36);
+  g.fillStyle = '#e8c040'; for (let x = 370; x < 430; x += 12) { g.beginPath(); g.moveTo(x, HORIZON - 40); g.lineTo(x + 6, HORIZON - 40); g.lineTo(x + 12, HORIZON - 36); g.lineTo(x + 6, HORIZON - 36); g.fill(); }
+  g.fillStyle = '#d8d8d0'; g.font = 'bold 10px sans-serif'; g.fillText('TRẠM HẢI ĐĂNG · KHU VỰC CẤM', 330, HORIZON - 56);
+  // tủ máy chủ sau lưng người chơi
+  for (let i = 0; i < 3; i++) { g.fillStyle = '#1e2228'; g.fillRect(6 + i * 40, 372, 34, 70); for (let k = 0; k < 6; k++) { g.fillStyle = rnd() < 0.5 ? 'rgba(90,220,140,0.8)' : 'rgba(255,90,60,0.8)'; g.fillRect(12 + i * 40, 380 + k * 10, 3, 3); } }
+}
+
 function drawCapital(g, rnd) {
   // nhà chọc trời nhiều lớp
   for (const [base, col, lit] of [[150, '#121428', 0.03], [210, '#0f1122', 0.06]]) {
@@ -436,6 +549,7 @@ export function drawBarricade(ctx, ratio, variant = 'town') {
     const plank = {
       harbor: i % 2 ? '#56636b' : '#6b5a46', dam: i % 2 ? '#7d7f7a' : '#6e706b', base: i % 2 ? '#4a5560' : '#566270',
       highway: ['#8a2a22', '#2a4a7a', '#c8c8c0', '#3a3a3e'][i % 4], capital: i % 2 ? '#8a8a84' : '#77776f',
+      factory: i % 2 ? '#c8b030' : '#3a5a8a', airport: i % 2 ? '#d8d8d4' : '#5a6068', snow: i % 2 ? '#5a4030' : '#4a3424', lighthouse: i % 2 ? '#4a4e56' : '#5c4030',
     }[variant] || '#6b4a2b';
     ctx.fillStyle = plank;
     ctx.fillRect(-44, -7, 88, 14);
@@ -444,6 +558,10 @@ export function drawBarricade(ctx, ratio, variant = 'town') {
     if (variant === 'dam') { ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(-44, -1, 88, 2); }
     if (variant === 'highway') { ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(-44, -7, 88, 2); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(-12, -3, 18, 6); }
     if (variant === 'capital') { ctx.fillStyle = '#e8c030'; for (let r = -40; r < 40; r += 16) ctx.fillRect(r, -2, 8, 4); }
+    if (variant === 'factory') { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(-44, -1, 88, 2); ctx.fillStyle = '#1a1a1a'; ctx.fillRect(-6, -5, 12, 10); }
+    if (variant === 'airport') { ctx.fillStyle = '#d83a2a'; for (let r = -40; r < 40; r += 20) ctx.fillRect(r, -7, 10, 14); }
+    if (variant === 'snow') { ctx.fillStyle = 'rgba(240,245,255,0.85)'; ctx.fillRect(-44, -7, 88, 4); }
+    if (variant === 'lighthouse') { ctx.fillStyle = '#e8c040'; for (let r = -40; r < 40; r += 14) { ctx.beginPath(); ctx.moveTo(r, 7); ctx.lineTo(r + 6, -7); ctx.lineTo(r + 10, -7); ctx.lineTo(r + 4, 7); ctx.fill(); } }
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.fillRect(-44, 4, 88, 3);
     ctx.fillStyle = '#c9c9c9';
@@ -488,6 +606,8 @@ const GUN_SHAPES = {
   flamer: [[0, 12, 30, 12], [28, 14, 52, 6], [78, 11, 12, 10], [30, 22, 8, 12], [6, 24, 16, 10], [56, 8, 4, 6]],
   launcher: [[0, 10, 24, 14], [22, 8, 58, 16], [80, 10, 10, 12], [30, 24, 8, 12], [50, 3, 12, 5]],
   sniper: [[0, 13, 24, 9], [22, 12, 76, 5], [32, 3, 30, 6], [38, 9, 3, 4], [54, 9, 3, 4], [28, 17, 8, 11], [92, 11, 6, 7]],
+  cryo: [[0, 11, 30, 12], [28, 13, 48, 8], [74, 10, 14, 14], [30, 22, 8, 12], [8, 24, 18, 10], [44, 4, 10, 8]],
+  railgun: [[0, 12, 26, 10], [24, 9, 64, 14], [86, 13, 18, 6], [32, 23, 8, 12], [40, 3, 34, 5], [100, 11, 4, 10]],
   tesla: [[0, 11, 28, 12], [26, 8, 40, 18], [64, 13, 22, 8], [84, 9, 8, 16], [32, 26, 8, 10], [42, 3, 4, 6], [52, 3, 4, 6]],
 };
 export function weaponIcon(id) {
@@ -590,6 +710,46 @@ export const CHARACTERS = {
     female: true, skin: '#f4d0b0', hair: 'braid', hairColor: '#120c0a', head: 'none',
     outfit: 'tactical', top: '#22262e', topShade: '#1a1d24', accent: '#0e1014',
     pants: '#1c1f26', shoes: '#0e0e10', lips: '#c84860', eyes: '#2a1a12', gloves: '#141416',
+  },
+  son: {
+    skin: '#d49a6a', hair: 'short', hairColor: '#1a1410', head: 'hardhat', stubble: true,
+    outfit: 'overalls', top: '#6a5a40', topShade: '#584a34', accent: '#d8a020',
+    pants: '#3a3a30', shoes: '#2a2018', gloves: '#2a2a2a',
+  },
+  thao: {
+    female: true, skin: '#f6d4b6', hair: 'bob', hairColor: '#1a1210', head: 'goggles',
+    outfit: 'labcoat', top: '#f2f6f6', topShade: '#d6dede', accent: '#3aa0a0',
+    pants: '#3a4a5a', shoes: '#e8e8e8', lips: '#d9576b', eyes: '#3a2418',
+  },
+  kien: {
+    skin: '#e0ae84', hair: 'neat', hairColor: '#1c1612', head: 'headphones',
+    outfit: 'jacket', top: '#5a6a4a', topShade: '#4a5a3c', accent: '#c8a050',
+    pants: '#3a3a3e', shoes: '#2a2018', gloves: '#3a2a22',
+  },
+  nhi: {
+    female: true, skin: '#f8d8bc', hair: 'ponytail', hairColor: '#2a1810', head: 'headphones',
+    outfit: 'hivis', top: '#2a3448', topShade: '#222a3a', accent: '#ff8a1e',
+    pants: '#2a2e3a', shoes: '#1a1a1e', lips: '#e05a74', eyes: '#3a2214',
+  },
+  quang: {
+    old: true, skin: '#c89064', hair: 'gray', hairColor: '#8a8478', head: 'hunterHat', beard: '#e8e8e8',
+    outfit: 'camo', top: '#e8ece8', topShade: '#c8d0cc', accent: '#5a6a5a',
+    pants: '#4a5248', shoes: '#2a2420', gloves: '#3a3a3a',
+  },
+  tuyet: {
+    female: true, skin: '#f8dcc4', hair: 'braid', hairColor: '#3a2014', head: 'cap',
+    outfit: 'jacket', top: '#c84040', topShade: '#a83434', accent: '#2a2a30',
+    pants: '#2a3040', shoes: '#4a3a2a', lips: '#d84a62', eyes: '#3a2214', gloves: '#2a2a30',
+  },
+  minh: {
+    skin: '#eec09a', hair: 'spiky', hairColor: '#141214', head: 'glasses',
+    outfit: 'shirtTie', top: '#3a4458', topShade: '#2e3648', accent: '#9aa4b8',
+    pants: '#2a2e38', shoes: '#141416',
+  },
+  an: {
+    female: true, skin: '#f4d2b4', hair: 'longStraight', hairColor: '#0e0a0a', head: 'glasses',
+    outfit: 'labcoat', top: '#eef0f4', topShade: '#d0d4dc', accent: '#2a6a5a',
+    pants: '#2a2e36', shoes: '#1a1a1e', lips: '#c8485e', eyes: '#2a1a12',
   },
   vy: {
     female: true, skin: '#f6d0ae', hair: 'buns', hairColor: '#2a1810', head: 'hardhat',

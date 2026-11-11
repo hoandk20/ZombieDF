@@ -17,14 +17,16 @@ export const SURVIVOR_SLOTS = [86, 54, 144, 24];
 
 export const HEADSHOT_MUL = 2.5;
 export const DAY_HOURS = 10;
-export const CAMPAIGN_NIGHTS = 60;
+export const CAMPAIGN_NIGHTS = 100;
 export const ACT_LENGTH = 10;
 export const STAGE_LENGTH = 20; // 20 đêm = 1 màn
-export const actFor = (n) => Math.min(6, Math.max(1, Math.ceil(n / ACT_LENGTH)));
-export const stageFor = (n) => Math.min(3, Math.max(1, Math.ceil(n / STAGE_LENGTH)));
-export const ACT_NAMES = { 1: 'Bến Sương', 2: 'Cảng Vọng Hải', 3: 'Đập Hồng Sơn', 4: 'Căn cứ Hồng Sơn', 5: 'Cao tốc Bắc Nam', 6: 'Thủ đô' };
-export const STAGE_NAMES = { 1: 'Đường ra biển', 2: 'Mật mã Hồng Sơn', 3: 'Chuyến hàng cuối cùng' };
-export const SCENES = { 1: 'town', 2: 'harbor', 3: 'dam', 4: 'base', 5: 'highway', 6: 'capital' };
+export const actFor = (n) => Math.min(10, Math.max(1, Math.ceil(n / ACT_LENGTH)));
+export const stageFor = (n) => Math.min(5, Math.max(1, Math.ceil(n / STAGE_LENGTH)));
+// chương đầu của mỗi màn (sang chương này là bắt đầu lại tay trắng)
+export const isStageStartAct = (act) => act > 1 && act % 2 === 1;
+export const ACT_NAMES = { 1: 'Bến Sương', 2: 'Cảng Vọng Hải', 3: 'Đập Hồng Sơn', 4: 'Căn cứ Hồng Sơn', 5: 'Cao tốc Bắc Nam', 6: 'Thủ đô', 7: 'Nhà máy Thành Nam', 8: 'Sân bay Bắc Thành', 9: 'Rừng tuyết biên giới', 10: 'Trạm Hải Đăng' };
+export const STAGE_NAMES = { 1: 'Đường ra biển', 2: 'Mật mã Hồng Sơn', 3: 'Chuyến hàng cuối cùng', 4: 'Biến chủng', 5: 'Tần số cuối cùng' };
+export const SCENES = { 1: 'town', 2: 'harbor', 3: 'dam', 4: 'base', 5: 'highway', 6: 'capital', 7: 'factory', 8: 'airport', 9: 'snow', 10: 'lighthouse' };
 export const sceneFor = (n) => SCENES[actFor(n)];
 export const MAX_SQUAD = 4;
 export const CAMP_INCOME = 35;
@@ -73,6 +75,10 @@ export const DEFENSES_BY_ACT = {
   4: ['turret', 'flameTurret', 'mortar', 'sniperNest', 'floodlight'],
   5: ['mortar', 'rocket', 'shocker', 'wire', 'mines'],
   6: ['teslaTower', 'drone', 'rocket', 'gas', 'floodlight'],
+  7: ['flameTurret', 'gas', 'saw', 'turret', 'mines'],
+  8: ['turret', 'drone', 'rocket', 'sniperNest', 'floodlight'],
+  9: ['shocker', 'sniperNest', 'mortar', 'saw', 'wire', 'mines'],
+  10: ['teslaTower', 'drone', 'rocket', 'mortar', 'gas', 'floodlight'],
 };
 export const ALL_DEFENSES = ['turret', 'mines', 'wire', 'floodlight', 'shocker', 'flameTurret', 'mortar', 'teslaTower', 'drone', 'saw', 'sniperNest', 'gas', 'rocket'];
 export function resetDefenses(d) {
@@ -135,7 +141,19 @@ export const WEAPONS = {
     desc: 'Tia sét nhảy sang 5 con gần nhau, làm tê liệt trong chốc lát. Xuyên giáp.',
   },
 };
-export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher', 'sniper', 'tesla'];
+WEAPONS.cryo = {
+  id: 'cryo', name: 'Súng phun băng', dmg: 10, rate: 0.05, mag: 150, reload: 3.0,
+  pellets: 1, spread: 0.12, pierce: 8, auto: true, flame: true, cryo: true, range: 440, burn: 0, freeze: 1.4,
+  price: 15000, ammoPrice: 320, ammoPack: 150, shake: 0.6, len: 42, act: 7,
+  desc: 'Phun khí nitơ lỏng của nhà máy. Làm chậm mạnh tối đa 8 con, zombie bị đông cứng chịu thêm 30% sát thương.',
+};
+WEAPONS.railgun = {
+  id: 'railgun', name: 'Súng điện từ', dmg: 520, rate: 1.6, mag: 4, reload: 2.8,
+  pellets: 1, spread: 0, pierce: 14, auto: false, heavyTracer: true, rail: true,
+  price: 19000, ammoPrice: 480, ammoPack: 16, shake: 8, len: 56, act: 8,
+  desc: 'Hoàn tự lắp từ tụ điện máy bay. Một phát xuyên cả hàng, không giáp nào chặn nổi.',
+};
+export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher', 'sniper', 'tesla', 'cryo', 'railgun'];
 
 export const GRENADE = { dmg: 380, radius: 100, price: 150, max: 4, fuse: 0.75 };
 
@@ -163,6 +181,15 @@ export const ZOMBIES = {
   juggernaut:{ name: 'Cỗ Máy Nghiền', hp: 9500, speed: 9, dmg: 90, atkRate: 2.2, h: 205, w: 110, reward: 2600, skin: '#6a6050', shirt: '#2a2a2e', pants: '#18181c', kind: 'upright', heavy: true, boss: true, plated: true, charger: true },
   queen:   { name: 'Nữ Hoàng Bầy Đàn', hp: 17000, speed: 8, dmg: 100, atkRate: 2.0, h: 245, w: 104, reward: 6000, skin: '#b0a0c0', shirt: '#3a2040', pants: '#1a1020', kind: 'upright', heavy: true, boss: true, queen: true, bomber: false },
   zero:    { name: 'Mẫu Thể Số 0', hp: 14000, speed: 10, dmg: 95, atkRate: 2.0, h: 232, w: 90, reward: 4000, skin: '#c8c0b4', shirt: '#3a1820', pants: '#1a1014', kind: 'upright', heavy: true, boss: true, phases: true },
+  // Màn 4 · 5
+  hazmat:  { name: 'Kẻ mặc đồ bảo hộ', hp: 170, speed: 22, dmg: 10, atkRate: 1.2, h: 108, w: 36, reward: 40, skin: '#8a8a70', shirt: '#c8b030', pants: '#b8a028', kind: 'upright', hazmat: true },
+  brood:   { name: 'Kẻ ấp trứng', hp: 200, speed: 15, dmg: 9, atkRate: 1.4, h: 114, w: 44, reward: 45, skin: '#a89cb0', shirt: '#4a3a52', pants: '#2a2030', kind: 'upright', brood: true },
+  frost:   { name: 'Kẻ băng giá', hp: 210, speed: 19, dmg: 12, atkRate: 1.3, h: 112, w: 36, reward: 45, skin: '#a8c4d4', shirt: '#3a4a5a', pants: '#24303a', kind: 'upright', frost: true },
+  signal:  { name: 'Kẻ thu sóng', hp: 130, speed: 24, dmg: 6, atkRate: 1.3, h: 106, w: 30, reward: 55, skin: '#9a9a8a', shirt: '#2a3a2e', pants: '#1e2420', kind: 'upright', healer: true },
+  furnace: { name: 'Lò Thiêu Sống', hp: 11000, speed: 9, dmg: 95, atkRate: 2.2, h: 236, w: 100, reward: 4500, skin: '#5a3020', shirt: '#2a140c', pants: '#1a0c08', kind: 'upright', heavy: true, boss: true, burner: true, hazmat: true, summoner: 'burner' },
+  reaper:  { name: 'Kẻ Gặt Đường Băng', hp: 12000, speed: 11, dmg: 100, atkRate: 2.0, h: 228, w: 92, reward: 5000, skin: '#7a7468', shirt: '#22242a', pants: '#14161a', kind: 'upright', heavy: true, boss: true, charger: true, summoner: 'leaper' },
+  wendigo: { name: 'Quỷ Tuyết', hp: 14000, speed: 10, dmg: 105, atkRate: 2.1, h: 248, w: 100, reward: 5500, skin: '#c8d8e0', shirt: '#4a5a66', pants: '#2a343c', kind: 'upright', heavy: true, boss: true, frost: true, regen: true, summoner: 'dog' },
+  caller:  { name: 'Kẻ Gọi Bầy', hp: 20000, speed: 8, dmg: 115, atkRate: 2.0, h: 262, w: 108, reward: 10000, skin: '#b8b0a0', shirt: '#1e2a24', pants: '#101612', kind: 'upright', heavy: true, boss: true, caller: true, healer: true },
   titan:   { name: 'Kẻ Khổng Lồ', hp: 3200, speed: 9, dmg: 60, atkRate: 2.2, h: 220, w: 86, reward: 600, skin: '#74664a', shirt: '#3a2418', pants: '#1f1b16', kind: 'upright', heavy: true, boss: true },
 };
 
@@ -177,10 +204,18 @@ export function bossTypeFor(n, idx = 0) {
   if (n === 50) return 'juggernaut';
   if (n === 55) return idx === 0 ? 'juggernaut' : 'tyrant';
   if (n === 60) return 'queen';
-  if (n > CAMPAIGN_NIGHTS) return ['titan', 'colossus', 'tyrant', 'zero', 'juggernaut', 'queen'][Math.floor(n / 5) % 6];
+  if (n === 65) return 'zero';
+  if (n === 70) return 'furnace';
+  if (n === 75) return idx === 0 ? 'furnace' : 'juggernaut';
+  if (n === 80) return 'reaper';
+  if (n === 85) return idx === 0 ? 'reaper' : 'tyrant';
+  if (n === 90) return 'wendigo';
+  if (n === 95) return idx === 0 ? 'wendigo' : 'queen';
+  if (n === 100) return 'caller';
+  if (n > CAMPAIGN_NIGHTS) return ['titan', 'colossus', 'tyrant', 'zero', 'juggernaut', 'queen', 'furnace', 'reaper', 'wendigo'][Math.floor(n / 5) % 9];
   return 'titan';
 }
-export const bossCountFor = (n) => (n === 35 || n === 55 ? 2 : 1); // đêm 35, 55: hai con trùm
+export const bossCountFor = (n) => ([35, 55, 75, 85, 95].includes(n) ? 2 : 1); // những đêm có hai con trùm
 
 // Mỗi đêm một "điểm nhấn" để người chơi không chán
 const MODS = {
@@ -217,6 +252,14 @@ const MODS = {
   57: { airdrops: 3, bounty: true },
   58: { horde: true },
   59: { blackout: true, airdrops: 2 },
+  // Màn 4
+  64: { airdrops: 2 }, 66: { rush: true }, 67: { blackout: true }, 68: { horde: true, airdrops: 1 }, 69: { bounty: true, airdrops: 2 },
+  71: { airdrops: 2 }, 72: { rush: true }, 73: { blackout: true, bounty: true }, 74: { horde: true },
+  76: { airdrops: 3 }, 77: { blackout: true, rush: true }, 78: { horde: true, airdrops: 1 }, 79: { bounty: true, airdrops: 2 },
+  // Màn 5
+  84: { airdrops: 2 }, 86: { blackout: true }, 87: { horde: true, airdrops: 1 }, 88: { rush: true, bounty: true }, 89: { blackout: true, airdrops: 2 },
+  91: { airdrops: 2 }, 92: { blackout: true }, 93: { horde: true }, 94: { rush: true, airdrops: 2 },
+  96: { blackout: true, bounty: true }, 97: { horde: true, airdrops: 2 }, 98: { rush: true, blackout: true }, 99: { airdrops: 3, horde: true },
 };
 export function modsFor(n) {
   if (n <= CAMPAIGN_NIGHTS) {
@@ -261,8 +304,8 @@ export function waveFor(n) {
     rewardMul: grace ? 1.4 : settle ? 1.15 : 1,
     total: Math.round(total),
     interval,
-    hpMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.11 + up * 0.25 : 1 + 19 * 0.11 + (n - 20) * 0.06) * gk * (settle ? (local === 11 ? 0.85 : 0.92) : 1),
-    dmgMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.02 + up * 0.08 : 1 + (n - 1) * 0.02) * (grace ? 0.75 : 1),
+    hpMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.11 + (up <= 2 ? up * 0.25 : 0.5 + (up - 2) * 0.12) : 1 + 19 * 0.11 + (n - 20) * 0.06) * gk * (settle ? (local === 11 ? 0.85 : 0.92) : 1),
+    dmgMul: (n <= CAMPAIGN_NIGHTS ? 1 + (local - 1) * 0.02 + (up <= 2 ? up * 0.08 : 0.16 + (up - 2) * 0.03) : 1 + (n - 1) * 0.02) * (grace ? 0.75 : 1),
     speedMul: m.rush ? 1.3 : 1,
     boss: isBossNight(n),
     mods: m,
@@ -282,17 +325,24 @@ export function waveFor(n) {
       burner: n >= 44 ? 0.12 : 0,
       splitter: n >= 52 ? 0.13 : 0,
       stalker: n >= 54 ? 0.11 : 0,
+      hazmat: n >= 62 ? 0.14 : 0,
+      brood: n >= 72 ? 0.1 : 0,
+      frost: n >= 82 ? 0.14 : 0,
+      signal: n >= 92 ? 0.08 : 0,
     },
   };
-  if (grace) for (const k of ['brute', 'riot', 'spitter', 'bloater', 'shielder', 'burner', 'splitter', 'reviver', 'screamer', 'stalker', 'leaper']) w.weights[k] *= 0.25;
+  if (grace) for (const k of ['brute', 'riot', 'spitter', 'bloater', 'shielder', 'burner', 'splitter', 'reviver', 'screamer', 'stalker', 'leaper', 'hazmat', 'brood', 'frost', 'signal']) w.weights[k] *= 0.25;
+  // màn sau đã có quá nhiều loại quái: giảm bớt loại cũ để loại mới nổi bật
+  if (n > 60) for (const k of ['crawler', 'riot', 'bloater', 'shielder', 'reviver']) w.weights[k] *= 0.6;
   return w;
 }
 
 export function weatherFor(n) {
   return {
- rain: (n >= 7 && n <= 10) || [16, 17, 19, 25, 28, 34, 35, 46, 49, 55, 58].includes(n) || (n > CAMPAIGN_NIGHTS && n % 3 === 0),
+ rain: (n >= 7 && n <= 10) || [16, 17, 19, 25, 28, 34, 35, 46, 49, 55, 58, 66, 67, 74, 77, 78, 96, 98].includes(n) || (n > CAMPAIGN_NIGHTS && n % 3 === 0),
+    snow: n > 80 && n <= 90,
     lightning: (n >= 7 && n <= 10) || [16, 17, 28, 34, 35, 49, 58].includes(n),
-    fog: n > 50 ? 0.16 : n > 40 ? 0.2 : n > 30 ? 0.12 : n > 20 ? (n === 28 ? 0.4 : 0.22) : n > 10 ? Math.min(0.2 + (n - 10) * 0.02, 0.38) : Math.min(0.08 + n * 0.02, 0.3),
+    fog: n > 90 ? 0.3 : n > 80 ? 0.26 : n > 70 ? 0.14 : n > 60 ? 0.2 : n > 50 ? 0.16 : n > 40 ? 0.2 : n > 30 ? 0.12 : n > 20 ? (n === 28 ? 0.4 : 0.22) : n > 10 ? Math.min(0.2 + (n - 10) * 0.02, 0.38) : Math.min(0.08 + n * 0.02, 0.3),
     bloodMoon: isBossNight(n),
   };
 }

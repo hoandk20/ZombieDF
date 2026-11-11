@@ -13,7 +13,7 @@ export function newSave() {
     reloadLevel: 0,
     dmgLevel: 0,
     seenAct: 1,
-    v: 4,
+    v: 5,
     difficulty: 'normal',
     turrets: 0,
     turretLevel: 1,
@@ -71,7 +71,9 @@ export function loadGame() {
       if (out.night > 20 && out.seenAct < 2) out.seenAct = 2;
     }
     if ((d.v || 0) < 4 && out.endless && out.night <= 61 && out.night > 40) out.endless = false; // bản 60 đêm
-    out.v = 4;
+    // bản 100 đêm: người vừa thắng đêm 60 và chưa đi xa trong vô tận được chơi tiếp màn 4
+    if ((d.v || 0) < 5 && out.endless && out.night <= 62 && out.night > 60) { out.endless = false; out.night = 61; }
+    out.v = 5;
     // những đồng đội đã từng gặp (để cắt cảnh không nhắc tới người chưa gặp)
     if (!Array.isArray(out.met)) out.met = [...new Set([...(out.crew || []), ...Object.keys(out.mates || {})])];
     if (!Array.isArray(out.squad)) out.squad = out.crew.slice(0, 4);

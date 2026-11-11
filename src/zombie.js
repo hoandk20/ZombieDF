@@ -317,6 +317,7 @@ export class Zombie {
     this.buffT = Math.max(0, this.buffT - dt);
     this.kbRecent = Math.max(0, this.kbRecent - dt * 14);
     this.screamT = Math.max(0, this.screamT - dt);
+    if (this.T.frost) this.stunT = 0; // vỏ băng: không bị tê liệt
     if (this.stunT > 0) { this.stunT -= dt; return; } // bị bẫy điện làm tê liệt
     if (this.leaping) { // kẻ nhảy đang bật qua mìn và dây thép gai
       this.leapT += dt;
@@ -404,11 +405,15 @@ export class Zombie {
         if (this.helmet <= 0) result = 'helmet';
       } else if (!head) dmg *= 0.55;
     }
+    if (this.T.hazmat && (kind === 'fire' || kind === 'gas' || kind === 'cold')) dmg *= 0.25; // đồ bảo hộ
+    if (this.T.frost) { if (kind === 'fire') dmg *= 2; else if (kind === 'bullet') dmg *= 0.75; } // vỏ băng
+    if (this.freezeT > 0 && kind !== 'cold') dmg *= 1.3; // đang đông cứng
+    this.sinceHit = 0;
     if (this.armorPhase && kind === 'bullet') dmg *= 0.4; // giai đoạn 3 của Mẫu Thể Số 0
     this.hp -= dmg;
-    if (kind !== 'fire' && kind !== 'gas') this.hitT = 0.08; // cháy âm ỉ thì không chớp trắng
+    if (kind !== 'fire' && kind !== 'gas' && kind !== 'cold') this.hitT = 0.08; // cháy âm ỉ thì không chớp trắng
     // đẩy lùi: con càng to (càng nặng) càng ít bị đẩy; trúng liên tục thì kháng dần
-    if (kind !== 'fire' && kind !== 'gas') {
+    if (kind !== 'fire' && kind !== 'gas' && kind !== 'cold') {
       const kb = (5 * Math.min(dmg / 35, 1.6)) / this.mass() / (1 + this.kbRecent * 0.35);
       this.kbRecent += kb;
       this.x = Math.min(this.x + kb, W + 100);
@@ -454,6 +459,8 @@ export class Zombie {
     LITE = !this.detail;
     if (this.legless) { ctx.translate(this.h * LEGLESS.tx, this.h * LEGLESS.ty); ctx.rotate(LEGLESS.rot); }
     if (this.T.kind === 'crawl') this.drawCrawl(ctx); else if (this.T.kind === 'dog') this.drawDog(ctx); else this.drawUpright(ctx);
+    if (this.T.kind === 'upright') this.drawExtras(ctx);
+    if (this.freezeT > 0 && this.alive) { ctx.fillStyle = 'rgba(170,220,255,0.28)'; ctx.fillRect(-this.w * 0.9, -this.h * 1.02, this.w * 1.8, this.h); }
     LITE = false;
     ctx.restore();
     if (this.alive && this.buffT > 0) { // bị kích động bởi tiếng rú
@@ -930,6 +937,41 @@ export class Zombie {
       ctx.fillStyle = furDark; // tai
       ctx.beginPath(); ctx.moveTo(hx + 3 * s, hy - 4 * s); ctx.lineTo(hx + 7 * s, hy - 12 * s); ctx.lineTo(hx + 8 * s, hy - 3 * s); ctx.fill();
       ctx.fillStyle = '#ff3b2f'; ctx.beginPath(); ctx.arc(hx - 2 * s, hy - 1.5 * s, 1.5 * s, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // phụ kiện của quái màn 4 · 5 (vẽ trong toạ độ của thân, gốc ở chân)
+  drawExtras(ctx) {
+    const T = this.T, h = this.h, s = h / 100;
+    const hx = -h * HEAD_X, hy = -h * HEAD_Y, r = h * HEAD_R;
+    const flash = this.hitT > 0;
+    if (T.hazmat) { // mũ trùm bảo hộ, kính che mặt, bình lọc
+      ctx.fillStyle = flash ? '#fff' : 'rgba(210,184,52,0.95)';
+      ctx.beginPath(); ctx.arc(hx, hy, r * 1.22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(30,40,46,0.9)'; ctx.beginPath(); ctx.ellipse(hx - r * 0.35, hy, r * 0.55, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(160,220,255,0.35)'; ctx.fillRect(hx - r * 0.7, hy - r * 0.25, r * 0.35, r * 0.15);
+      ctx.fillStyle = '#2a2c30'; ctx.beginPath(); ctx.arc(hx - r * 0.6, hy + r * 0.62, r * 0.32, 0, Math.PI * 2); ctx.fill();
+    }
+    if (T.brood) { // túi trứng phập phồng trên lưng
+      const pulse = 1 + Math.sin(this.phase * 2.5) * 0.06;
+      ctx.fillStyle = flash ? '#fff' : 'rgba(170,110,190,0.88)';
+      ctx.beginPath(); ctx.ellipse(h * 0.08, -h * 0.6, h * 0.16 * pulse, h * 0.2 * pulse, -0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(90,40,110,0.6)';
+      for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.arc(h * (0.03 + (k % 2) * 0.08), -h * (0.72 - k * 0.07), 3.5 * s, 0, Math.PI * 2); ctx.fill(); }
+    }
+    if (T.frost) { // vỏ băng nhọn trên vai và lưng
+      ctx.fillStyle = flash ? '#fff' : 'rgba(200,232,255,0.85)';
+      for (const [x, y, k] of [[-0.14, -0.78, 1], [0.0, -0.8, 1.3], [0.12, -0.7, 1.1], [0.14, -0.56, 0.9]]) {
+        ctx.beginPath(); ctx.moveTo(h * x - 4 * s, h * y); ctx.lineTo(h * x + 2 * s, h * y - 16 * s * k); ctx.lineTo(h * x + 7 * s, h * y); ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(180,220,255,0.18)'; ctx.fillRect(-this.w * 0.7, -h * 0.95, this.w * 1.4, h * 0.95);
+    }
+    if (T.healer) { // ăng-ten mọc ra từ đầu, đầu đèn nhấp nháy
+      ctx.strokeStyle = '#3a3e3a'; ctx.lineWidth = 2 * s;
+      ctx.beginPath(); ctx.moveTo(hx + r * 0.2, hy - r * 0.8); ctx.lineTo(hx + r * 0.6, hy - r * 2.6); ctx.moveTo(hx - r * 0.3, hy - r * 0.9); ctx.lineTo(hx - r * 0.9, hy - r * 2.1); ctx.stroke();
+      const on = Math.sin(this.phase * 4) > 0;
+      ctx.fillStyle = on ? '#9fff7a' : '#3a6a2a';
+      ctx.beginPath(); ctx.arc(hx + r * 0.6, hy - r * 2.6, 3 * s, 0, Math.PI * 2); ctx.arc(hx - r * 0.9, hy - r * 2.1, 2.5 * s, 0, Math.PI * 2); ctx.fill();
     }
   }
 

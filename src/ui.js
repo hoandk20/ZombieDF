@@ -5,11 +5,12 @@ import {
   modsFor, MOD_INFO, waveFor, mateLevel, MATE_XP, CAMP_INCOME,
   DIFFICULTIES, DIFF_ORDER, diffOf, UPKEEP, TURRET, MINE, WIRE, FLOODLIGHT_PRICE,
   SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE, SAW, SNIPER_NEST, GAS, ROCKET, DEFENSES_BY_ACT, ALL_DEFENSES, resetDefenses,
+  isStageStartAct,
 } from './config.js';
 import {
   INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO,
   STAGE1_END, STAGE2_INTRO, ACT3_END, ACT4_INTRO, STAGE2_END, STAGE3_INTRO, ACT5_END, ACT6_INTRO, hasPerk,
-  storyFor,
+  storyFor, STAGE3_END, STAGE4_INTRO, ACT7_END, ACT8_INTRO, STAGE4_END, STAGE5_INTRO, ACT9_END, ACT10_INTRO,
 } from './story.js';
 import { setMet } from './cine.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
@@ -414,7 +415,7 @@ export class UI {
       const active = id === d.current;
       const empty = st.mag === 0 ? ' empty' : '';
       return `<button class="weapon-slot${active ? ' active' : ''}${empty}" data-hud="weapon" data-arg="${id}">
-        <span class="slot-key">${WEAPON_ORDER.indexOf(id) + 1}</span>
+        <span class="slot-key">${["1","2","3","4","5","6","7","8","9","0","-"][WEAPON_ORDER.indexOf(id)]}</span>
         <img class="slot-icon" src="${weaponIcon(id)}" alt="">
         <span class="slot-ammo">${active && g.reloadT > 0 ? '···' : st.mag}<small>/${w.infinite ? '∞' : st.reserve}</small></span>
       </button>`;
@@ -462,7 +463,9 @@ export class UI {
     const end = {
       10: [ACT1_END, 'Hết chương 1 · Bình minh thứ mười'], 20: [STAGE1_END, 'Hết màn 1 · Bình minh thứ hai mươi'],
       30: [ACT3_END, 'Hết chương 3 · Bình minh thứ ba mươi'], 40: [STAGE2_END, 'Hết màn 2 · Bình minh thứ bốn mươi'],
-      50: [ACT5_END, 'Hết chương 5 · Bình minh thứ năm mươi'],
+      50: [ACT5_END, 'Hết chương 5 · Bình minh thứ năm mươi'], 60: [STAGE3_END, 'Hết màn 3 · Bình minh thứ sáu mươi'],
+      70: [ACT7_END, 'Hết chương 7 · Bình minh thứ bảy mươi'], 80: [STAGE4_END, 'Hết màn 4 · Bình minh thứ tám mươi'],
+      90: [ACT9_END, 'Hết chương 9 · Bình minh thứ chín mươi'],
     }[n];
     setTimeout(() => this.playCutscene(end[0], () => this.playActIntro(actFor(n + 1), info), end[1]), 600);
   }
@@ -471,8 +474,8 @@ export class UI {
     const g = this.game;
     g.setScene(SCENES[act]);
     g.state = 'day';
-    const lines = { 2: ACT2_INTRO, 3: STAGE2_INTRO, 4: ACT4_INTRO, 5: STAGE3_INTRO, 6: ACT6_INTRO }[act] || [];
-    const stageStart = { 3: 2, 5: 3 }[act];
+    const lines = { 2: ACT2_INTRO, 3: STAGE2_INTRO, 4: ACT4_INTRO, 5: STAGE3_INTRO, 6: ACT6_INTRO, 7: STAGE4_INTRO, 8: ACT8_INTRO, 9: STAGE5_INTRO, 10: ACT10_INTRO }[act] || [];
+    const stageStart = isStageStartAct(act) ? (act + 1) / 2 : 0;
     const title = stageStart ? `Màn ${stageStart} · ${STAGE_NAMES[stageStart]} · Chương ${act} · ${ACT_NAMES[act]}` : `Chương ${act} · ${ACT_NAMES[act]}`;
     // chương mới: đồng đội cũ đã ở lại phía sau, công trình phòng thủ phải dựng lại từ đầu
     if (act > (g.data.seenAct || 1) && !g.data.endless) {
@@ -486,7 +489,7 @@ export class UI {
       g.data.barricadeLevel = 0;
       g.data.hp = barricadeMax(0);
       g.data.chapterReset = true;
-      if (act === 3 || act === 5) { // màn mới: nâng cấp vũ khí cũng làm lại từ đầu
+      if (isStageStartAct(act)) { // màn mới: nâng cấp vũ khí cũng làm lại từ đầu
         g.data.dmgLevel = 0; g.data.reloadLevel = 0; g.data.upgradeReset = true;
         // màn mới: Hoàn ra đi tay trắng, chỉ còn khẩu súng lục của ông ngoại
         g.data.weapons = { pistol: { mag: WEAPONS.pistol.mag, reserve: 0 } };
@@ -507,7 +510,7 @@ export class UI {
   }
 
   showVictoryStory(info) {
-    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Kết thúc · Bình minh thứ sáu mươi'), 600);
+    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Kết thúc · Bình minh thứ một trăm'), 600);
   }
 
   showVictory() {
@@ -518,11 +521,11 @@ export class UI {
         <div class="panel small victory">
           <div class="eyebrow">Chiến dịch hoàn thành</div>
           <h2 class="big-title gold">BẠN ĐÃ SỐNG SÓT</h2>
-          <p class="story-line">Sáu mươi đêm, từ Bến Sương tới thủ đô. Hoàn đã mang thùng mẫu đến Bệnh viện Trung ương, và vắc-xin bắt đầu được sản xuất cho cả đất nước.</p>
+          <p class="story-line">Một trăm đêm, từ Bến Sương tới Trạm Hải Đăng. Hoàn đã mang vắc-xin tới thủ đô, lần ra tín hiệu điều khiển bầy đàn và đảo ngược nó. Cả đất nước đã được ngủ yên.</p>
           <div class="stat-row">
             <div><b>${d.totalKills}</b><span>zombie đã hạ</span></div>
             <div><b>${d.headshots || 0}</b><span>headshot</span></div>
-            <div><b>${d.crew.length}/${SURVIVORS.length}</b><span>đồng đội</span></div>
+            <div><b>${(d.met || d.crew).length}/${SURVIVORS.length}</b><span>đồng đội đã gặp</span></div>
           </div>
           <button class="primary" data-act="endless">Ở lại chiến đấu · Chế độ vô tận</button>
           <button class="ghost" data-act="menu">Menu chính</button>
@@ -582,7 +585,7 @@ export class UI {
     if (this.dayDone) return;
     const [k, dir] = arg.split(':');
     const used = this.alloc.repair + this.alloc.scav + this.alloc.search;
-    if (dir === '+' && used < DAY_HOURS) this.alloc[k]++;
+    if (dir === '+' && used < this.dayHours()) this.alloc[k]++;
     if (dir === '-' && this.alloc[k] > 0) this.alloc[k]--;
     sfx.click();
     this.renderDay();
@@ -673,6 +676,8 @@ export class UI {
     const next = SURVIVORS.filter((s) => !d.crew.includes(s.id) && s.act === actFor(d.night) && (s.from || 1) > d.night).sort((a, b) => a.from - b.from)[0];
     return next ? `Chưa có ai quanh đây (có người mới từ đêm ${next.from})` : 'Quanh đây không còn ai';
   }
+
+  dayHours() { return DAY_HOURS + (hasPerk(this.game.data, 'kien') ? 2 : 0); }
 
   eatPerDay() {
     const d = this.game.data;
@@ -786,6 +791,7 @@ export class UI {
         if ((d.drones || 0) < DRONE.max) out.push({ id: 'drone', title: `Drone chiến đấu #${(d.drones || 0) + 1}`, desc: 'Bay lượn trên chiến trường, bắn con gần nhất. Hết băng thì tự nạp.', stats: `ST ${DRONE.dmg} · băng ${DRONE.mag}`, price: DRONE.price, glyph: '✈', tag: 'MỚI' });
       }
     }
+    if (hasPerk(d, 'son')) for (const it of out) it.price = Math.round(it.price * 0.8);
     if (!out.length) out.push({ id: 'none', title: 'Đã dựng hết công trình của chương này', desc: 'Sang chương mới sẽ có công trình phòng thủ khác.', price: 0, glyph: '✓', disabled: true });
     return out;
   }
@@ -845,11 +851,11 @@ export class UI {
       const n = actStart + i + 1;
       const cls = n < d.night ? 'done' : n === d.night ? 'next' : '';
       return `<span class="${cls}${isBossNight(n) ? ' boss' : ''}" title="Đêm ${n}"></span>`;
-    }).join('')}<em>${['', '🚁', '🚢', '🏔', '📡', '🚚', '🏥'][act]}</em></div>` : '';
+    }).join('')}<em>${['', '🚁', '🚢', '🏔', '📡', '🚚', '🏥', '🏭', '✈', '🌲', '🗼'][act]}</em></div>` : '';
 
     const radioLines = storyFor(DAWN_LOG[d.night - 1], d.met || []);
     const radio = radioLines.length && !d.endless ? radioLines[radioLines.length - 1] : null;
-    const newFoe = { 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater', 22: 'dog', 24: 'screamer', 27: 'reviver', 32: 'shielder', 42: 'leaper', 44: 'burner', 52: 'splitter', 54: 'stalker' }[d.night];
+    const newFoe = { 62: 'hazmat', 72: 'brood', 82: 'frost', 92: 'signal', 2: 'runner', 3: 'crawler', 4: 'brute', 6: 'spitter', 11: 'riot', 12: 'bloater', 22: 'dog', 24: 'screamer', 27: 'reviver', 32: 'shielder', 42: 'leaper', 44: 'burner', 52: 'splitter', 54: 'stalker' }[d.night];
     const mods = modsFor(d.night);
     const modList = Object.keys(MOD_INFO).filter((k) => mods[k]);
     const wv = waveFor(d.night);
@@ -875,10 +881,10 @@ export class UI {
         <div class="stepper">
           <button data-act="hour" data-arg="${k}:-" ${this.dayDone || !this.alloc[k] ? 'disabled' : ''} aria-label="Bớt">−</button>
           <span>${this.alloc[k]}<i>h</i></span>
-          <button data-act="hour" data-arg="${k}:+" ${this.dayDone || used >= DAY_HOURS ? 'disabled' : ''} aria-label="Thêm">+</button>
+          <button data-act="hour" data-arg="${k}:+" ${this.dayDone || used >= this.dayHours() ? 'disabled' : ''} aria-label="Thêm">+</button>
         </div>
       </div>`;
-    const hourDots = Array.from({ length: DAY_HOURS }, (_, i) => {
+    const hourDots = Array.from({ length: this.dayHours() }, (_, i) => {
       let c = '';
       if (i < this.alloc.repair) c = 'r';
       else if (i < this.alloc.repair + this.alloc.scav) c = 's';
@@ -946,7 +952,7 @@ export class UI {
             ${info ? `<div class="recap">Đêm ${info.night}: hạ <b>${info.kills}</b> zombie (${info.headshots} headshot), chuỗi dài nhất <b>${info.bestStreak}</b>, kiếm <b>$${info.earned}</b> + thưởng sống sót <b>$${info.bonus}</b>${info.campIncome ? ` + trại <b>$${info.campIncome}</b>` : ''}${info.eat ? `, cả nhóm ăn <b>${info.eat}</b> hộp` : ''}${info.hungry ? ' <span class="hurt-txt">· HẾT ĐỒ ĂN, CẢ NHÓM ĐANG ĐÓI</span>' : ''}${info.crates ? `, mở <b>${info.crates}</b> thùng tiếp tế` : ''}${info.extraGrenade ? ', Hùng nhặt thêm 1 lựu đạn' : ''}.${info.injured?.length ? ` <span class="hurt-txt">${info.injured.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} bị thương.</span>` : ''}</div>` : ''}
             ${radio ? `<div class="radio-card"><span class="radio-tag">${radio.who}</span>${esc(radio.text)}</div>` : ''}
             ${resetWarn}${threatWarn}${warn}${foodWarn}${squadWarn}${forecast}
-            <h3>${this.dayDone ? 'Kết quả trong ngày' : 'Kế hoạch ban ngày'} <small>${this.dayDone ? 'Đã hết giờ' : `${DAY_HOURS - used} giờ còn lại`}</small></h3>
+            <h3>${this.dayDone ? 'Kết quả trong ngày' : 'Kế hoạch ban ngày'} <small>${this.dayDone ? 'Đã hết giờ' : `${this.dayHours() - used} giờ còn lại`}</small></h3>
             <div class="hour-dots">${hourDots}</div>
             ${this.dayDone
               ? `<ul class="day-log${this.animateLog ? ' animate' : ''}">${this.dayLog.map((l) => `<li><span>${l.icon}</span>${l.text}</li>`).join('')}</ul>`

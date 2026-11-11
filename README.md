@@ -1,6 +1,6 @@
 # Barricade Nights 🧟
 
-Game thủ thành chống zombie 2D (thể loại *barricade defense*), chiến dịch 3 màn × 20 đêm (6 chương, 6 bản đồ): đứng sau hàng rào, ngắm bắn
+Game thủ thành chống zombie 2D (thể loại *barricade defense*), chiến dịch 5 màn × 20 đêm (10 chương, 10 bản đồ, 100 đêm): đứng sau hàng rào, ngắm bắn
 từng đợt zombie mỗi đêm, ban ngày thì sửa rào, đi lục lọi, tìm người sống sót và mua súng mới.
 
 Viết bằng **HTML5 Canvas + JavaScript thuần** (không dùng engine), đóng gói bằng **Vite** cho web
@@ -28,6 +28,16 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
   **Chương 5 · Cao tốc Bắc Nam** (cầu vượt, xe bỏ hoang đang cháy) và **Chương 6 · Thủ đô** (nhà chọc trời,
   tháp truyền hình, ga tàu điện ngầm). Trùm: Quái Vật Cảng (45), Cỗ Máy Nghiền lao húc, da thép (50),
   Cỗ Máy Nghiền + Bạo Chúa Rừng (55), Nữ Hoàng Bầy Đàn đẻ bầy liên tục, 3 giai đoạn (60).
+- **Màn 4 · Biến chủng (đêm 61–80):** vắc-xin ra đời nhưng một chủng mới không phản ứng với thuốc. Hoàn phát hiện
+  trong bản ghi radio một tín hiệu 19 hertz lặp lại mỗi khi bầy đàn tràn lên.
+  **Chương 7 · Nhà máy Thành Nam** (ống khói, bồn hóa chất) giữ dây chuyền vắc-xin thế hệ hai;
+  **Chương 8 · Sân bay Bắc Thành** (đường băng, tháp không lưu) giữ cho những chuyến bay vắc-xin cất cánh,
+  đồng thời dò ra nguồn tín hiệu: **Trạm Hải Đăng**. Trùm: Mẫu Thể Số 0 (65), **Lò Thiêu Sống** miễn lửa, gọi kẻ cháy (70),
+  Lò Thiêu + Cỗ Máy Nghiền (75), **Kẻ Gặt Đường Băng** lao húc, gọi kẻ nhảy (80), Kẻ Gặt + Bạo Chúa Rừng (85).
+- **Màn 5 · Tần số cuối cùng (đêm 81–100):** vượt **Chương 9 · Rừng tuyết biên giới** (tuyết rơi, rừng thông, xác máy bay)
+  tới **Chương 10 · Trạm Hải Đăng** (ngọn hải đăng, cột ăng-ten khổng lồ, phòng máy chủ). Trùm: **Quỷ Tuyết** tự lành
+  khi không bị bắn, miễn tê liệt (90), Quỷ Tuyết + Nữ Hoàng (95), **Kẻ Gọi Bầy** chữa lành cả bầy, gọi kẻ thu sóng,
+  mọc giáp băng (100). Kết thúc: Hoàn viết lại phần mềm máy phát, đảo ngược tần số và ru ngủ bầy đàn khắp cả nước.
 - **Mỗi chương là một khởi đầu mới:** đồng đội cũ ở lại phía sau (có lý do trong cốt truyện), công trình
   phòng thủ phải dựng lại. Mỗi chương có 2 đồng đội riêng, bộ công trình riêng và loại quái mới riêng.
 
@@ -39,8 +49,15 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 | 4 · Căn cứ Hồng Sơn | Bác sĩ Khoa, Vy | Tháp súng máy, tháp phun lửa, súng cối tự động, ổ bắn tỉa tự động, đèn pha | Lính mang khiên |
 | 5 · Cao tốc Bắc Nam | Tuấn, Ngọc | Súng cối tự động, giàn tên lửa, bẫy điện, dây thép gai, mìn | Kẻ nhảy (bật qua mìn), kẻ cháy (miễn nhiễm lửa) |
 | 6 · Thủ đô | Đạt, Hà | Tháp Tesla, drone chiến đấu, giàn tên lửa, máy phóng khí độc, đèn pha | Kẻ phân thân, kẻ tàng hình |
+| 7 · Nhà máy Thành Nam | Sơn (công trình rẻ hơn 20%), Thảo (+2 đồ hộp mỗi sáng) | Tháp phun lửa, khí độc, lưỡi cưa, tháp súng máy, mìn | Kẻ mặc đồ bảo hộ (chịu lửa, khí độc) |
+| 8 · Sân bay Bắc Thành | Kiên (+2 giờ ban ngày), Nhi (+15% tiền thưởng) | Tháp súng máy, drone, giàn tên lửa, ổ bắn tỉa, đèn pha | Kẻ ấp trứng (đẻ con non liên tục) |
+| 9 · Rừng tuyết biên giới | Quang (mìn, lưỡi cưa +40%), Tuyết (đồng đội bắn nhanh hơn 20%) | Bẫy điện, ổ bắn tỉa, súng cối, lưỡi cưa, dây thép gai, mìn | Kẻ băng giá (miễn tê liệt, sợ lửa) |
+| 10 · Trạm Hải Đăng | Minh (công trình +25% sát thương), An (tinh nhuệ ít hơn một nửa) | Tháp Tesla, drone, giàn tên lửa, súng cối, khí độc, đèn pha | Kẻ thu sóng (chữa lành cả bầy) |
 
 - 4 đồng đội mới ở màn 2: **Hùng** (cựu binh, súng máy), **Linh** (xạ thủ), **bác sĩ Khoa**, **Vy** (kỹ sư điện).
+- Vũ khí mới ở màn 4: **Súng phun băng** (làm chậm, zombie đông cứng chịu thêm 30% sát thương) và **Súng điện từ**
+  do Hoàn tự lắp (xuyên 14 con, xuyên giáp). Phím tắt: `0` và `-`.
+- Cắt cảnh và nhật ký không nhắc tới đồng đội bạn chưa từng gặp.
 - Thắng chiến dịch sẽ mở **chế độ vô tận** (cứ 5 đêm lại có một con trùm).
 
 ## Không khí sinh tồn
@@ -105,7 +122,7 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 | **Ban đêm** | Zombie kéo đến từ bên phải. Chuột / chạm để ngắm & bắn. Bắn vào **đầu** gây x2.5 sát thương và thưởng thêm tiền. Độ bền hàng rào về 0 là thua. |
 | **Ban ngày** | Chia 10 giờ cho: 🔨 sửa hàng rào, 🎒 lục lọi (tiền, đạn, đôi khi nhặt được súng), 🔦 tìm người sống sót (tối đa 4 người, tự động bắn hỗ trợ). Sau đó mua sắm ở cửa hàng. |
 | **Vũ khí** | Súng lục (đạn vô hạn), Shotgun (nhiều viên, mạnh ở gần), Tiểu liên (tự động), Súng trường (xuyên 4 mục tiêu), Súng máy. Chương 2 mở thêm Súng phun lửa (đốt cháy, xuyên giáp) và Súng phóng lựu (đạn nổ); chương 3 Súng bắn tỉa (xuyên 6), chương 4 Súng điện (sét lan 5 con, làm tê liệt). |
-| **Sức mạnh theo giá** | Súng càng đắt càng mạnh: Súng lục < Shotgun < Tiểu liên < Súng trường < Súng máy < Súng phun lửa < Súng phóng lựu < Súng bắn tỉa < Súng điện. |
+| **Sức mạnh theo giá** | Súng càng đắt càng mạnh: Súng lục < Shotgun < Tiểu liên < Súng trường < Súng máy < Súng phun lửa < Súng phóng lựu < Súng bắn tỉa < Súng điện < Súng phun băng < Súng điện từ. |
 | **Đổi chỗ mỗi chương** | Sang chương mới thì hàng rào phải dựng lại từ đầu (mất hết cấp gia cố), nhưng 40% số tiền đã đầu tư vào hàng rào được trả lại dưới dạng vật liệu. Hai đêm đầu của chương thứ hai trong mỗi màn bầy đàn đến thưa hơn. |
 | **Zombie** | Thường, chạy nhanh (từ đêm 2), bò (từ đêm 3, khó bắn đầu), gã khổng lồ (từ đêm 4), kẻ phun axit (từ đêm 6, phá rào từ xa), cảnh sát bọc giáp (từ đêm 11, mũ chặn headshot cho tới khi vỡ), kẻ trương phình (từ đêm 12, phát nổ khi chết), trùm Kẻ Khổng Lồ (đêm 10, 15) và Quái Vật Cảng (đêm 20). |
 | **Cắt rời chi** | Bắn vào tay hoặc chân đủ đau thì chi đó rụng ra (bắn chân gây ít sát thương hơn nhưng rất dễ làm đứt chân), văng xuống đất và nằm lại. Mất một chân: khập khiễng, chậm hẳn. Mất cả hai chân: đổ sấp, lết bằng tay. Mất tay: cào hàng rào yếu đi. Nổ lớn có thể xé rời chi. Không áp dụng cho trùm. |
