@@ -22,6 +22,7 @@ export function newSave() {
     floodlight: false,
     food: 8,
     threat: 1,
+    flashlight: false,
     met: [],
     hungry: false,
     eventDay: 0,

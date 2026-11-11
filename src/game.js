@@ -1613,7 +1613,7 @@ export class Game {
 
     // ánh sáng cộng dồn: chớp súng, vụ nổ, cửa sổ nhà
     ctx.globalCompositeOperation = 'lighter';
-    if (inGame && (this.state === 'night' || this.state === 'paused')) { // đèn pin của Hoàn rọi theo hướng ngắm
+    if (inGame && this.data && this.data.flashlight && (this.state === 'night' || this.state === 'paused')) { // đèn pin (phải mua) rọi theo hướng ngắm
       const a = this.aimAngle();
       const fl = ctx.createRadialGradient(SHOULDER.x, SHOULDER.y, 10, SHOULDER.x, SHOULDER.y, 560);
       fl.addColorStop(0, 'rgba(255,240,200,0.16)'); fl.addColorStop(1, 'rgba(255,240,200,0)');
@@ -1972,7 +1972,7 @@ export class Game {
       g.fillStyle = gr;
       g.fillRect(x - r, y - r, r * 2, r * 2);
     };
-    hole(this.aim.x, this.aim.y, vy ? 170 : 115);
+    hole(this.aim.x, this.aim.y, vy ? 170 : this.data.flashlight ? 115 : 72);
     hole(140, 430, vy ? 240 : 130);
     if (vy) { hole(420, 470, 200, 0.8); hole(640, 470, 160, 0.5); } // đèn pha của Vy
     for (const l of this.lights) hole(l.x, l.y, l.r * 0.9, Math.min(1, l.a * 3 * (l.life / l.max)));

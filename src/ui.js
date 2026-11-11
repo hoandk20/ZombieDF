@@ -493,6 +493,7 @@ export class UI {
         g.data.current = 'pistol';
         g.data.cash = 300;
         g.data.grenades = 2;
+        g.data.flashlight = false;
         g.data.food = 8;
         g.data.hungry = false;
         g.data.threat = Math.round((1 + ((g.data.threat || 1) - 1) * 0.5) * 100) / 100;
@@ -727,6 +728,7 @@ export class UI {
     const items = [
       { id: 'food', title: 'Đồ hộp × 3', desc: `Mỗi sáng cả nhóm ăn ${this.eatPerDay()} hộp. Hết đồ ăn thì bị đói: nạp đạn chậm, bắn rung tay. Đang có ${d.food || 0}.`, price: Math.round(70 * (1 + d.night * 0.03)), glyph: '🥫' },
       { id: 'grenade', icon: 'grenade', title: 'Lựu đạn', desc: `Nổ diện rộng, cực mạnh với bầy đàn. Đang có ${d.grenades}/${GRENADE.max}.`, price: GRENADE.price, disabled: d.grenades >= GRENADE.max },
+      ...(d.flashlight ? [] : [{ id: 'flashlight', title: 'Đèn pin gắn súng', desc: 'Rọi một luồng sáng theo hướng ngắm. Đêm mất điện nhìn xa hơn hẳn.', price: 250, glyph: '🔦' }]),
       // bộ sửa chữa không bán bằng tiền nữa: muốn sửa rào thì phải bỏ giờ ban ngày ra sửa
       { id: 'barricade', title: `Gia cố hàng rào · cấp ${d.barricadeLevel + 1}`, desc: `Độ bền tối đa ${max} → ${barricadeMax(d.barricadeLevel + 1)}`, price: barricadeUpgradePrice(d.barricadeLevel) },
     ];
@@ -797,6 +799,7 @@ export class UI {
     if (id === 'repair') d.hp = Math.min(max, d.hp + max * 0.25);
     else if (id === 'grenade') d.grenades++;
     else if (id === 'food') d.food = (d.food || 0) + 3;
+    else if (id === 'flashlight') d.flashlight = true;
     else if (id === 'barricade') {
       d.barricadeLevel++;
       d.hp += barricadeMax(d.barricadeLevel) - max; // phần tăng thêm được đầy

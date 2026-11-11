@@ -110,6 +110,7 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 | **Zombie** | Thường, chạy nhanh (từ đêm 2), bò (từ đêm 3, khó bắn đầu), gã khổng lồ (từ đêm 4), kẻ phun axit (từ đêm 6, phá rào từ xa), cảnh sát bọc giáp (từ đêm 11, mũ chặn headshot cho tới khi vỡ), kẻ trương phình (từ đêm 12, phát nổ khi chết), trùm Kẻ Khổng Lồ (đêm 10, 15) và Quái Vật Cảng (đêm 20). |
 | **Cắt rời chi** | Bắn vào tay hoặc chân đủ đau thì chi đó rụng ra (bắn chân gây ít sát thương hơn nhưng rất dễ làm đứt chân), văng xuống đất và nằm lại. Mất một chân: khập khiễng, chậm hẳn. Mất cả hai chân: đổ sấp, lết bằng tay. Mất tay: cào hàng rào yếu đi. Nổ lớn có thể xé rời chi. Không áp dụng cho trùm. |
 | **Lựu đạn** | Nổ diện rộng. Phím `G`/`Space` ném vào vị trí con trỏ; trên điện thoại chạm nút lựu đạn rồi chạm vào chỗ muốn ném. |
+| **Đèn pin** | Không có sẵn. Mua "Đèn pin gắn súng" ($250, tab Trang bị) để có luồng sáng theo hướng ngắm và nhìn xa hơn trong đêm mất điện. Mất khi sang màn mới. |
 | **Nâng cấp** | Gia cố hàng rào (tăng độ bền tối đa), luyện nạp đạn nhanh hơn, đạn xuyên giáp (+8% sát thương mỗi cấp). Hàng rào chỉ sửa được bằng giờ ban ngày (không mua bộ sửa chữa bằng tiền). |
 
 **Điều khiển:** chuột/chạm để bắn (súng tự động: giữ), `R` nạp đạn, `G` lựu đạn, `1–9` / `Q` `E` / con lăn để đổi
