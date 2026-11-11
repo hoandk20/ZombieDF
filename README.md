@@ -33,12 +33,12 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 
 | Chương | Đồng đội | Công trình phòng thủ | Quái mới |
 |---|---|---|---|
-| 1 · Bến Sương | Lan, Ông Tư | Mìn, dây thép gai | Kẻ chạy, kẻ bò, gã khổng lồ, kẻ phun axit |
-| 2 · Cảng Vọng Hải | Bảo, Mai | Tháp súng máy, mìn, đèn pha | Cảnh sát bọc giáp, kẻ trương phình |
-| 3 · Đập Hồng Sơn | Hùng, Linh | Bẫy điện, dây thép gai, mìn | Chó nhiễm bệnh, kẻ rú, kẻ tái sinh |
-| 4 · Căn cứ Hồng Sơn | Bác sĩ Khoa, Vy | Tháp súng máy, tháp phun lửa, đèn pha | Lính mang khiên |
-| 5 · Cao tốc Bắc Nam | Tuấn, Ngọc | Súng cối tự động, dây thép gai, mìn | Kẻ nhảy (bật qua mìn), kẻ cháy (miễn nhiễm lửa) |
-| 6 · Thủ đô | Đạt, Hà | Tháp Tesla, drone chiến đấu, đèn pha | Kẻ phân thân, kẻ tàng hình |
+| 1 · Bến Sương | Lan, Ông Tư | Lưỡi cưa quay, tháp súng máy, mìn, dây thép gai | Kẻ chạy, kẻ bò, gã khổng lồ, kẻ phun axit |
+| 2 · Cảng Vọng Hải | Bảo, Mai | Tháp súng máy, tháp phun lửa, máy phóng khí độc, mìn, đèn pha | Cảnh sát bọc giáp, kẻ trương phình |
+| 3 · Đập Hồng Sơn | Hùng, Linh | Bẫy điện, ổ bắn tỉa tự động, lưỡi cưa quay, dây thép gai, mìn | Chó nhiễm bệnh, kẻ rú, kẻ tái sinh |
+| 4 · Căn cứ Hồng Sơn | Bác sĩ Khoa, Vy | Tháp súng máy, tháp phun lửa, súng cối tự động, ổ bắn tỉa tự động, đèn pha | Lính mang khiên |
+| 5 · Cao tốc Bắc Nam | Tuấn, Ngọc | Súng cối tự động, giàn tên lửa, bẫy điện, dây thép gai, mìn | Kẻ nhảy (bật qua mìn), kẻ cháy (miễn nhiễm lửa) |
+| 6 · Thủ đô | Đạt, Hà | Tháp Tesla, drone chiến đấu, giàn tên lửa, máy phóng khí độc, đèn pha | Kẻ phân thân, kẻ tàng hình |
 
 - 4 đồng đội mới ở màn 2: **Hùng** (cựu binh, súng máy), **Linh** (xạ thủ), **bác sĩ Khoa**, **Vy** (kỹ sư điện).
 - Thắng chiến dịch sẽ mở **chế độ vô tận** (cứ 5 đêm lại có một con trùm).
@@ -72,6 +72,8 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
   - **Tháp súng máy tự động** (tối đa 2, nâng cấp 3 cấp): tự bắn con gần nhất, bắn liên tục sẽ quá nhiệt.
   - **Bẫy điện**: phóng điện làm tê liệt mọi con trên tấm điện. **Tháp phun lửa**: đốt mọi con lại gần rào.
   - **Súng cối tự động**: nã đạn nổ vào chỗ đông nhất. **Tháp Tesla**: sét nhảy 5 con. **Drone chiến đấu**: bay và bắn.
+  - **Lưỡi cưa quay** (mới): cứa chân mọi con sát rào, hay làm đứt chân. **Ổ bắn tỉa tự động** (mới): ưu tiên bắn con nhiều máu nhất, xuyên 3 con.
+  - **Máy phóng khí độc** (mới): đám mây làm chậm và bào máu cả bầy. **Giàn tên lửa** (mới): phóng cả loạt tên lửa nhỏ vào những con ở xa.
   - **Mìn**: tự rải trước rào mỗi đêm, nổ khi zombie dẫm lên; mìn chưa nổ được thu lại.
   - **Dây thép gai** (2 cấp): làm chậm và cứa zombie sát hàng rào.
   - **Đèn pha chiến trường**: nhìn rõ trong đêm mất điện.
@@ -82,7 +84,7 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
   sát thương giảm mạnh ở rìa vụ nổ, trùm và gã khổng lồ chịu nổ tốt hơn, lựu đạn đắt hơn và mang tối đa 4 quả.
 - Súng phun lửa có tầm bắn trung bình (420px) thay vì sát rào.
 - **Mỗi màn bắt đầu lại tay trắng:** súng (chỉ còn súng lục), đạn, tiền ($300), lựu đạn, đồ hộp, nâng cấp vũ khí,
-  đồng đội và công trình phòng thủ đều đặt lại. Cấp gia cố hàng rào được giữ.
+  đồng đội, công trình phòng thủ và hàng rào đều đặt lại.
 - **Mức đe doạ thích nghi:** hàng rào càng ít bị xây xước, đêm sau zombie càng nhiều máu, đông và dồn dập hơn;
   suýt thua thì bầy đàn nới tay. Từ đêm 8 có **zombie tinh nhuệ** (hào quang đỏ, gấp đôi máu, thưởng gấp đôi).
 - **Đẩy lùi theo khối lượng:** zombie càng to càng ít bị đẩy lùi; bị bắn liên tục thì kháng dần.

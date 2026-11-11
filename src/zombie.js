@@ -406,9 +406,9 @@ export class Zombie {
     }
     if (this.armorPhase && kind === 'bullet') dmg *= 0.4; // giai đoạn 3 của Mẫu Thể Số 0
     this.hp -= dmg;
-    if (kind !== 'fire') this.hitT = 0.08; // cháy âm ỉ thì không chớp trắng
+    if (kind !== 'fire' && kind !== 'gas') this.hitT = 0.08; // cháy âm ỉ thì không chớp trắng
     // đẩy lùi: con càng to (càng nặng) càng ít bị đẩy; trúng liên tục thì kháng dần
-    if (kind !== 'fire') {
+    if (kind !== 'fire' && kind !== 'gas') {
       const kb = (5 * Math.min(dmg / 35, 1.6)) / this.mass() / (1 + this.kbRecent * 0.35);
       this.kbRecent += kb;
       this.x = Math.min(this.x + kb, W + 100);

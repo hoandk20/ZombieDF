@@ -3,7 +3,7 @@ import {
   WEAPONS, WEAPON_ORDER, HEADSHOT_MUL, SURVIVOR_SLOTS, GRENADE, CAMPAIGN_NIGHTS, ACT_LENGTH,
   waveFor, weatherFor, barricadeMax, reloadMul, actFor, bossTypeFor, dmgMul,
   sceneFor, stageFor, bossCountFor, STAGE_LENGTH, CAMP_INCOME, mateLevel,
-  diffOf, UPKEEP, TURRET, MINE, WIRE, nextThreat, eliteChance, SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE,
+  diffOf, UPKEEP, TURRET, MINE, WIRE, nextThreat, eliteChance, SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE, SAW, SNIPER_NEST, GAS, ROCKET,
 } from './config.js';
 import { SURVIVORS, NIGHT_TITLES, MATE_COMBAT, hasPerk } from './story.js';
 import { Zombie, roundRect, shade as shadeHex } from './zombie.js';
@@ -197,6 +197,10 @@ export class Game {
     this.flameT = { heat: 0, cool: 0, ang: 0 };
     this.mortarT = 2;
     this.teslaT = 1;
+    this.sawT = 0; this.sawAng = 0;
+    this.sniperT = 1.5; this.sniperAim = null;
+    this.gasT = 3; this.clouds = [];
+    this.rocketT = 3;
     this.drones = Array.from({ length: Math.min(d.drones || 0, DRONE.max) }, (_, i) => ({ x: 300 + i * 140, y: 230 - i * 20, cd: 0.5, ammo: DRONE.mag, reload: 0, ph: i * 2 }));
     this.turrets = Array.from({ length: Math.min(d.turrets || 0, TURRET.max) }, (_, i) => ({ ...TURRET.slots[i], ang: Math.PI * 0.02, cd: 0.5, heat: 0, overheat: 0, recoil: 0 }));
     this.mines = Array.from({ length: d.mines || 0 }, (_, i) => ({ x: 300 + ((i * 47) % 260) + rand(-10, 10), y: rand(LANE_MIN + 4, LANE_MAX - 4) }));
@@ -1132,6 +1136,82 @@ export class Game {
         } else this.teslaT = 0.3;
       }
     }
+    // lưỡi cưa quay: cứa vào chân, dễ làm đứt chân
+    const sw = d.sawLevel || 0;
+    if (sw) {
+      this.sawAng += dt * 18;
+      this.sawT -= dt;
+      if (this.sawT <= 0) {
+        this.sawT = 0.25;
+        for (const z of alive) {
+          if (z.leaping || z.x - z.w / 2 > SAW.to || z.x < SAW.from) continue;
+          const dm = SAW.dps[sw] * 0.25;
+          this.hitZombie(z, dm, false, z.x - z.w / 2, z.foot - 12, 1, false, { silent: true, noFx: true, kind: 'blast', src: 'saw' });
+          if (z.alive && z.T.kind === 'upright') z.limbHit(dm * 1.6, z.foot - z.h * 0.2, this);
+          for (let i = 0; i < 2; i++) this.addParticle({ x: z.x - z.w / 2, y: z.foot - 8, vx: rand(20, 120), vy: rand(-140, -40), life: 0.4, color: '#8b0d0d', size: rand(2, 3), g: 500, ground: z.foot + 2, decal: true });
+        }
+      }
+    }
+    // ổ bắn tỉa: ưu tiên con nhiều máu nhất
+    const sn = d.sniperLevel || 0;
+    if (sn) {
+      this.sniperT -= dt;
+      const pool = alive.filter((z) => z.x < W - 30 && !z.leaping);
+      const tgt = pool.sort((a, b) => b.hp - a.hp)[0];
+      if (tgt) this.sniperAim = tgt;
+      if (this.sniperT <= 0) {
+        if (tgt) {
+          this.sniperT = SNIPER_NEST.every[sn];
+          const b = tgt.boxes();
+          const ang = Math.atan2((b.by0 + b.by1) / 2 - SNIPER_NEST.y, tgt.x - SNIPER_NEST.x);
+          this.castRay(SNIPER_NEST.x + 20, SNIPER_NEST.y, ang, SNIPER_NEST.dmg[sn], SNIPER_NEST.pierce, false, false, 'sniperNest', true);
+          this.lights.push({ x: SNIPER_NEST.x + 20, y: SNIPER_NEST.y, r: 120, life: 0.07, max: 0.07, color: '255,220,150', a: 0.35 });
+          sfx.sniper();
+        } else this.sniperT = 0.4;
+      }
+    }
+    // máy phóng khí độc
+    const gl = d.gasLevel || 0;
+    if (gl) {
+      this.gasT -= dt;
+      if (this.gasT <= 0) {
+        const mid = alive.filter((z) => z.x > 300 && z.x < 760);
+        if (mid.length) {
+          let best = mid[0], bestN = 0;
+          for (const z of mid) { const n = mid.filter((o) => Math.abs(o.x - z.x) < GAS.radius).length; if (n > bestN) { bestN = n; best = z; } }
+          this.gasT = GAS.every[gl];
+          const tx = best.x - 25, ty = clamp(best.foot - 4, LANE_MIN, LANE_MAX);
+          this.projectiles.push({ type: 'gas', x0: GAS.x, y0: GAS.y - 24, x1: tx, y1: ty, t: 0, dur: 0.9, arc: 160, lvl: gl });
+          sfx.throw();
+        } else this.gasT = 0.5;
+      }
+    }
+    for (const c of this.clouds) {
+      c.life -= dt;
+      for (const z of alive) {
+        if (Math.hypot((z.x - c.x) * 0.8, z.foot - c.y) > GAS.radius) continue;
+        z.gasT = 0.3;
+        if (Math.random() < dt * 4) this.hitZombie(z, GAS.dps[c.lvl] * 0.25, false, z.x, z.foot - 40, 1, false, { silent: true, noFx: true, kind: 'gas', src: 'gas' });
+      }
+      if (Math.random() < dt * 10) this.addParticle({ x: c.x + rand(-GAS.radius, GAS.radius) * 0.8, y: c.y - rand(0, 50), vx: rand(-10, 10), vy: rand(-18, -6), life: 1.2, color: '120,170,60', size: rand(10, 18), kind: 'smoke' });
+    }
+    this.clouds = this.clouds.filter((c) => c.life > 0);
+    // giàn tên lửa
+    const rl = d.rocketLevel || 0;
+    if (rl) {
+      this.rocketT -= dt;
+      if (this.rocketT <= 0) {
+        const far = alive.filter((z) => z.x > 360 && z.x < W - 10);
+        if (far.length) {
+          this.rocketT = ROCKET.every[rl];
+          for (let i = 0; i < ROCKET.salvo[rl]; i++) {
+            const t = far[Math.floor(Math.random() * far.length)];
+            this.projectiles.push({ type: 'shell', rocket: true, x0: ROCKET.x + i * 4, y0: ROCKET.y - 26, x1: t.x - 10 + rand(-14, 14), y1: t.foot - 4, t: -i * 0.12, dur: 0.75, arc: 120 + rand(0, 60), w: { radius: ROCKET.radius, dmg: ROCKET.dmg[rl] } });
+          }
+          sfx.launcher();
+        } else this.rocketT = 0.5;
+      }
+    }
     // drone chiến đấu
     for (const dr of this.drones) {
       dr.ph += dt;
@@ -1155,6 +1235,10 @@ export class Game {
 
   // Dây thép gai: làm chậm và cứa zombie sát hàng rào
   slowAt(z, dt) {
+    if (z.gasT > 0) { z.gasT -= dt; return GAS.slow * this.wireSlow(z, dt); }
+    return this.wireSlow(z, dt);
+  }
+  wireSlow(z, dt) {
     const lv = this.state === 'night' && this.data ? this.data.wireLevel || 0 : 0;
     if (!lv || z.leaping || z.x - z.w / 2 > WIRE.to || z.x < WIRE.from) return 1;
     if (Math.random() < dt * 4) this.hitZombie(z, WIRE.dps[lv] * 0.25, false, z.x - z.w / 2, z.foot - 20, 1, false, { silent: true, noFx: true, kind: 'blast', src: 'wire' });
@@ -1221,7 +1305,7 @@ export class Game {
     for (const p of this.projectiles) {
       p.t += dt;
       p.spin = (p.spin || 0) + dt * 14;
-      const k = Math.min(1, p.t / p.dur);
+      const k = Math.max(0, Math.min(1, p.t / p.dur));
       p.x = p.x0 + (p.x1 - p.x0) * k;
       p.y = p.y0 + (p.y1 - p.y0) * k - p.arc * 4 * k * (1 - k);
       if (p.type === 'shell') this.addParticle({ x: p.x, y: p.y, vx: rand(-15, 15), vy: rand(-15, 5), life: 0.5, color: '170,170,170', size: 4, kind: 'smoke' });
@@ -1232,6 +1316,7 @@ export class Game {
         p.done = true;
         if (p.type === 'grenade') this.explode(p.x1, p.y1, { grenade: true });
         else if (p.type === 'shell') this.explode(p.x1, p.y1, { radius: p.w.radius, dmg: p.w.dmg });
+        else if (p.type === 'gas') { this.clouds.push({ x: p.x1, y: p.y1, life: GAS.life, lvl: p.lvl }); sfx.acid(); }
         else {
           this.splashAcid(p.x1, p.y1, 10, LANE_MAX); sfx.acid(); this.damageBarricade(p.dmg, LANE_MAX);
           this.texts.push({ x: p.x1 + 6, y: p.y1 - 18, text: 'AXIT!', life: 0.8, max: 0.8, size: 13, color: '#c8f040' });
@@ -1436,8 +1521,14 @@ export class Game {
         ctx.fillStyle = '#888'; ctx.fillRect(-2, -8, 4, 3);
         ctx.restore();
       } else {
+        if (p.t < 0) continue; // tên lửa chưa phóng
         if (p.type === 'shell') {
-          ctx.fillStyle = '#2a2c30'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#2a2c30'; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.rocket ? 5 : 6, p.rocket ? 2.5 : 4, 0, 0, Math.PI * 2); ctx.fill();
+          if (p.rocket) { ctx.fillStyle = 'rgba(255,170,60,0.8)'; ctx.beginPath(); ctx.arc(p.x - 6, p.y + 1, 3, 0, Math.PI * 2); ctx.fill(); }
+        } else if (p.type === 'gas') { // bình khí độc
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.spin);
+          ctx.fillStyle = '#4a6a30'; ctx.fillRect(-4, -7, 8, 14); ctx.fillStyle = '#e0d040'; ctx.fillRect(-4, -2, 8, 3);
+          ctx.restore();
         } else { // viên axit: to, phát sáng, có vệt
           ctx.fillStyle = 'rgba(180,240,60,0.35)';
           ctx.beginPath(); ctx.arc(p.x + 8, p.y - 3, 6, 0, Math.PI * 2); ctx.fill();
@@ -1803,6 +1894,50 @@ export class Game {
       ctx.fillStyle = '#9aa4b0'; ctx.beginPath(); ctx.arc(tx, ty - 34, 8, 0, Math.PI * 2); ctx.fill();
       const charge = 1 - Math.max(0, this.teslaT) / TESLA_TOWER.every[d.teslaLevel];
       this.drawLight(ctx, tx, ty - 34, 30, '120,200,255', 0.15 + charge * 0.35);
+    }
+    for (const c of this.clouds) { // đám mây khí độc
+      const a = Math.min(1, c.life / 1) * 0.28;
+      const g = ctx.createRadialGradient(c.x, c.y - 20, 10, c.x, c.y - 20, GAS.radius * 1.15);
+      g.addColorStop(0, `rgba(130,180,60,${a})`); g.addColorStop(1, 'rgba(110,160,50,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(c.x, c.y - 20, GAS.radius * 1.15, GAS.radius * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    if (d.sawLevel) { // ba lưỡi cưa xoay nửa chìm dưới đất
+      for (const y of [LANE_MIN + 10, (LANE_MIN + LANE_MAX) / 2 + 4, LANE_MAX - 2]) {
+        const x = SAW.to - 12, r = 15;
+        ctx.save(); ctx.beginPath(); ctx.rect(x - r - 2, y - r - 2, r * 2 + 4, r + 2); ctx.clip();
+        ctx.translate(x, y); ctx.rotate(this.sawAng);
+        ctx.fillStyle = d.sawLevel > 1 ? '#c8ccd2' : '#a8acb2';
+        ctx.beginPath();
+        for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2; const rr = k % 2 ? r : r - 4; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#3a3e44'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#2a2c30'; ctx.fillRect(x - r - 3, y - 1, r * 2 + 6, 4);
+      }
+    }
+    if (d.sniperLevel) { // ổ bắn tỉa trên bao cát sau rào
+      const sx = SNIPER_NEST.x, sy = SNIPER_NEST.y;
+      ctx.fillStyle = '#7c6e4d'; ctx.beginPath(); ctx.ellipse(sx, sy + 12, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#4a4a40'; ctx.fillRect(sx - 4, sy, 8, 12);
+      const t = this.sniperAim && this.sniperAim.alive ? this.sniperAim : null;
+      const ang = t ? Math.atan2(t.foot - t.h * 0.5 - sy, t.x - sx) : 0.05;
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(ang);
+      ctx.fillStyle = '#2a2c30'; ctx.fillRect(-6, -3, 34, 5); ctx.fillRect(4, -7, 10, 4);
+      ctx.restore();
+      if (t) { ctx.strokeStyle = 'rgba(255,40,40,0.35)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx + 20, sy); ctx.lineTo(t.x, t.foot - t.h * 0.5); ctx.stroke(); }
+    }
+    if (d.gasLevel) { // ống phóng bình khí
+      ctx.save(); ctx.translate(GAS.x, GAS.y);
+      ctx.fillStyle = '#7c6e4d'; ctx.beginPath(); ctx.ellipse(0, 4, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.rotate(-0.8); ctx.fillStyle = '#4a6a30'; ctx.fillRect(-4, -6, 30, 12); ctx.fillStyle = '#e0d040'; ctx.fillRect(10, -6, 4, 12);
+      ctx.restore();
+    }
+    if (d.rocketLevel) { // giàn tên lửa
+      ctx.save(); ctx.translate(ROCKET.x, ROCKET.y);
+      ctx.fillStyle = '#7c6e4d'; ctx.beginPath(); ctx.ellipse(0, 6, 20, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.rotate(-0.55); ctx.fillStyle = '#3e4440'; ctx.fillRect(-12, -14, 34, 20);
+      ctx.fillStyle = '#1a1c1e'; for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) { ctx.beginPath(); ctx.arc(20, -9 + r * 9 + c * 0, 3, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
     }
     for (const dr of this.drones) { // drone quadcopter
       ctx.save(); ctx.translate(dr.x, dr.y);

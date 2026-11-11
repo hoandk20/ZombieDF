@@ -59,19 +59,24 @@ export const FLAME_TURRET = { price: 4200, range: 330, burn: 18, dmg: 5, spray: 
 export const MORTAR = { prices: [5200, 4800], every: [0, 4.2, 3.2], dmg: [0, 120, 170], radius: 90, x: 46, y: 468 };
 export const TESLA_TOWER = { prices: [6500, 5200], every: [0, 1.6, 1.15], dmg: [0, 45, 65], range: 430, chain: 3, x: 232, y: 352 };
 export const DRONE = { price: 4800, max: 2, dmg: 13, rate: 0.12, mag: 30, reload: 2.2 };
+// Vũ khí tự động mới
+export const SAW = { prices: [1500, 2600], dps: [0, 12, 22], from: 238, to: 305 };                       // lưỡi cưa quay sát rào
+export const SNIPER_NEST = { prices: [3600, 4200], every: [0, 2.6, 1.9], dmg: [0, 140, 200], pierce: 3, x: 186, y: 360 }; // ổ bắn tỉa tự động
+export const GAS = { prices: [3000, 3800], every: [0, 6, 4.5], dps: [0, 20, 30], radius: 85, life: 4, slow: 0.8, x: 70, y: 470 }; // máy phóng khí độc
+export const ROCKET = { prices: [5600, 5000], every: [0, 5, 3.8], salvo: [0, 3, 4], dmg: [0, 95, 125], radius: 62, x: 100, y: 452 }; // giàn tên lửa
 
 // Mỗi chương (bản đồ) có bộ công trình phòng thủ riêng. Sang chương mới thì làm lại từ đầu.
 export const DEFENSES_BY_ACT = {
-  1: ['mines', 'wire'],
-  2: ['turret', 'mines', 'floodlight'],
-  3: ['shocker', 'wire', 'mines'],
-  4: ['turret', 'flameTurret', 'floodlight'],
-  5: ['mortar', 'wire', 'mines'],
-  6: ['teslaTower', 'drone', 'floodlight'],
+  1: ['saw', 'turret', 'mines', 'wire'],
+  2: ['turret', 'flameTurret', 'gas', 'mines', 'floodlight'],
+  3: ['shocker', 'sniperNest', 'saw', 'wire', 'mines'],
+  4: ['turret', 'flameTurret', 'mortar', 'sniperNest', 'floodlight'],
+  5: ['mortar', 'rocket', 'shocker', 'wire', 'mines'],
+  6: ['teslaTower', 'drone', 'rocket', 'gas', 'floodlight'],
 };
-export const ALL_DEFENSES = ['turret', 'mines', 'wire', 'floodlight', 'shocker', 'flameTurret', 'mortar', 'teslaTower', 'drone'];
+export const ALL_DEFENSES = ['turret', 'mines', 'wire', 'floodlight', 'shocker', 'flameTurret', 'mortar', 'teslaTower', 'drone', 'saw', 'sniperNest', 'gas', 'rocket'];
 export function resetDefenses(d) {
-  Object.assign(d, { turrets: 0, turretLevel: 1, mines: 0, wireLevel: 0, floodlight: false, shockerLevel: 0, flameTurret: 0, mortarLevel: 0, teslaLevel: 0, drones: 0 });
+  Object.assign(d, { turrets: 0, turretLevel: 1, mines: 0, wireLevel: 0, floodlight: false, shockerLevel: 0, flameTurret: 0, mortarLevel: 0, teslaLevel: 0, drones: 0, sawLevel: 0, sniperLevel: 0, gasLevel: 0, rocketLevel: 0 });
 }
 
 export const WEAPONS = {

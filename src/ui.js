@@ -4,7 +4,7 @@ import {
   ZOMBIES, dmgUpgradePrice, MAX_DMG_LVL, stageFor, STAGE_LENGTH, STAGE_NAMES, SCENES, MAX_SQUAD,
   modsFor, MOD_INFO, waveFor, mateLevel, MATE_XP, CAMP_INCOME,
   DIFFICULTIES, DIFF_ORDER, diffOf, UPKEEP, TURRET, MINE, WIRE, FLOODLIGHT_PRICE,
-  SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE, DEFENSES_BY_ACT, ALL_DEFENSES, resetDefenses,
+  SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE, SAW, SNIPER_NEST, GAS, ROCKET, DEFENSES_BY_ACT, ALL_DEFENSES, resetDefenses,
 } from './config.js';
 import {
   INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO,
@@ -732,7 +732,7 @@ export class UI {
     ];
     const dl = d.dmgLevel || 0;
     if (dl < MAX_DMG_LVL) {
-      items.push({ id: 'dmgUp', title: `Đạn xuyên giáp · cấp ${dl + 1}/${MAX_DMG_LVL}`, desc: 'Mọi vũ khí của bạn gây thêm 12% sát thương', price: dmgUpgradePrice(dl) });
+      items.push({ id: 'dmgUp', title: `Đạn xuyên giáp · cấp ${dl + 1}/${MAX_DMG_LVL}`, desc: 'Mọi vũ khí của bạn gây thêm 8% sát thương', price: dmgUpgradePrice(dl) });
     }
     if (d.reloadLevel < MAX_RELOAD_LVL) {
       items.push({ id: 'reloadUp', title: `Luyện nạp đạn · cấp ${d.reloadLevel + 1}/${MAX_RELOAD_LVL}`, desc: 'Nạp đạn mọi loại súng nhanh hơn 12%', price: reloadUpgradePrice(d.reloadLevel) });
@@ -768,6 +768,18 @@ export class UI {
       } else if (k === 'teslaTower') {
         const t2 = d.teslaLevel || 0;
         if (t2 < 2) out.push({ id: 'teslaTower', title: t2 ? 'Nâng cấp tháp Tesla · cấp 2' : 'Tháp Tesla', desc: 'Sét nhảy qua 5 con gần nhau. Xuyên giáp, xuyên khiên.', stats: `ST ${TESLA_TOWER.dmg[t2 + 1]} · mỗi ${TESLA_TOWER.every[t2 + 1]} giây`, price: TESLA_TOWER.prices[t2], glyph: '⚡', tag: t2 ? '' : 'MỚI' });
+      } else if (k === 'saw') {
+        const v = d.sawLevel || 0;
+        if (v < 2) out.push({ id: 'saw', title: v ? 'Nâng cấp lưỡi cưa · cấp 2' : 'Lưỡi cưa quay', desc: 'Ba lưỡi cưa xoay sát chân rào, cứa liên tục vào chân mọi con lại gần. Hay cắt đứt chân, biến chúng thành kẻ bò.', stats: `${SAW.dps[v + 1]} sát thương/giây`, price: SAW.prices[v], glyph: '✲', tag: v ? '' : 'MỚI' });
+      } else if (k === 'sniperNest') {
+        const v = d.sniperLevel || 0;
+        if (v < 2) out.push({ id: 'sniperNest', title: v ? 'Nâng cấp ổ bắn tỉa · cấp 2' : 'Ổ bắn tỉa tự động', desc: 'Súng bắn tỉa gắn ống ngắm nhiệt trên mái nhà. Ưu tiên hạ con to và nguy hiểm nhất, đạn xuyên 3 con.', stats: `ST ${SNIPER_NEST.dmg[v + 1]} · mỗi ${SNIPER_NEST.every[v + 1]} giây`, price: SNIPER_NEST.prices[v], glyph: '⌖', tag: v ? '' : 'MỚI' });
+      } else if (k === 'gas') {
+        const v = d.gasLevel || 0;
+        if (v < 2) out.push({ id: 'gas', title: v ? 'Nâng cấp máy phóng khí độc · cấp 2' : 'Máy phóng khí độc', desc: 'Bắn bình khí độc vào chỗ bầy đàn đông nhất. Đám mây làm chậm và ăn mòn mọi con bên trong vài giây.', stats: `${GAS.dps[v + 1]} sát thương/giây · mỗi ${GAS.every[v + 1]} giây`, price: GAS.prices[v], glyph: '☁', tag: v ? '' : 'MỚI' });
+      } else if (k === 'rocket') {
+        const v = d.rocketLevel || 0;
+        if (v < 2) out.push({ id: 'rocket', title: v ? 'Nâng cấp giàn tên lửa · cấp 2' : 'Giàn tên lửa', desc: 'Phóng cả loạt tên lửa nhỏ vào những con ở xa, mỗi quả nổ một vùng nhỏ.', stats: `${ROCKET.salvo[v + 1]} quả × ST ${ROCKET.dmg[v + 1]} · mỗi ${ROCKET.every[v + 1]} giây`, price: ROCKET.prices[v], glyph: '➶', tag: v ? '' : 'MỚI' });
       } else if (k === 'drone') {
         if ((d.drones || 0) < DRONE.max) out.push({ id: 'drone', title: `Drone chiến đấu #${(d.drones || 0) + 1}`, desc: 'Bay lượn trên chiến trường, bắn con gần nhất. Hết băng thì tự nạp.', stats: `ST ${DRONE.dmg} · băng ${DRONE.mag}`, price: DRONE.price, glyph: '✈', tag: 'MỚI' });
       }
@@ -800,6 +812,10 @@ export class UI {
     else if (id === 'mortar') d.mortarLevel = (d.mortarLevel || 0) + 1;
     else if (id === 'teslaTower') d.teslaLevel = (d.teslaLevel || 0) + 1;
     else if (id === 'drone') d.drones = (d.drones || 0) + 1;
+    else if (id === 'saw') d.sawLevel = (d.sawLevel || 0) + 1;
+    else if (id === 'sniperNest') d.sniperLevel = (d.sniperLevel || 0) + 1;
+    else if (id === 'gas') d.gasLevel = (d.gasLevel || 0) + 1;
+    else if (id === 'rocket') d.rocketLevel = (d.rocketLevel || 0) + 1;
     else if (id.startsWith('w:')) {
       const w = id.slice(2);
       d.weapons[w] = { mag: WEAPONS[w].mag, reserve: WEAPONS[w].mag * 2 };
