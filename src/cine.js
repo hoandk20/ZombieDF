@@ -2,6 +2,7 @@
 // Mọi thứ vẽ bằng canvas, chuyển động chậm theo thời gian t (giây).
 import { W, H } from './config.js';
 import { drawCharacter, CHARACTERS } from './render.js';
+import { L } from './i18n.js';
 
 const TAU = Math.PI * 2;
 const lerp = (a, b, k) => a + (b - a) * k;
@@ -157,7 +158,7 @@ function ship(ctx, x, y, s, lit = true) {
   ctx.fillRect(-100, -34, 140, 22); ctx.fillRect(-70, -54, 80, 20); ctx.fillRect(-26, -88, 16, 34);
   ctx.fillStyle = '#8a2a22'; ctx.fillRect(-26, -88, 16, 8);
   if (lit) { ctx.fillStyle = 'rgba(255,220,140,0.85)'; for (let i = 0; i < 10; i++) ctx.fillRect(-94 + i * 13, -27, 6, 5); for (let i = 0; i < 5; i++) ctx.fillRect(-62 + i * 13, -47, 6, 5); }
-  ctx.fillStyle = '#e8e8e8'; ctx.font = 'bold 9px sans-serif'; ctx.fillText('BÌNH MINH', 40, -1);
+  ctx.fillStyle = '#e8e8e8'; ctx.font = 'bold 9px sans-serif'; ctx.fillText(L("BÌNH MINH", "DAWNSTAR"), 40, -1);
   ctx.restore();
 }
 function truck(ctx, x, y, s, col = '#2a2a30') {
@@ -340,11 +341,11 @@ const SHOTS = {
     ctx.strokeStyle = 'rgba(120,200,160,0.5)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(120, 420); ctx.bezierCurveTo(300, 380, 420, 300, 620, 200); ctx.stroke();
     ctx.fillStyle = '#7ad0a0'; ctx.font = '600 14px "Roboto Mono", monospace';
-    ctx.fillText('VỌNG HẢI', 90, 446); ctx.fillText('HỒNG SƠN', 630, 196);
+    ctx.fillText(L("VỌNG HẢI", "VONG HAI"), 90, 446); ctx.fillText(L("HỒNG SƠN", "HONG SON"), 630, 196);
     radioWaves(ctx, 620, 200, t, '120,240,160');
     ctx.fillStyle = `rgba(255,80,60,${0.6 + Math.sin(t * 6) * 0.4})`; ctx.beginPath(); ctx.arc(620, 200, 7, 0, TAU); ctx.fill();
     ctx.fillStyle = '#7ad0a0'; ctx.font = '500 12px "Roboto Mono", monospace';
-    ctx.fillText(`TẦN SỐ 144.${String(Math.floor(t * 7) % 100).padStart(2, '0')} MHz · TÍN HIỆU CẦU CỨU`, 40, 50);
+    ctx.fillText(`${L('TẦN SỐ', 'FREQ')} 144.${String(Math.floor(t * 7) % 100).padStart(2, '0')} MHz · ${L('TÍN HIỆU CẦU CỨU', 'DISTRESS SIGNAL')}`, 40, 50);
   },
   riverBoat(ctx, t) {
     sky(ctx, NIGHT); stars(ctx, 17, 80); moon(ctx, 220, 90, 26);
@@ -437,7 +438,7 @@ const SHOTS = {
     ctx.fillStyle = '#b8bcc0'; ctx.fillRect(360, 250, 240, 26);
     ctx.fillStyle = '#c03030'; ctx.fillRect(470, 300, 20, 60); ctx.fillRect(450, 320, 60, 20);
     ctx.fillStyle = `rgba(80,255,120,${0.6 + Math.sin(t * 4) * 0.3})`; ctx.beginPath(); ctx.arc(580, 290, 6, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#1a1c20'; ctx.font = 'bold 11px "Roboto Mono", monospace'; ctx.fillText('CHỦNG GỐC · -80°C', 380, 380);
+    ctx.fillStyle = '#1a1c20'; ctx.font = 'bold 11px "Roboto Mono", monospace'; ctx.fillText(L("CHỦNG GỐC · -80°C", "ORIGINAL STRAIN · -80°C"), 380, 380);
     for (let i = 0; i < 8; i++) { const a = (t * 0.4 + i / 8) % 1; ctx.fillStyle = `rgba(220,240,255,${0.2 * (1 - a)})`; ctx.beginPath(); ctx.arc(380 + i * 28, 250 - a * 60, 10 + a * 12, 0, TAU); ctx.fill(); }
   },
   // Màn 3
@@ -447,7 +448,7 @@ const SHOTS = {
     ctx.fillStyle = '#1c1a1e'; ctx.beginPath(); ctx.moveTo(430, 340); ctx.lineTo(530, 340); ctx.lineTo(W + 200, H); ctx.lineTo(-200, H); ctx.fill();
     for (let i = 0; i < 8; i++) { const k = ((t * 0.5 + i / 8) % 1); const y = 340 + k * k * 200; ctx.fillStyle = `rgba(240,240,240,${0.6 * k})`; ctx.fillRect(478 - k * 4, y, 4 + k * 8, 6 + k * 18); }
     ctx.fillStyle = '#1e5a3a'; ctx.fillRect(640, 200, 140, 50); ctx.strokeStyle = '#d8e8d8'; ctx.strokeRect(644, 204, 132, 42);
-    ctx.fillStyle = '#e8f0e8'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('THỦ ĐÔ', 656, 222); ctx.fillText('300 km ↑', 656, 238);
+    ctx.fillStyle = '#e8f0e8'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(L("THỦ ĐÔ", "CAPITAL"), 656, 222); ctx.fillText('300 km ↑', 656, 238);
     truck(ctx, 480, 500, 1.4, '#3a3428');
     for (const fx of [180, 820]) fire(ctx, fx, 420, 1, t + fx);
   },
@@ -472,7 +473,7 @@ const SHOTS = {
     ground(ctx, 400, '#2a2628', '#121012');
     ctx.fillStyle = '#2a2a34'; ctx.fillRect(200, 220, 560, 30);
     for (let i = 0; i < 5; i++) { ctx.fillStyle = '#1e1e26'; ctx.fillRect(230 + i * 120, 250, 30, 150); ctx.fillStyle = 'rgba(255,220,140,0.6)'; ctx.fillRect(236 + i * 120, 270, 18, 12); }
-    ctx.fillStyle = '#e8e8e8'; ctx.font = 'bold 14px sans-serif'; ctx.fillText('TRẠM THU PHÍ · CỬA NGÕ THỦ ĐÔ', 330, 242);
+    ctx.fillStyle = '#e8e8e8'; ctx.font = 'bold 14px sans-serif'; ctx.fillText(L("TRẠM THU PHÍ · CỬA NGÕ THỦ ĐÔ", "TOLL PLAZA · CAPITAL GATE"), 330, 242);
     truck(ctx, 420, 420, 1.2, '#4a3a28');
     if (metHas('tuan')) { ctx.save(); ctx.scale(1.3, 1.3); drawCharacter(ctx, 400, 324, 0.2, 'shotgun', 34, 0, t, CHARACTERS.tuan); ctx.restore(); }
     const k = (t * 0.08) % 1;
@@ -534,8 +535,8 @@ const SHOTS = {
     for (let x = 0; x < 640; x += 3) { const y = 260 + Math.sin((x + t * 120) * 0.05) * 30 * (0.5 + 0.5 * Math.sin(x * 0.01 + t)) + (Math.sin(x * 0.9 + t * 30) * 4); if (x === 0) ctx.moveTo(160 + x, y); else ctx.lineTo(160 + x, y); }
     ctx.stroke();
     ctx.fillStyle = '#5adc8a'; ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('TẦN SỐ PHÁT HIỆN: 19.0 Hz', 190, 130);
-    if (Math.sin(t * 5) > 0) { ctx.fillStyle = '#ff5a45'; ctx.fillText('● TÍN HIỆU LẶP LẠI', 190, 410); }
+    ctx.fillText(L("TẦN SỐ PHÁT HIỆN: 19.0 Hz", "DETECTED FREQUENCY: 19.0 Hz"), 190, 130);
+    if (Math.sin(t * 5) > 0) { ctx.fillStyle = '#ff5a45'; ctx.fillText(L("● TÍN HIỆU LẶP LẠI", "● REPEATING SIGNAL"), 190, 410); }
     glow(ctx, 480, 260, 300, '90,220,140', 0.08);
   },
   factoryGate(ctx, t) {

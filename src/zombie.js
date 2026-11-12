@@ -1,4 +1,5 @@
 import { ZOMBIES, BARRICADE_X, LANE_MIN, LANE_MAX, W } from './config.js';
+import { L } from './i18n.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 // ---------- vẽ khối: chi thuôn có viền, vệt sáng trăng và bóng đổ ----------
@@ -702,7 +703,7 @@ export class Zombie {
       ctx.fillStyle = '#c9c9c9';
       ctx.font = `bold ${7 * s}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('CSCĐ', (shX + hipX) / 2, shoulderY + 18 * s);
+      ctx.fillText(L("CSCĐ", "POLICE"), (shX + hipX) / 2, shoulderY + 18 * s);
     }
     if (T.bomber) { // bụng trương phình
       const pulse = 1 + Math.sin(this.phase * 3) * 0.04;

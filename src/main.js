@@ -2,6 +2,9 @@ import './style.css';
 import { W, H } from './config.js';
 import { Game } from './game.js';
 import { UI } from './ui.js';
+import { initI18n } from './i18n.js';
+
+initI18n();
 
 const app = document.getElementById('app');
 const canvas = document.getElementById('game');

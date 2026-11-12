@@ -13,6 +13,7 @@ import {
   storyFor, STAGE3_END, STAGE4_INTRO, ACT7_END, ACT8_INTRO, STAGE4_END, STAGE5_INTRO, ACT9_END, ACT10_INTRO,
 } from './story.js';
 import { setMet } from './cine.js';
+import { L, getLang, setLang, whoLabel } from './i18n.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
 import { weaponIcon, heroPortrait, characterPortrait } from './render.js';
@@ -22,67 +23,67 @@ const rand = (a, b) => a + Math.random() * (b - a);
 // Sự kiện buổi sáng: những lựa chọn khó khăn của người sống sót
 const MORNING_EVENTS = [
   {
-    title: 'Người lạ xin ăn',
-    text: 'Một người đàn ông gầy gò đứng ngoài hàng rào, tay giơ cao. "Tôi chỉ xin ít đồ ăn. Hai ngày rồi tôi chưa ăn gì."',
+    get title() { return L("Người lạ xin ăn", "A stranger begging for food"); },
+    get text() { return L("Một người đàn ông gầy gò đứng ngoài hàng rào, tay giơ cao. \"Tôi chỉ xin ít đồ ăn. Hai ngày rồi tôi chưa ăn gì.\"", "A gaunt man stands outside the barricade, hands raised. \"I only need a little food. I haven't eaten in two days.\""); },
     choices: [
-      { label: 'Chia 2 hộp đồ ăn', hint: '−2 đồ hộp, có thể được đền đáp', run: (d) => { d.food = Math.max(0, (d.food || 0) - 2); if (Math.random() < 0.6) { d.grenades = Math.min(GRENADE.max, d.grenades + 1); return 'Ông ấy cảm ơn rối rít, để lại một quả lựu đạn tìm được trên đường rồi lặng lẽ đi về phía núi.'; } return 'Ông ấy ăn ngấu nghiến rồi đi mất. Ít nhất đêm nay bạn ngủ ngon hơn.'; } },
-      { label: 'Đuổi đi', hint: 'Giữ đồ ăn cho nhóm', run: () => 'Ông ấy nhìn bạn rất lâu rồi bỏ đi. Bạn cố không nghĩ về chuyện đó.' },
+      { get label() { return L("Chia 2 hộp đồ ăn", "Share 2 cans of food"); }, get hint() { return L("−2 đồ hộp, có thể được đền đáp", "−2 cans, may be repaid"); }, run: (d) => { d.food = Math.max(0, (d.food || 0) - 2); if (Math.random() < 0.6) { d.grenades = Math.min(GRENADE.max, d.grenades + 1); return L("Ông ấy cảm ơn rối rít, để lại một quả lựu đạn tìm được trên đường rồi lặng lẽ đi về phía núi.", "He thanks you over and over, leaves a grenade he found on the road, then quietly heads for the mountains."); } return L("Ông ấy ăn ngấu nghiến rồi đi mất. Ít nhất đêm nay bạn ngủ ngon hơn.", "He wolfs it down and disappears. At least you will sleep better tonight."); } },
+      { get label() { return L("Đuổi đi", "Send him away"); }, get hint() { return L("Giữ đồ ăn cho nhóm", "Keep the food for the group"); }, run: () => L("Ông ấy nhìn bạn rất lâu rồi bỏ đi. Bạn cố không nghĩ về chuyện đó.", "He stares at you for a long time, then walks away. You try not to think about it.") },
     ],
   },
   {
-    title: 'Tiếng khóc trong khu nhà bên',
-    text: 'Có tiếng khóc như trẻ con vọng ra từ căn nhà đổ nát bên kia đường. Có thể là người sống sót. Cũng có thể là cái bẫy.',
+    get title() { return L("Tiếng khóc trong khu nhà bên", "Crying next door"); },
+    get text() { return L("Có tiếng khóc như trẻ con vọng ra từ căn nhà đổ nát bên kia đường. Có thể là người sống sót. Cũng có thể là cái bẫy.", "Something like a child crying echoes from the ruined house across the street. It could be a survivor. It could be a trap."); },
     choices: [
-      { label: 'Đi kiểm tra', hint: 'Rủi ro, có thể được đồ ăn', run: (d, max) => { if (Math.random() < 0.55) { d.food = (d.food || 0) + 4; d.searchPity = (d.searchPity || 0) + 3; return 'Một gia đình trốn dưới hầm. Họ đã lên đường về phía nam, để lại 4 hộp đồ ăn và chỉ cho bạn chỗ có thể còn người sống.'; } d.hp = Math.max(1, d.hp - max * 0.12); return 'Là một con zombie mắc kẹt dưới đống gạch. Cả bầy nghe tiếng động kéo đến, phá một mảng hàng rào trước khi bạn kịp chạy về.'; } },
-      { label: 'Mặc kệ', hint: 'An toàn', run: () => 'Tiếng khóc tắt dần lúc gần trưa. Bạn không bao giờ biết đó là gì.' },
+      { get label() { return L("Đi kiểm tra", "Go check"); }, get hint() { return L("Rủi ro, có thể được đồ ăn", "Risky, may find food"); }, run: (d, max) => { if (Math.random() < 0.55) { d.food = (d.food || 0) + 4; d.searchPity = (d.searchPity || 0) + 3; return L("Một gia đình trốn dưới hầm. Họ đã lên đường về phía nam, để lại 4 hộp đồ ăn và chỉ cho bạn chỗ có thể còn người sống.", "A family hiding in the basement. They head south, leaving 4 cans of food and telling you where more survivors might be."); } d.hp = Math.max(1, d.hp - max * 0.12); return L("Là một con zombie mắc kẹt dưới đống gạch. Cả bầy nghe tiếng động kéo đến, phá một mảng hàng rào trước khi bạn kịp chạy về.", "It is a zombie trapped under the rubble. The noise draws the pack, and they tear down part of the barricade before you get back."); } },
+      { get label() { return L("Mặc kệ", "Ignore it"); }, get hint() { return L("An toàn", "Safe"); }, run: () => L("Tiếng khóc tắt dần lúc gần trưa. Bạn không bao giờ biết đó là gì.", "The crying fades out around noon. You will never know what it was.") },
     ],
   },
   {
-    title: 'Thùng cứu trợ giữa đường',
-    text: 'Một thùng hàng cứu trợ rơi lệch, nằm giữa đường cách hàng rào hai trăm mét. Vài cái bóng đang lảng vảng quanh đó.',
+    get title() { return L("Thùng cứu trợ giữa đường", "Relief crate in the road"); },
+    get text() { return L("Một thùng hàng cứu trợ rơi lệch, nằm giữa đường cách hàng rào hai trăm mét. Vài cái bóng đang lảng vảng quanh đó.", "A relief crate missed its target and landed in the road two hundred meters from the barricade. A few shadows are lurking around it."); },
     choices: [
-      { label: 'Liều ra lấy', hint: 'Được tiền và đồ ăn, rào có thể bị hư', run: (d, max) => { const cash = Math.round(rand(150, 300) * (1 + d.night * 0.05)); d.cash += cash; d.food = (d.food || 0) + 2; if (Math.random() < 0.5) { d.hp = Math.max(1, d.hp - max * 0.08); return `Bạn kéo được thùng về: $${cash} và 2 hộp đồ ăn. Nhưng vài con bám theo, cào hỏng một góc hàng rào.`; } return `Bạn kéo được thùng về trót lọt: $${cash} và 2 hộp đồ ăn.`; } },
-      { label: 'Bỏ qua', hint: 'Không mạo hiểm', run: () => 'Đến chiều, thùng hàng đã biến mất. Ai đó khác liều hơn bạn.' },
+      { get label() { return L("Liều ra lấy", "Risk it"); }, get hint() { return L("Được tiền và đồ ăn, rào có thể bị hư", "Cash and food, the barricade may get damaged"); }, run: (d, max) => { const cash = Math.round(rand(150, 300) * (1 + d.night * 0.05)); d.cash += cash; d.food = (d.food || 0) + 2; if (Math.random() < 0.5) { d.hp = Math.max(1, d.hp - max * 0.08); return L(`Bạn kéo được thùng về: $${cash} và 2 hộp đồ ăn. Nhưng vài con bám theo, cào hỏng một góc hàng rào.`, `You haul the crate back: $${cash} and 2 cans of food. But a few followed you and clawed a corner of the barricade.`); } return L(`Bạn kéo được thùng về trót lọt: $${cash} và 2 hộp đồ ăn.`, `You haul the crate back safely: $${cash} and 2 cans of food.`); } },
+      { get label() { return L("Bỏ qua", "Leave it"); }, get hint() { return L("Không mạo hiểm", "No risk"); }, run: () => L("Đến chiều, thùng hàng đã biến mất. Ai đó khác liều hơn bạn.", "By afternoon the crate is gone. Someone braver than you took it.") },
     ],
   },
   {
-    title: 'Kho thuốc bỏ hoang',
-    text: 'Bạn tìm thấy một hiệu thuốc cửa sắt còn khoá. Bên trong tối om, có mùi lạ.',
+    get title() { return L("Kho thuốc bỏ hoang", "Abandoned pharmacy"); },
+    get text() { return L("Bạn tìm thấy một hiệu thuốc cửa sắt còn khoá. Bên trong tối om, có mùi lạ.", "You find a pharmacy with its steel shutter still locked. It is pitch dark inside and smells strange."); },
     choices: [
-      { label: 'Phá cửa vào', hint: 'Có thể được nhiều đồ, có thể mất tiền sửa đồ', run: (d) => { if (Math.random() < 0.7) { d.food = (d.food || 0) + 2; d.grenades = Math.min(GRENADE.max, d.grenades + 1); for (const id of Object.keys(d.mates || {})) d.mates[id].injured = Math.max(0, (d.mates[id].injured || 0) - 1); return 'Thuốc men, băng gạc, 2 hộp đồ ăn và một quả lựu đạn. Những người bị thương hồi phục nhanh hơn một ngày.'; } d.cash = Math.max(0, d.cash - 120); return 'Cửa có bẫy. Bạn thoát được nhưng làm hỏng đồ nghề, mất $120 để sửa.'; } },
-      { label: 'Đi tiếp', hint: 'An toàn', run: () => 'Bạn đánh dấu chỗ này trên bản đồ. Có lẽ để lần sau.' },
+      { get label() { return L("Phá cửa vào", "Break in"); }, get hint() { return L("Có thể được nhiều đồ, có thể mất tiền sửa đồ", "May find a lot, may cost money for repairs"); }, run: (d) => { if (Math.random() < 0.7) { d.food = (d.food || 0) + 2; d.grenades = Math.min(GRENADE.max, d.grenades + 1); for (const id of Object.keys(d.mates || {})) d.mates[id].injured = Math.max(0, (d.mates[id].injured || 0) - 1); return L("Thuốc men, băng gạc, 2 hộp đồ ăn và một quả lựu đạn. Những người bị thương hồi phục nhanh hơn một ngày.", "Medicine, bandages, 2 cans of food and a grenade. The injured recover one day faster."); } d.cash = Math.max(0, d.cash - 120); return L("Cửa có bẫy. Bạn thoát được nhưng làm hỏng đồ nghề, mất $120 để sửa.", "The door was trapped. You got away but broke your tools, $120 to fix."); } },
+      { get label() { return L("Đi tiếp", "Move on"); }, get hint() { return L("An toàn", "Safe"); }, run: () => L("Bạn đánh dấu chỗ này trên bản đồ. Có lẽ để lần sau.", "You mark the place on your map. Maybe next time.") },
     ],
   },
   {
-    title: 'Tín hiệu cầu cứu',
-    text: 'Radio bắt được một giọng nói run rẩy: "Ai đó… chúng tôi bị kẹt ở trạm xăng, còn ba người…"',
+    get title() { return L("Tín hiệu cầu cứu", "Distress call"); },
+    get text() { return L("Radio bắt được một giọng nói run rẩy: \"Ai đó… chúng tôi bị kẹt ở trạm xăng, còn ba người…\"", "The radio picks up a trembling voice: \"Anyone… we're trapped at the gas station, three of us left…\""); },
     choices: [
-      { label: 'Gửi đồ tiếp tế', hint: '−3 đồ hộp, dễ tìm người hơn', run: (d) => { d.food = Math.max(0, (d.food || 0) - 3); d.searchPity = (d.searchPity || 0) + 6; return 'Bạn hướng dẫn họ chỗ lấy đồ. Họ hứa sẽ báo cho bạn nếu thấy ai còn sống quanh đây.'; } },
-      { label: 'Tắt radio', hint: 'Giữ đồ ăn', run: () => 'Bạn tắt radio. Lần đầu tiên, Hoàn tháo tai nghe xuống trước khi tín hiệu kịp tắt.' },
+      { get label() { return L("Gửi đồ tiếp tế", "Send supplies"); }, get hint() { return L("−3 đồ hộp, dễ tìm người hơn", "−3 cans, easier to find survivors"); }, run: (d) => { d.food = Math.max(0, (d.food || 0) - 3); d.searchPity = (d.searchPity || 0) + 6; return L("Bạn hướng dẫn họ chỗ lấy đồ. Họ hứa sẽ báo cho bạn nếu thấy ai còn sống quanh đây.", "You tell them where to find supplies. They promise to let you know if they see anyone alive nearby."); } },
+      { get label() { return L("Tắt radio", "Turn off the radio"); }, get hint() { return L("Giữ đồ ăn", "Keep the food"); }, run: () => L("Bạn tắt radio. Lần đầu tiên, Hoàn tháo tai nghe xuống trước khi tín hiệu kịp tắt.", "You switch off the radio. For the first time, Hoan takes off his headphones before the signal dies.") },
     ],
   },
   {
-    title: 'Chuột phá kho',
-    text: 'Sáng nay kho đồ ăn có dấu răng chuột. Nếu không làm gì, chúng sẽ ăn hết.',
+    get title() { return L("Chuột phá kho", "Rats in the stores"); },
+    get text() { return L("Sáng nay kho đồ ăn có dấu răng chuột. Nếu không làm gì, chúng sẽ ăn hết.", "This morning there are rat bites in the food store. If you do nothing, they will eat it all."); },
     choices: [
-      { label: 'Mua bẫy và dọn kho', hint: '−$80, giữ được đồ ăn', run: (d) => { d.cash = Math.max(0, d.cash - 80); return 'Kho sạch sẽ, đồ ăn còn nguyên. Bạn tự nhủ ít nhất vẫn còn thứ mình kiểm soát được.'; } },
-      { label: 'Chấp nhận mất', hint: '−2 đồ hộp', run: (d) => { d.food = Math.max(0, (d.food || 0) - 2); return 'Lũ chuột ăn mất 2 hộp. Bữa sáng hôm nay ít hơn mọi ngày.'; } },
+      { get label() { return L("Mua bẫy và dọn kho", "Buy traps and clean up"); }, get hint() { return L("−$80, giữ được đồ ăn", "−$80, food is saved"); }, run: (d) => { d.cash = Math.max(0, d.cash - 80); return L("Kho sạch sẽ, đồ ăn còn nguyên. Bạn tự nhủ ít nhất vẫn còn thứ mình kiểm soát được.", "The store is clean and the food is safe. At least something is still under your control."); } },
+      { get label() { return L("Chấp nhận mất", "Accept the loss"); }, get hint() { return L("−2 đồ hộp", "−2 cans"); }, run: (d) => { d.food = Math.max(0, (d.food || 0) - 2); return L("Lũ chuột ăn mất 2 hộp. Bữa sáng hôm nay ít hơn mọi ngày.", "The rats ate 2 cans. Breakfast is smaller than usual today."); } },
     ],
   },
   {
-    title: 'Gương mặt quen',
-    text: 'Trong số những cái xác lảng vảng ngoài hàng rào, có một gương mặt bạn nhận ra: người bán bánh mì đầu ngõ, vẫn đeo chiếc tạp dề cũ.',
+    get title() { return L("Gương mặt quen", "A familiar face"); },
+    get text() { return L("Trong số những cái xác lảng vảng ngoài hàng rào, có một gương mặt bạn nhận ra: người bán bánh mì đầu ngõ, vẫn đeo chiếc tạp dề cũ.", "Among the corpses wandering outside the barricade is a face you recognize: the bread seller from the corner, still wearing his old apron."); },
     choices: [
-      { label: 'Kết thúc cho ông ấy', hint: 'Lấy lại đồ trong túi tạp dề', run: (d) => { const c = Math.round(rand(60, 140)); d.cash += c; d.food = (d.food || 0) + 1; return `Một phát súng duy nhất. Trong túi tạp dề còn $${c} và một hộp sữa. Bạn chôn ông ấy cạnh hàng rào.`; } },
-      { label: 'Để ông ấy đi', hint: 'Không làm gì', run: () => 'Bạn nhìn theo cho đến khi bóng ông khuất sau dãy nhà. Có những thứ bạn chưa sẵn sàng làm.' },
+      { get label() { return L("Kết thúc cho ông ấy", "Put him to rest"); }, get hint() { return L("Lấy lại đồ trong túi tạp dề", "Take what is in his apron"); }, run: (d) => { const c = Math.round(rand(60, 140)); d.cash += c; d.food = (d.food || 0) + 1; return L(`Một phát súng duy nhất. Trong túi tạp dề còn $${c} và một hộp sữa. Bạn chôn ông ấy cạnh hàng rào.`, `A single shot. His apron pocket holds $${c} and a can of milk. You bury him by the barricade.`); } },
+      { get label() { return L("Để ông ấy đi", "Let him go"); }, get hint() { return L("Không làm gì", "Do nothing"); }, run: () => L("Bạn nhìn theo cho đến khi bóng ông khuất sau dãy nhà. Có những thứ bạn chưa sẵn sàng làm.", "You watch until he disappears behind the houses. Some things you are not ready to do.") },
     ],
   },
   {
-    title: 'Mưa đêm qua',
-    text: 'Mưa lớn suốt đêm làm ướt kho đạn và mục một phần hàng rào.',
+    get title() { return L("Mưa đêm qua", "Last night's rain"); },
+    get text() { return L("Mưa lớn suốt đêm làm ướt kho đạn và mục một phần hàng rào.", "Heavy rain all night soaked the ammo store and rotted part of the barricade."); },
     choices: [
-      { label: 'Phơi đạn, chằng rào', hint: 'Mất thời gian, giữ đạn', run: (d, max) => { d.hp = Math.max(1, d.hp - max * 0.05); return 'Đạn khô lại, nhưng một phần hàng rào vẫn hỏng mất 5% độ bền.'; } },
-      { label: 'Gia cố rào trước', hint: 'Mất một ít đạn', run: (d) => { const ids = Object.keys(d.weapons).filter((id) => !WEAPONS[id].infinite); if (ids.length) { const id = ids[Math.floor(Math.random() * ids.length)]; const lost = Math.ceil(d.weapons[id].reserve * 0.2); d.weapons[id].reserve -= lost; return `Hàng rào vững vàng, nhưng ${lost} viên đạn ${WEAPONS[id].name} bị ẩm, không dùng được nữa.`; } return 'Hàng rào vững vàng. May mà bạn chưa có nhiều đạn để mà mất.'; } },
+      { get label() { return L("Phơi đạn, chằng rào", "Dry the ammo, tie down the barricade"); }, get hint() { return L("Mất thời gian, giữ đạn", "Takes time, keeps the ammo"); }, run: (d, max) => { d.hp = Math.max(1, d.hp - max * 0.05); return L("Đạn khô lại, nhưng một phần hàng rào vẫn hỏng mất 5% độ bền.", "The ammo dries out, but part of the barricade still loses 5% durability."); } },
+      { get label() { return L("Gia cố rào trước", "Reinforce the barricade first"); }, get hint() { return L("Mất một ít đạn", "Lose some ammo"); }, run: (d) => { const ids = Object.keys(d.weapons).filter((id) => !WEAPONS[id].infinite); if (ids.length) { const id = ids[Math.floor(Math.random() * ids.length)]; const lost = Math.ceil(d.weapons[id].reserve * 0.2); d.weapons[id].reserve -= lost; return L(`Hàng rào vững vàng, nhưng ${lost} viên đạn ${WEAPONS[id].name} bị ẩm, không dùng được nữa.`, `The barricade holds, but ${lost} ${WEAPONS[id].name} rounds got wet and are useless now.`); } return L("Hàng rào vững vàng. May mà bạn chưa có nhiều đạn để mà mất.", "The barricade holds. Luckily you did not have much ammo to lose."); } },
     ],
   },
 ];
@@ -152,7 +153,7 @@ export class UI {
         g.data = newSave();
         g.data.difficulty = arg;
         sfx.click();
-        this.playCutscene(INTRO, () => { saveGame(g.data); g.startNight(); }, 'Bến Sương', true);
+        this.playCutscene(INTRO, () => { saveGame(g.data); g.startNight(); }, ACT_NAMES[1], true);
         break;
       case 'continue': {
         const d = loadGame();
@@ -198,10 +199,11 @@ export class UI {
       case 'tab': this.shopTab = arg; sfx.click(); this.renderDay(); break;
       case 'squad': this.toggleSquad(arg); break;
       case 'startNight': g.data.upgradeReset = false; g.data.chapterReset = false; saveGame(g.data); sfx.click(); g.startNight(); break;
+      case 'lang': setLang(arg); sfx.click(); this.game.onLang && this.game.onLang(); this.showMenu(); break;
       case 'endless':
         g.data.endless = true;
         saveGame(g.data);
-        this.playCutscene(ENDLESS_NOTE, () => this.showDay(null), 'Chế độ vô tận');
+        this.playCutscene(ENDLESS_NOTE, () => this.showDay(null), L('Chế độ vô tận', 'Endless mode'));
         break;
       case 'next': this.advanceCut(); break;
       case 'skip': this.finishCut(); break;
@@ -211,55 +213,65 @@ export class UI {
   }
 
   toggleBtn(key) {
-    const labels = { sound: 'Âm thanh', music: 'Nhạc nền', shake: 'Rung màn hình', hq: 'Đồ hoạ chi tiết' };
+    const labels = { sound: L('Âm thanh', 'Sound'), music: L('Nhạc nền', 'Music'), shake: L('Rung màn hình', 'Screen shake'), hq: L('Đồ hoạ chi tiết', 'Detailed graphics') };
     const on = this.settings[key];
-    return `<button class="toggle ${on ? 'on' : ''}" data-act="toggle" data-arg="${key}"><span>${labels[key]}</span><b>${on ? 'BẬT' : 'TẮT'}</b></button>`;
+    return `<button class="toggle ${on ? 'on' : ''}" data-act="toggle" data-arg="${key}"><span>${labels[key]}</span><b>${on ? L('BẬT', 'ON') : L('TẮT', 'OFF')}</b></button>`;
   }
 
   // ---------- Menu ----------
   showMenu() {
     this.cut = null;
     const save = loadGame();
-    const fs = document.fullscreenEnabled ? '<button class="ghost" data-act="fullscreen">Toàn màn hình</button>' : '';
+    const fs = document.fullscreenEnabled ? `<button class="ghost" data-act="fullscreen">${L('Toàn màn hình', 'Fullscreen')}</button>` : '';
     const contLabel = save
-      ? (save.night > CAMPAIGN_NIGHTS && !save.endless ? 'Tiếp tục · Đã thắng chiến dịch' : `Tiếp tục · ${save.endless ? `Đêm ${save.night} (vô tận)` : `Màn ${stageFor(save.night)} · Đêm ${save.night - (stageFor(save.night) - 1) * STAGE_LENGTH}`} · ${diffOf(save).name}`)
+      ? (save.night > CAMPAIGN_NIGHTS && !save.endless ? L('Tiếp tục · Đã thắng chiến dịch', 'Continue · Campaign won') : `${L('Tiếp tục', 'Continue')} · ${save.endless ? L(`Đêm ${save.night} (vô tận)`, `Night ${save.night} (endless)`) : L(`Màn ${stageFor(save.night)} · Đêm ${save.night - (stageFor(save.night) - 1) * STAGE_LENGTH}`, `Stage ${stageFor(save.night)} · Night ${save.night - (stageFor(save.night) - 1) * STAGE_LENGTH}`)} · ${diffOf(save).name}`)
       : '';
     this.root.innerHTML = `
       <div class="screen menu fade-in">
         <div class="menu-left">
-          <div class="eyebrow">Một đài phát thanh · một hàng rào · Bến Sương</div>
+          <div class="eyebrow">${L("Một đài phát thanh · một hàng rào · Bến Sương", "One radio station · one barricade · Ben Suong")}</div>
           <h1 class="title"><span class="t1">BARRICADE</span><span class="t2">NIGHTS</span></h1>
-          <p class="tagline">Hoàn, một kỹ sư IT giữ đài phát thanh cuối cùng. Giữ vững hàng rào cho đến khi được cứu.</p>
+          <p class="tagline">${L("Hoàn, một kỹ sư IT giữ đài phát thanh cuối cùng. Giữ vững hàng rào cho đến khi được cứu.", "Hoan, an IT engineer keeping the last radio station alive. Hold the barricade until rescue comes.")}</p>
           <div class="menu-buttons">
             ${save ? `<button class="primary" data-act="continue">${contLabel}</button>` : ''}
-            <button class="${save ? '' : 'primary'}" data-act="new">Chiến dịch mới</button>
-            <button data-act="help">Hướng dẫn</button>
+            <button class="${save ? '' : 'primary'}" data-act="new">${L("Chiến dịch mới", "New campaign")}</button>
+            <button data-act="help">${L("Hướng dẫn", "How to play")}</button>
             <div class="menu-row">${this.toggleBtn('sound')}${this.toggleBtn('music')}</div>
             ${fs}
           </div>
         </div>
-        <div class="menu-foot">Chạm hoặc click để bắn · Bắn vào đầu để hạ nhanh</div>
+        <div class="menu-foot">${L("Chạm hoặc click để bắn · Bắn vào đầu để hạ nhanh", "Tap or click to shoot · Aim for the head")}</div>
+        <div class="lang-flags">${this.flagBtn('en')}${this.flagBtn('vi')}</div>
       </div>`;
+  }
+
+  // nút chọn ngôn ngữ bằng lá cờ (vẽ bằng SVG để hiện giống nhau trên mọi máy)
+  flagBtn(code) {
+    const flag = code === 'vi'
+      ? '<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#da251d"/><polygon fill="#ffcd00" points="15,4 16.2,8.3 20.7,8.3 17.1,10.9 18.4,15.2 15,12.6 11.6,15.2 12.9,10.9 9.3,8.3 13.8,8.3"/></svg>'
+      : '<svg viewBox="0 0 60 30"><clipPath id="uk-t"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#uk-t)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg>';
+    const label = code === 'vi' ? 'Tiếng Việt' : 'English';
+    return `<button class="flag-btn${getLang() === code ? ' active' : ''}" data-act="lang" data-arg="${code}" aria-label="${label}" title="${label}">${flag}<span>${code.toUpperCase()}</span></button>`;
   }
 
   chooseDifficulty() {
     this.modal(`
-      <div class="eyebrow">Chiến dịch mới</div>
-      <h2>Chọn độ khó</h2>
+      <div class="eyebrow">${L("Chiến dịch mới", "New campaign")}</div>
+      <h2>${L("Chọn độ khó", "Choose difficulty")}</h2>
       <div class="diff-grid">
         ${DIFF_ORDER.map((k) => `<button class="diff-btn${k === 'normal' ? ' rec' : ''}" data-act="diff" data-arg="${k}">
-          <b>${DIFFICULTIES[k].name}${k === 'normal' ? ' <em>ĐỀ XUẤT</em>' : ''}</b><span>${DIFFICULTIES[k].desc}</span></button>`).join('')}
+          <b>${DIFFICULTIES[k].name}${k === 'normal' ? ` <em>${L('ĐỀ XUẤT', 'RECOMMENDED')}</em>` : ''}</b><span>${DIFFICULTIES[k].desc}</span></button>`).join('')}
       </div>
-      <div class="modal-actions"><button class="ghost" data-act="closeModal">Huỷ</button></div>`);
+      <div class="modal-actions"><button class="ghost" data-act="closeModal">${L("Huỷ", "Cancel")}</button></div>`);
   }
 
   confirmNew() {
     this.modal(`
-      <h2>Bắt đầu lại?</h2>
-      <p>Tiến trình hiện tại sẽ bị xoá và bạn bắt đầu lại từ đêm 1.</p>
+      <h2>${L('Bắt đầu lại?', 'Start over?')}</h2>
+      <p>${L('Tiến trình hiện tại sẽ bị xoá và bạn bắt đầu lại từ đêm 1.', 'Your current progress will be erased and you will start again from night 1.')}</p>
       <div class="modal-actions">
-        <button data-act="closeModal">Huỷ</button>
-        <button class="primary" data-act="new" data-arg="confirm">Bắt đầu lại</button>
+        <button data-act="closeModal">${L('Huỷ', 'Cancel')}</button>
+        <button class="primary" data-act="new" data-arg="confirm">${L('Bắt đầu lại', 'Start over')}</button>
       </div>`);
   }
 
@@ -280,35 +292,35 @@ export class UI {
       <div class="screen panel-screen fade-in">
         <div class="panel help">
           <div class="help-head">
-            <img class="hero-card" src="${heroPortrait()}" alt="Hoàn">
+            <img class="hero-card" src="${heroPortrait()}" alt="Hoan">
             <div>
-              <div class="eyebrow">Nhân vật chính</div>
-              <h2>Hoàn · kỹ sư IT của đài phát thanh</h2>
-              <p class="story-line">Không bao giờ tháo tai nghe. Biết code, biết sửa máy, và không bao giờ tháo tai nghe. Chừng nào radio còn phát, chừng đó Hoàn còn chiến đấu.</p>
+              <div class="eyebrow">${L("Nhân vật chính", "The hero")}</div>
+              <h2>${L("Hoàn · kỹ sư IT của đài phát thanh", "Hoan · the radio station's IT engineer")}</h2>
+              <p class="story-line">${L("Không bao giờ tháo tai nghe. Biết code, biết sửa máy, và không bao giờ tháo tai nghe. Chừng nào radio còn phát, chừng đó Hoàn còn chiến đấu.", "Writes code, fixes machines, and never takes off his headphones. As long as the radio keeps broadcasting, Hoan keeps fighting.")}</p>
             </div>
           </div>
           <div class="help-grid">
-            <div><h4>Ban đêm</h4>
-              <p>Zombie kéo đến từ bên phải để phá hàng rào. Ngắm và bắn bằng chuột hoặc chạm vào màn hình. Súng tự động thì giữ để xả đạn.</p>
-              <p><b>Bắn vào đầu</b> gây x2.5 sát thương, thưởng thêm 50% tiền. Hạ liên tiếp nhanh được thưởng thêm.</p>
+            <div><h4>${L("Ban đêm", "Night")}</h4>
+              <p>${L("Zombie kéo đến từ bên phải để phá hàng rào. Ngắm và bắn bằng chuột hoặc chạm vào màn hình. Súng tự động thì giữ để xả đạn.", "Zombies come from the right to tear down your barricade. Aim and shoot with the mouse or by tapping the screen. Hold to fire automatic weapons.")}</p>
+              ${L('<p><b>Bắn vào đầu</b> gây x2.5 sát thương, thưởng thêm 50% tiền. Hạ liên tiếp nhanh được thưởng thêm.</p>', '<p><b>Headshots</b> deal x2.5 damage and pay 50% more. Quick kill streaks earn bonus cash.</p>')}
             </div>
-            <div><h4>Ban ngày</h4>
-              <p>Chia ${DAY_HOURS} giờ cho sửa rào, lục lọi tiền và đạn, hoặc tìm người sống sót. Mỗi người có một kỹ năng riêng và sẽ bắn hỗ trợ bạn.</p>
-              <p>Chỉ 4 người được đứng trên rào, người còn lại ở trại kiếm thêm tiền. Đồng đội lên cấp khi hạ zombie và có thể bị thương khi rào sắp vỡ: hãy đưa người khác lên thay.</p>
-              <p>Mỗi màn có 20 đêm. Chú ý <b>dự báo đêm nay</b>: mất điện, thả dù tiếp tế, kẻ mang hòm…</p>
-              <p>Tab <b>Phòng thủ</b>: mỗi chương có bộ công trình riêng (mìn, dây thép gai, tháp súng, bẫy điện, tháp phun lửa, súng cối, tháp Tesla, drone). Sang chương mới, đồng đội và công trình đều phải làm lại từ đầu.</p>
+            <div><h4>${L("Ban ngày", "Day")}</h4>
+              <p>${L(`Chia ${DAY_HOURS} giờ cho sửa rào, lục lọi tiền và đạn, hoặc tìm người sống sót. Mỗi người có một kỹ năng riêng và sẽ bắn hỗ trợ bạn.`, `Split ${DAY_HOURS} hours between repairing the barricade, scavenging for cash and ammo, or searching for survivors. Each survivor has a unique perk and fights alongside you.`)}</p>
+              <p>${L("Chỉ 4 người được đứng trên rào, người còn lại ở trại kiếm thêm tiền. Đồng đội lên cấp khi hạ zombie và có thể bị thương khi rào sắp vỡ: hãy đưa người khác lên thay.", "Only 4 people fit on the barricade; the rest stay in camp and earn extra cash. Companions level up by killing zombies and can get injured when the barricade is about to break: swap someone else in.")}</p>
+              ${L('<p>Mỗi màn có 20 đêm. Chú ý <b>dự báo đêm nay</b>: mất điện, thả dù tiếp tế, kẻ mang hòm…</p>', '<p>Each stage has 20 nights. Watch <b>tonight\'s forecast</b>: blackouts, supply drops, thieves…</p>')}
+              ${L('<p>Tab <b>Phòng thủ</b>: mỗi chương có bộ công trình riêng (mìn, dây thép gai, tháp súng, bẫy điện, tháp phun lửa, súng cối, tháp Tesla, drone). Sang chương mới, đồng đội và công trình đều phải làm lại từ đầu.</p>', '<p><b>Defense</b> tab: each chapter has its own set of defenses (mines, barbed wire, turrets, electric traps, flame turrets, mortars, tesla towers, drones). In a new chapter, companions and defenses start over.</p>')}
             </div>
-            <div><h4>Điều khiển</h4>
+            <div><h4>${L("Điều khiển", "Controls")}</h4>
               <table class="keys">
-                <tr><td>Bắn</td><td>Click / chạm</td></tr>
-                <tr><td>Nạp đạn</td><td>R · nút ⟳</td></tr>
-                <tr><td>Lựu đạn</td><td>G hoặc Space · nút lựu đạn rồi chạm</td></tr>
-                <tr><td>Đổi súng</td><td>1–9 · Q/E · con lăn</td></tr>
-                <tr><td>Tạm dừng</td><td>P · Esc</td></tr>
+                <tr><td>${L('Bắn', 'Shoot')}</td><td>${L('Click / chạm', 'Click / tap')}</td></tr>
+                <tr><td>${L('Nạp đạn', 'Reload')}</td><td>${L('R · nút ⟳', 'R · ⟳ button')}</td></tr>
+                <tr><td>${L('Lựu đạn', 'Grenade')}</td><td>${L('G hoặc Space · nút lựu đạn rồi chạm', 'G or Space · grenade button then tap')}</td></tr>
+                <tr><td>${L('Đổi súng', 'Switch weapon')}</td><td>${L('1–9, 0, - · Q/E · con lăn', '1–9, 0, - · Q/E · mouse wheel')}</td></tr>
+                <tr><td>${L('Tạm dừng', 'Pause')}</td><td>P · Esc</td></tr>
               </table>
             </div>
           </div>
-          <button class="primary" data-act="menu">Quay lại</button>
+          <button class="primary" data-act="menu">${L("Quay lại", "Back")}</button>
         </div>
       </div>`;
   }
@@ -326,9 +338,9 @@ export class UI {
         <div class="cut-box">
           <div class="cut-who"></div>
           <p class="cut-text"></p>
-          <div class="cut-hint">Chạm để tiếp tục ▸</div>
+          <div class="cut-hint">${L("Chạm để tiếp tục ▸", "Tap to continue ▸")}</div>
         </div>
-        <button class="cut-skip ghost" data-act="skip">Bỏ qua ▸▸</button>
+        <button class="cut-skip ghost" data-act="skip">${L("Bỏ qua ▸▸", "Skip ▸▸")}</button>
         <div class="bar bottom"></div>
       </div>`;
     this.showCutLine();
@@ -339,7 +351,7 @@ export class UI {
     const line = c.lines[c.i];
     const who = this.root.querySelector('.cut-who');
     const text = this.root.querySelector('.cut-text');
-    who.textContent = line.who;
+    who.textContent = whoLabel(line.who);
     who.className = 'cut-who who-' + (line.who === 'RADIO' ? 'radio' : line.who === 'NHẬT KÝ' ? 'journal' : 'you');
     // mỗi câu có thể gắn một cảnh minh hoạ; câu không có cảnh thì giữ cảnh trước
     if (line.shot) this.game.setShot(line.shot);
@@ -387,11 +399,11 @@ export class UI {
     this.cut = null;
     this.root.innerHTML = `
       <div class="hud">
-        <button class="hud-btn pause" data-hud="pause" aria-label="Tạm dừng">❚❚</button>
+        <button class="hud-btn pause" data-hud="pause" aria-label="Pause">❚❚</button>
         <div class="weapon-bar"></div>
         <div class="hud-actions">
-          <button class="hud-btn grenade" data-hud="grenade" aria-label="Lựu đạn"></button>
-          <button class="hud-btn reload" data-hud="reload" aria-label="Nạp đạn">⟳<small>R</small></button>
+          <button class="hud-btn grenade" data-hud="grenade" aria-label="Grenade"></button>
+          <button class="hud-btn reload" data-hud="reload" aria-label="Reload">⟳<small>R</small></button>
         </div>
       </div>`;
     this.weaponBar = this.root.querySelector('.weapon-bar');
@@ -429,10 +441,10 @@ export class UI {
     this.root.innerHTML = `
       <div class="screen panel-screen dim fade-in">
         <div class="panel small">
-          <h2>Tạm dừng</h2>
-          <button class="primary" data-act="resume">Tiếp tục chiến đấu</button>
+          <h2>${L('Tạm dừng', 'Paused')}</h2>
+          <button class="primary" data-act="resume">${L('Tiếp tục chiến đấu', 'Resume fighting')}</button>
           ${this.toggleBtn('sound')}${this.toggleBtn('music')}${this.toggleBtn('shake')}${this.toggleBtn('hq')}
-          <button class="ghost" data-act="quit">Về menu (đêm này sẽ chơi lại từ đầu)</button>
+          <button class="ghost" data-act="quit">${L("Về menu (đêm này sẽ chơi lại từ đầu)", "Quit to menu (this night restarts)")}</button>
         </div>
       </div>`;
   }
@@ -442,17 +454,17 @@ export class UI {
     this.root.innerHTML = `
       <div class="screen panel-screen dim red fade-in-slow">
         <div class="panel small over">
-          <div class="eyebrow danger">Đêm ${info.night}</div>
-          <h2 class="danger big-title">HÀNG RÀO ĐÃ VỠ</h2>
+          <div class="eyebrow danger">${L('Đêm', 'Night')} ${info.night}</div>
+          <h2 class="danger big-title">${L('HÀNG RÀO ĐÃ VỠ', 'THE BARRICADE HAS FALLEN')}</h2>
           <p class="story-line">${GAMEOVER_LINES[ri(0, GAMEOVER_LINES.length - 1)]}</p>
           <div class="stat-row">
-            <div><b>${d.night - 1}</b><span>đêm sống sót</span></div>
-            <div><b>${d.totalKills}</b><span>zombie đã hạ</span></div>
+            <div><b>${d.night - 1}</b><span>${L('đêm sống sót', 'nights survived')}</span></div>
+            <div><b>${d.totalKills}</b><span>${L('zombie đã hạ', 'zombies killed')}</span></div>
             <div><b>${d.headshots || 0}</b><span>headshot</span></div>
           </div>
-          <button class="primary" data-act="retry">Thử lại đêm ${info.night}</button>
-          <button data-act="new" data-arg="confirm">Chiến dịch mới</button>
-          <button class="ghost" data-act="menu">Menu chính</button>
+          <button class="primary" data-act="retry">${L('Thử lại đêm', 'Retry night')} ${info.night}</button>
+          <button data-act="new" data-arg="confirm">${L('Chiến dịch mới', 'New campaign')}</button>
+          <button class="ghost" data-act="menu">${L('Menu chính', 'Main menu')}</button>
         </div>
       </div>`;
   }
@@ -461,11 +473,11 @@ export class UI {
   showInterlude(info) {
     const n = info.transition;
     const end = {
-      10: [ACT1_END, 'Hết chương 1 · Bình minh thứ mười'], 20: [STAGE1_END, 'Hết màn 1 · Bình minh thứ hai mươi'],
-      30: [ACT3_END, 'Hết chương 3 · Bình minh thứ ba mươi'], 40: [STAGE2_END, 'Hết màn 2 · Bình minh thứ bốn mươi'],
-      50: [ACT5_END, 'Hết chương 5 · Bình minh thứ năm mươi'], 60: [STAGE3_END, 'Hết màn 3 · Bình minh thứ sáu mươi'],
-      70: [ACT7_END, 'Hết chương 7 · Bình minh thứ bảy mươi'], 80: [STAGE4_END, 'Hết màn 4 · Bình minh thứ tám mươi'],
-      90: [ACT9_END, 'Hết chương 9 · Bình minh thứ chín mươi'],
+      10: [ACT1_END, L("Hết chương 1 · Bình minh thứ mười", "End of chapter 1 · The tenth dawn")], 20: [STAGE1_END, L("Hết màn 1 · Bình minh thứ hai mươi", "End of stage 1 · The twentieth dawn")],
+      30: [ACT3_END, L("Hết chương 3 · Bình minh thứ ba mươi", "End of chapter 3 · The thirtieth dawn")], 40: [STAGE2_END, L("Hết màn 2 · Bình minh thứ bốn mươi", "End of stage 2 · The fortieth dawn")],
+      50: [ACT5_END, L("Hết chương 5 · Bình minh thứ năm mươi", "End of chapter 5 · The fiftieth dawn")], 60: [STAGE3_END, L("Hết màn 3 · Bình minh thứ sáu mươi", "End of stage 3 · The sixtieth dawn")],
+      70: [ACT7_END, L("Hết chương 7 · Bình minh thứ bảy mươi", "End of chapter 7 · The seventieth dawn")], 80: [STAGE4_END, L("Hết màn 4 · Bình minh thứ tám mươi", "End of stage 4 · The eightieth dawn")],
+      90: [ACT9_END, L("Hết chương 9 · Bình minh thứ chín mươi", "End of chapter 9 · The ninetieth dawn")],
     }[n];
     setTimeout(() => this.playCutscene(end[0], () => this.playActIntro(actFor(n + 1), info), end[1]), 600);
   }
@@ -476,7 +488,7 @@ export class UI {
     g.state = 'day';
     const lines = { 2: ACT2_INTRO, 3: STAGE2_INTRO, 4: ACT4_INTRO, 5: STAGE3_INTRO, 6: ACT6_INTRO, 7: STAGE4_INTRO, 8: ACT8_INTRO, 9: STAGE5_INTRO, 10: ACT10_INTRO }[act] || [];
     const stageStart = isStageStartAct(act) ? (act + 1) / 2 : 0;
-    const title = stageStart ? `Màn ${stageStart} · ${STAGE_NAMES[stageStart]} · Chương ${act} · ${ACT_NAMES[act]}` : `Chương ${act} · ${ACT_NAMES[act]}`;
+    const title = stageStart ? `${L('Màn', 'Stage')} ${stageStart} · ${STAGE_NAMES[stageStart]} · ${L('Chương', 'Chapter')} ${act} · ${ACT_NAMES[act]}` : `${L('Chương', 'Chapter')} ${act} · ${ACT_NAMES[act]}`;
     // chương mới: đồng đội cũ đã ở lại phía sau, công trình phòng thủ phải dựng lại từ đầu
     if (act > (g.data.seenAct || 1) && !g.data.endless) {
       g.data.crew = []; g.data.squad = []; g.data.mates = {}; g.data.searchPity = 0;
@@ -510,7 +522,7 @@ export class UI {
   }
 
   showVictoryStory(info) {
-    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, 'Kết thúc · Bình minh thứ một trăm'), 600);
+    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, L('Kết thúc · Bình minh thứ một trăm', 'The end · The hundredth dawn')), 600);
   }
 
   showVictory() {
@@ -519,16 +531,16 @@ export class UI {
     this.root.innerHTML = `
       <div class="screen panel-screen dawn fade-in-slow">
         <div class="panel small victory">
-          <div class="eyebrow">Chiến dịch hoàn thành</div>
-          <h2 class="big-title gold">BẠN ĐÃ SỐNG SÓT</h2>
-          <p class="story-line">Một trăm đêm, từ Bến Sương tới Trạm Hải Đăng. Hoàn đã mang vắc-xin tới thủ đô, lần ra tín hiệu điều khiển bầy đàn và đảo ngược nó. Cả đất nước đã được ngủ yên.</p>
+          <div class="eyebrow">${L('Chiến dịch hoàn thành', 'Campaign complete')}</div>
+          <h2 class="big-title gold">${L('BẠN ĐÃ SỐNG SÓT', 'YOU SURVIVED')}</h2>
+          <p class="story-line">${L('Một trăm đêm, từ Bến Sương tới Trạm Hải Đăng. Hoàn đã mang vắc-xin tới thủ đô, lần ra tín hiệu điều khiển bầy đàn và đảo ngược nó. Cả đất nước đã được ngủ yên.', 'One hundred nights, from Ben Suong to Lighthouse Station. Hoan carried the vaccine to the capital, traced the signal driving the horde and turned it around. The whole country can finally sleep.')}</p>
           <div class="stat-row">
-            <div><b>${d.totalKills}</b><span>zombie đã hạ</span></div>
+            <div><b>${d.totalKills}</b><span>${L('zombie đã hạ', 'zombies killed')}</span></div>
             <div><b>${d.headshots || 0}</b><span>headshot</span></div>
-            <div><b>${(d.met || d.crew).length}/${SURVIVORS.length}</b><span>đồng đội đã gặp</span></div>
+            <div><b>${(d.met || d.crew).length}/${SURVIVORS.length}</b><span>${L('đồng đội đã gặp', 'companions met')}</span></div>
           </div>
-          <button class="primary" data-act="endless">Ở lại chiến đấu · Chế độ vô tận</button>
-          <button class="ghost" data-act="menu">Menu chính</button>
+          <button class="primary" data-act="endless">${L('Ở lại chiến đấu · Chế độ vô tận', 'Keep fighting · Endless mode')}</button>
+          <button class="ghost" data-act="menu">${L('Menu chính', 'Main menu')}</button>
         </div>
       </div>`;
   }
@@ -537,7 +549,7 @@ export class UI {
   afterNight(info) {
     const log = DAWN_LOG[info.night];
     const go = () => this.showDay(info);
-    if (log && !this.game.data.endless) setTimeout(() => this.playCutscene(log, go, `Bình minh · Ngày ${info.night + 1}`), 400);
+    if (log && !this.game.data.endless) setTimeout(() => this.playCutscene(log, go, `${L('Bình minh · Ngày', 'Dawn · Day')} ${info.night + 1}`), 400);
     else setTimeout(go, 400);
   }
 
@@ -550,7 +562,7 @@ export class UI {
     this.alloc = { repair: 0, scav: 0, search: 0 };
     this.dayDone = !!g.data.dayUsed;
     this.fadeDay = true;
-    this.dayLog = this.dayDone ? [{ icon: '·', text: 'Bạn đã dùng hết thời gian của ngày hôm nay.' }] : [];
+    this.dayLog = this.dayDone ? [{ icon: '·', text: L('Bạn đã dùng hết thời gian của ngày hôm nay.', 'You have used up all of today\'s time.') }] : [];
     this.renderDay();
     const d = g.data;
     if (info && !info.transition && d.eventDay !== d.night && Math.random() < 0.5) {
@@ -562,7 +574,7 @@ export class UI {
   showEvent(ev) {
     this.currentEvent = ev;
     this.modal(`
-      <div class="eyebrow">Buổi sáng · Ngày ${this.game.data.night}</div>
+      <div class="eyebrow">${L('Buổi sáng · Ngày', 'Morning · Day')} ${this.game.data.night}</div>
       <h2>${ev.title}</h2>
       <p class="story-line">${ev.text}</p>
       <div class="event-choices">
@@ -578,7 +590,7 @@ export class UI {
     this.currentEvent = null;
     saveGame(d);
     this.renderDay();
-    this.modal(`<h2>${ev.title}</h2><p class="story-line">${result}</p><div class="modal-actions"><button class="primary" data-act="closeModal">Tiếp tục</button></div>`);
+    this.modal(`<h2>${ev.title}</h2><p class="story-line">${result}</p><div class="modal-actions"><button class="primary" data-act="closeModal">${L('Tiếp tục', 'Continue')}</button></div>`);
   }
 
   changeHour(arg) {
@@ -600,7 +612,7 @@ export class UI {
     if (this.alloc.repair) {
       const before = d.hp;
       d.hp = Math.min(max, d.hp + this.alloc.repair * max * this.repairRate());
-      log.push({ icon: '🔨', text: `Sửa hàng rào: +${Math.round(d.hp - before)} độ bền${hasPerk(d, 'lan') ? ' (Lan giúp một tay)' : ''}.` });
+      log.push({ icon: '🔨', text: L(`Sửa hàng rào: +${Math.round(d.hp - before)} độ bền${hasPerk(d, 'lan') ? ' (Lan giúp một tay)' : ''}.`, `Repaired the barricade: +${Math.round(d.hp - before)} durability${hasPerk(d, 'lan') ? ' (Lan helped)' : ''}.`) });
     }
     let cash = 0;
     const cashMul = hasPerk(d, 'mai') ? 1.3 : 1;
@@ -613,19 +625,19 @@ export class UI {
           const id = owned[ri(0, owned.length - 1)];
           const amt = Math.ceil(WEAPONS[id].ammoPack * rand(0.25, 0.5));
           d.weapons[id].reserve += amt;
-          log.push({ icon: '📦', text: `Tìm thấy ${amt} viên đạn ${WEAPONS[id].name}.` });
+          log.push({ icon: '📦', text: L(`Tìm thấy ${amt} viên đạn ${WEAPONS[id].name}.`, `Found ${amt} ${WEAPONS[id].name} rounds.`) });
         }
       }
       if (Math.random() < 0.15 && d.grenades < GRENADE.max) {
         d.grenades++;
-        log.push({ icon: '💣', text: 'Nhặt được một quả lựu đạn trong đồn cảnh sát cũ.' });
+        log.push({ icon: '💣', text: L('Nhặt được một quả lựu đạn trong đồn cảnh sát cũ.', 'Picked up a grenade at the old police station.') });
       }
       if (Math.random() < 0.035) {
         const missing = WEAPON_ORDER.filter((id) => !d.weapons[id]);
         if (missing.length) {
           const id = missing[0];
           d.weapons[id] = { mag: 0, reserve: WEAPONS[id].mag * 2 };
-          log.push({ icon: '🔫', text: `May mắn! Nhặt được khẩu ${WEAPONS[id].name}!` });
+          log.push({ icon: '🔫', text: L(`May mắn! Nhặt được khẩu ${WEAPONS[id].name}!`, `Lucky! Found a ${WEAPONS[id].name}!`) });
         }
       }
     }
@@ -634,8 +646,8 @@ export class UI {
     if (this.alloc.scav) {
       d.cash += cash;
       d.food = (d.food || 0) + cans;
-      log.push({ icon: '💰', text: `Lục lọi được $${cash}${hasPerk(d, 'mai') ? ' (Mai dẫn đường)' : ''}.` });
-      log.push({ icon: '🥫', text: cans ? `Tìm được ${cans} hộp đồ ăn.` : 'Không tìm được chút đồ ăn nào.' });
+      log.push({ icon: '💰', text: L(`Lục lọi được $${cash}${hasPerk(d, 'mai') ? ' (Mai dẫn đường)' : ''}.`, `Scavenged $${cash}${hasPerk(d, 'mai') ? ' (Mai led the way)' : ''}.`) });
+      log.push({ icon: '🥫', text: cans ? L(`Tìm được ${cans} hộp đồ ăn.`, `Found ${cans} can${cans > 1 ? 's' : ''} of food.`) : L('Không tìm được chút đồ ăn nào.', 'Found no food at all.') });
     }
 
     const found = [];
@@ -655,10 +667,10 @@ export class UI {
       }
     }
     if (this.alloc.search) {
-      if (found.length) found.forEach((s) => log.push({ icon: '🧍', text: `${s.name} (${s.role}) đã gia nhập nhóm!` }));
-      else log.push({ icon: '🔦', text: !this.availableRecruits().length ? 'Quanh đây không còn ai để tìm nữa.' : 'Không tìm thấy ai còn sống… nhưng bạn đã đi được xa hơn.' });
+      if (found.length) found.forEach((s) => log.push({ icon: '🧍', text: L(`${s.name} (${s.role}) đã gia nhập nhóm!`, `${s.name} (${s.role}) joined the group!`) }));
+      else log.push({ icon: '🔦', text: !this.availableRecruits().length ? L('Quanh đây không còn ai để tìm nữa.', 'There is no one left to find around here.') : L('Không tìm thấy ai còn sống… nhưng bạn đã đi được xa hơn.', 'Found no one alive… but you searched further than before.') });
     }
-    if (!log.length) log.push({ icon: '·', text: 'Bạn nghỉ ngơi cả ngày.' });
+    if (!log.length) log.push({ icon: '·', text: L('Bạn nghỉ ngơi cả ngày.', 'You rested all day.') });
     this.dayLog = log;
     this.dayDone = true;
     d.dayUsed = true;
@@ -674,7 +686,7 @@ export class UI {
   nextRecruitHint() {
     const d = this.game.data;
     const next = SURVIVORS.filter((s) => !d.crew.includes(s.id) && s.act === actFor(d.night) && (s.from || 1) > d.night).sort((a, b) => a.from - b.from)[0];
-    return next ? `Chưa có ai quanh đây (có người mới từ đêm ${next.from})` : 'Quanh đây không còn ai';
+    return next ? L(`Chưa có ai quanh đây (có người mới từ đêm ${next.from})`, `No one around yet (someone new from night ${next.from})`) : L('Quanh đây không còn ai', 'No one left around here');
   }
 
   dayHours() { return DAY_HOURS + (hasPerk(this.game.data, 'kien') ? 2 : 0); }
@@ -708,13 +720,13 @@ export class UI {
       <div class="found">
         <img src="${portrait(s)}" alt="">
         <div>
-          <div class="eyebrow">Người sống sót mới</div>
+          <div class="eyebrow">${L("Người sống sót mới", "New survivor")}</div>
           <h2>${s.name} <small>${s.role}</small></h2>
           <p class="story-line">${s.intro}</p>
-          <p class="perk">Kỹ năng: ${s.perk}</p>
+          <p class="perk">${L('Kỹ năng', 'Perk')}: ${s.perk}</p>
         </div>
       </div>
-      <div class="modal-actions"><button class="primary" data-act="closeModal">Chào mừng</button></div>`;
+      <div class="modal-actions"><button class="primary" data-act="closeModal">${L("Chào mừng", "Welcome")}</button></div>`;
   }
 
   shopItems() {
@@ -724,25 +736,25 @@ export class UI {
       const act = d.endless ? 2 : actFor(d.night);
       return WEAPON_ORDER.filter((id) => !WEAPONS[id].infinite && ((WEAPONS[id].act || 1) <= act || d.weapons[id])).map((id) => {
         const w = WEAPONS[id];
-        const stats = `ST ${w.dmg}${w.pellets > 1 ? '×' + w.pellets : ''} · băng ${w.mag}${w.auto ? ' · tự động' : ''}${w.pierce > 1 ? ' · xuyên ' + w.pierce : ''}`;
-        if (!d.weapons[id]) return { id: 'w:' + id, icon: id, title: w.name, desc: w.desc, stats, price: w.price, tag: w.act === 2 ? 'KHO CẢNG' : 'MỚI' };
-        return { id: 'a:' + id, icon: id, title: `Đạn ${w.name} +${w.ammoPack}`, desc: `Đang có ${d.weapons[id].reserve + d.weapons[id].mag} viên`, stats, price: w.ammoPrice, owned: true };
+        const stats = `${L('ST', 'DMG')} ${w.dmg}${w.pellets > 1 ? '×' + w.pellets : ''} · ${L('băng', 'mag')} ${w.mag}${w.auto ? ' · ' + L('tự động', 'auto') : ''}${w.pierce > 1 ? ' · ' + L('xuyên', 'pierce') + ' ' + w.pierce : ''}`;
+        if (!d.weapons[id]) return { id: 'w:' + id, icon: id, title: w.name, desc: w.desc, stats, price: w.price, tag: w.act === 2 ? L('KHO CẢNG', 'PORT ARMORY') : L('MỚI', 'NEW') };
+        return { id: 'a:' + id, icon: id, title: L(`Đạn ${w.name} +${w.ammoPack}`, `${w.name} ammo +${w.ammoPack}`), desc: L(`Đang có ${d.weapons[id].reserve + d.weapons[id].mag} viên`, `${d.weapons[id].reserve + d.weapons[id].mag} rounds owned`), stats, price: w.ammoPrice, owned: true };
       });
     }
     if (this.shopTab === 'defense') return this.defenseItems();
     const items = [
-      { id: 'food', title: 'Đồ hộp × 3', desc: `Mỗi sáng cả nhóm ăn ${this.eatPerDay()} hộp. Hết đồ ăn thì bị đói: nạp đạn chậm, bắn rung tay. Đang có ${d.food || 0}.`, price: Math.round(70 * (1 + d.night * 0.03)), glyph: '🥫' },
-      { id: 'grenade', icon: 'grenade', title: 'Lựu đạn', desc: `Nổ diện rộng, cực mạnh với bầy đàn. Đang có ${d.grenades}/${GRENADE.max}.`, price: GRENADE.price, disabled: d.grenades >= GRENADE.max },
-      ...(d.flashlight ? [] : [{ id: 'flashlight', title: 'Đèn pin gắn súng', desc: 'Rọi một luồng sáng theo hướng ngắm. Đêm mất điện nhìn xa hơn hẳn.', price: 250, glyph: '🔦' }]),
+      { id: 'food', title: L('Đồ hộp × 3', 'Canned food × 3'), desc: L(`Mỗi sáng cả nhóm ăn ${this.eatPerDay()} hộp. Hết đồ ăn thì bị đói: nạp đạn chậm, bắn rung tay. Đang có ${d.food || 0}.`, `The group eats ${this.eatPerDay()} cans every morning. Without food everyone goes hungry: slower reloads, shaky aim. You have ${d.food || 0}.`), price: Math.round(70 * (1 + d.night * 0.03)), glyph: '🥫' },
+      { id: 'grenade', icon: 'grenade', title: L('Lựu đạn', 'Grenade'), desc: L(`Nổ diện rộng, cực mạnh với bầy đàn. Đang có ${d.grenades}/${GRENADE.max}.`, `Wide blast, devastating against hordes. You have ${d.grenades}/${GRENADE.max}.`), price: GRENADE.price, disabled: d.grenades >= GRENADE.max },
+      ...(d.flashlight ? [] : [{ id: 'flashlight', title: L('Đèn pin gắn súng', 'Weapon flashlight'), desc: L('Rọi một luồng sáng theo hướng ngắm. Đêm mất điện nhìn xa hơn hẳn.', 'Casts a beam where you aim. See much further on blackout nights.'), price: 250, glyph: '🔦' }]),
       // bộ sửa chữa không bán bằng tiền nữa: muốn sửa rào thì phải bỏ giờ ban ngày ra sửa
-      { id: 'barricade', title: `Gia cố hàng rào · cấp ${d.barricadeLevel + 1}`, desc: `Độ bền tối đa ${max} → ${barricadeMax(d.barricadeLevel + 1)}`, price: barricadeUpgradePrice(d.barricadeLevel) },
+      { id: 'barricade', title: L(`Gia cố hàng rào · cấp ${d.barricadeLevel + 1}`, `Reinforce barricade · level ${d.barricadeLevel + 1}`), desc: L(`Độ bền tối đa ${max} → ${barricadeMax(d.barricadeLevel + 1)}`, `Max durability ${max} → ${barricadeMax(d.barricadeLevel + 1)}`), price: barricadeUpgradePrice(d.barricadeLevel) },
     ];
     const dl = d.dmgLevel || 0;
     if (dl < MAX_DMG_LVL) {
-      items.push({ id: 'dmgUp', title: `Đạn xuyên giáp · cấp ${dl + 1}/${MAX_DMG_LVL}`, desc: 'Mọi vũ khí của bạn gây thêm 8% sát thương', price: dmgUpgradePrice(dl) });
+      items.push({ id: 'dmgUp', title: L(`Đạn xuyên giáp · cấp ${dl + 1}/${MAX_DMG_LVL}`, `Armor-piercing rounds · level ${dl + 1}/${MAX_DMG_LVL}`), desc: L('Mọi vũ khí của bạn gây thêm 8% sát thương', 'All your weapons deal 8% more damage'), price: dmgUpgradePrice(dl) });
     }
     if (d.reloadLevel < MAX_RELOAD_LVL) {
-      items.push({ id: 'reloadUp', title: `Luyện nạp đạn · cấp ${d.reloadLevel + 1}/${MAX_RELOAD_LVL}`, desc: 'Nạp đạn mọi loại súng nhanh hơn 12%', price: reloadUpgradePrice(d.reloadLevel) });
+      items.push({ id: 'reloadUp', title: L(`Luyện nạp đạn · cấp ${d.reloadLevel + 1}/${MAX_RELOAD_LVL}`, `Reload drills · level ${d.reloadLevel + 1}/${MAX_RELOAD_LVL}`), desc: L('Nạp đạn mọi loại súng nhanh hơn 12%', 'Reload every weapon 12% faster'), price: reloadUpgradePrice(d.reloadLevel) });
     }
     return items;
   }
@@ -755,44 +767,44 @@ export class UI {
     const tl = d.turretLevel || 1;
     for (const k of avail) {
       if (k === 'turret') {
-        if ((d.turrets || 0) < TURRET.max) out.push({ id: 'turret', title: `Tháp súng máy tự động #${(d.turrets || 0) + 1}`, desc: 'Đặt trên hàng rào, tự bắn con gần nhất. Bắn liên tục sẽ quá nhiệt.', stats: `ST ${TURRET.dmg[tl - 1]} · ${Math.round(1 / TURRET.rate[tl - 1])} phát/giây`, price: TURRET.price, glyph: '⌖' });
-        if ((d.turrets || 0) > 0 && tl < 3) out.push({ id: 'turretUp', title: `Nâng cấp tháp súng · cấp ${tl + 1}`, desc: 'Mạnh hơn, bắn nhanh hơn, lâu quá nhiệt hơn.', stats: `ST ${TURRET.dmg[tl - 1]} → ${TURRET.dmg[tl]}`, price: TURRET.upgrade[tl], glyph: '⌖' });
+        if ((d.turrets || 0) < TURRET.max) out.push({ id: 'turret', title: L(`Tháp súng máy tự động #${(d.turrets || 0) + 1}`, `Auto turret #${(d.turrets || 0) + 1}`), desc: L('Đặt trên hàng rào, tự bắn con gần nhất. Bắn liên tục sẽ quá nhiệt.', 'Mounted on the barricade, shoots the nearest zombie. Overheats with sustained fire.'), stats: L(`ST ${TURRET.dmg[tl - 1]} · ${Math.round(1 / TURRET.rate[tl - 1])} phát/giây`, `DMG ${TURRET.dmg[tl - 1]} · ${Math.round(1 / TURRET.rate[tl - 1])} shots/s`), price: TURRET.price, glyph: '⌖' });
+        if ((d.turrets || 0) > 0 && tl < 3) out.push({ id: 'turretUp', title: L(`Nâng cấp tháp súng · cấp ${tl + 1}`, `Upgrade turrets · level ${tl + 1}`), desc: L('Mạnh hơn, bắn nhanh hơn, lâu quá nhiệt hơn.', 'Stronger, faster, overheats later.'), stats: `${L('ST', 'DMG')} ${TURRET.dmg[tl - 1]} → ${TURRET.dmg[tl]}`, price: TURRET.upgrade[tl], glyph: '⌖' });
       } else if (k === 'mines') {
-        out.push({ id: 'mines', title: 'Mìn × 2', desc: `Tự rải trước rào mỗi đêm, nổ khi zombie dẫm lên. Kẻ nhảy bật qua được. Đang có ${d.mines || 0}/${MINE.max}.`, price: MINE.price * 2, glyph: '✸', disabled: (d.mines || 0) + 2 > MINE.max });
+        out.push({ id: 'mines', title: L('Mìn × 2', 'Mines × 2'), desc: L(`Tự rải trước rào mỗi đêm, nổ khi zombie dẫm lên. Kẻ nhảy bật qua được. Đang có ${d.mines || 0}/${MINE.max}.`, `Laid in front of the barricade every night, explode when stepped on. Leapers jump over them. You have ${d.mines || 0}/${MINE.max}.`), price: MINE.price * 2, glyph: '✸', disabled: (d.mines || 0) + 2 > MINE.max });
       } else if (k === 'wire') {
         const wl = d.wireLevel || 0;
-        if (wl < 2) out.push({ id: 'wire', title: `Dây thép gai · cấp ${wl + 1}`, desc: `Zombie sát rào bị làm chậm ${Math.round((1 - WIRE.slow[wl + 1]) * 100)}% và bị cứa liên tục.`, price: WIRE.prices[wl], glyph: '✕' });
+        if (wl < 2) out.push({ id: 'wire', title: L(`Dây thép gai · cấp ${wl + 1}`, `Barbed wire · level ${wl + 1}`), desc: L(`Zombie sát rào bị làm chậm ${Math.round((1 - WIRE.slow[wl + 1]) * 100)}% và bị cứa liên tục.`, `Zombies near the barricade are slowed by ${Math.round((1 - WIRE.slow[wl + 1]) * 100)}% and constantly cut.`), price: WIRE.prices[wl], glyph: '✕' });
       } else if (k === 'floodlight') {
-        if (!d.floodlight) out.push({ id: 'floodlight', title: 'Đèn pha chiến trường', desc: 'Đêm mất điện vẫn nhìn rõ quanh hàng rào và điểm ngắm.', price: FLOODLIGHT_PRICE, glyph: '☀' });
+        if (!d.floodlight) out.push({ id: 'floodlight', title: L('Đèn pha chiến trường', 'Field floodlight'), desc: L('Đêm mất điện vẫn nhìn rõ quanh hàng rào và điểm ngắm.', 'See clearly around the barricade and your aim point on blackout nights.'), price: FLOODLIGHT_PRICE, glyph: '☀' });
       } else if (k === 'shocker') {
         const sl = d.shockerLevel || 0;
-        if (sl < 2) out.push({ id: 'shocker', title: sl ? 'Nâng cấp bẫy điện · cấp 2' : 'Bẫy điện', desc: `Tấm điện đặt xa phía trước rào, phóng điện định kỳ vào tối đa ${SHOCKER.maxHit[sl + 1]} con gần nhất trong vùng, làm tê liệt trong chốc lát. Trùm không bị tê liệt.`, stats: `ST ${SHOCKER.dmg[sl + 1]} · mỗi ${SHOCKER.every[sl + 1]} giây`, price: SHOCKER.prices[sl], glyph: 'ϟ', tag: sl ? '' : 'MỚI' });
+        if (sl < 2) out.push({ id: 'shocker', title: sl ? L('Nâng cấp bẫy điện · cấp 2', 'Upgrade electric trap · level 2') : L('Bẫy điện', 'Electric trap'), desc: L(`Tấm điện đặt xa phía trước rào, phóng điện định kỳ vào tối đa ${SHOCKER.maxHit[sl + 1]} con gần nhất trong vùng, làm tê liệt trong chốc lát. Trùm không bị tê liệt.`, `Electric plates far in front of the barricade zap up to ${SHOCKER.maxHit[sl + 1]} of the nearest zombies in the zone, stunning them briefly. Bosses are not stunned.`), stats: L(`ST ${SHOCKER.dmg[sl + 1]} · mỗi ${SHOCKER.every[sl + 1]} giây`, `DMG ${SHOCKER.dmg[sl + 1]} · every ${SHOCKER.every[sl + 1]}s`), price: SHOCKER.prices[sl], glyph: 'ϟ', tag: sl ? '' : L('MỚI', 'NEW') });
       } else if (k === 'flameTurret') {
-        if (!d.flameTurret) out.push({ id: 'flameTurret', title: 'Tháp phun lửa', desc: 'Phun lửa vào mọi con lại gần rào, đốt cháy theo thời gian. Kẻ cháy miễn nhiễm.', stats: `tầm ${FLAME_TURRET.range}px · đốt ${FLAME_TURRET.burn}/giây`, price: FLAME_TURRET.price, glyph: '♨', tag: 'MỚI' });
+        if (!d.flameTurret) out.push({ id: 'flameTurret', title: L('Tháp phun lửa', 'Flame turret'), desc: L('Phun lửa vào mọi con lại gần rào, đốt cháy theo thời gian. Kẻ cháy miễn nhiễm.', 'Sprays fire at everything near the barricade, burning over time. Burners are immune.'), stats: L(`tầm ${FLAME_TURRET.range}px · đốt ${FLAME_TURRET.burn}/giây`, `range ${FLAME_TURRET.range}px · burn ${FLAME_TURRET.burn}/s`), price: FLAME_TURRET.price, glyph: '♨', tag: L('MỚI', 'NEW') });
       } else if (k === 'mortar') {
         const ml = d.mortarLevel || 0;
-        if (ml < 2) out.push({ id: 'mortar', title: ml ? 'Nâng cấp súng cối · cấp 2' : 'Súng cối tự động', desc: 'Tự bắn đạn nổ vào chỗ bầy đàn đông nhất ở xa.', stats: `ST ${MORTAR.dmg[ml + 1]} · mỗi ${MORTAR.every[ml + 1]} giây`, price: MORTAR.prices[ml], glyph: '☄', tag: ml ? '' : 'MỚI' });
+        if (ml < 2) out.push({ id: 'mortar', title: ml ? L('Nâng cấp súng cối · cấp 2', 'Upgrade mortar · level 2') : L('Súng cối tự động', 'Auto mortar'), desc: L('Tự bắn đạn nổ vào chỗ bầy đàn đông nhất ở xa.', 'Shells the densest group of zombies at range.'), stats: L(`ST ${MORTAR.dmg[ml + 1]} · mỗi ${MORTAR.every[ml + 1]} giây`, `DMG ${MORTAR.dmg[ml + 1]} · every ${MORTAR.every[ml + 1]}s`), price: MORTAR.prices[ml], glyph: '☄', tag: ml ? '' : L('MỚI', 'NEW') });
       } else if (k === 'teslaTower') {
         const t2 = d.teslaLevel || 0;
-        if (t2 < 2) out.push({ id: 'teslaTower', title: t2 ? 'Nâng cấp tháp Tesla · cấp 2' : 'Tháp Tesla', desc: 'Sét nhảy qua 5 con gần nhau. Xuyên giáp, xuyên khiên.', stats: `ST ${TESLA_TOWER.dmg[t2 + 1]} · mỗi ${TESLA_TOWER.every[t2 + 1]} giây`, price: TESLA_TOWER.prices[t2], glyph: '⚡', tag: t2 ? '' : 'MỚI' });
+        if (t2 < 2) out.push({ id: 'teslaTower', title: t2 ? L('Nâng cấp tháp Tesla · cấp 2', 'Upgrade tesla tower · level 2') : L('Tháp Tesla', 'Tesla tower'), desc: L('Sét nhảy qua 5 con gần nhau. Xuyên giáp, xuyên khiên.', 'Lightning jumps through nearby zombies. Ignores armor and shields.'), stats: L(`ST ${TESLA_TOWER.dmg[t2 + 1]} · mỗi ${TESLA_TOWER.every[t2 + 1]} giây`, `DMG ${TESLA_TOWER.dmg[t2 + 1]} · every ${TESLA_TOWER.every[t2 + 1]}s`), price: TESLA_TOWER.prices[t2], glyph: '⚡', tag: t2 ? '' : L('MỚI', 'NEW') });
       } else if (k === 'saw') {
         const v = d.sawLevel || 0;
-        if (v < 2) out.push({ id: 'saw', title: v ? 'Nâng cấp lưỡi cưa · cấp 2' : 'Lưỡi cưa quay', desc: 'Ba lưỡi cưa xoay sát chân rào, cứa liên tục vào chân mọi con lại gần. Hay cắt đứt chân, biến chúng thành kẻ bò.', stats: `${SAW.dps[v + 1]} sát thương/giây`, price: SAW.prices[v], glyph: '✲', tag: v ? '' : 'MỚI' });
+        if (v < 2) out.push({ id: 'saw', title: v ? L('Nâng cấp lưỡi cưa · cấp 2', 'Upgrade saw blades · level 2') : L('Lưỡi cưa quay', 'Spinning saws'), desc: L('Ba lưỡi cưa xoay sát chân rào, cứa liên tục vào chân mọi con lại gần. Hay cắt đứt chân, biến chúng thành kẻ bò.', 'Three spinning blades at the foot of the barricade slice the legs of anything that gets close. Often cuts legs off, turning them into crawlers.'), stats: L(`${SAW.dps[v + 1]} sát thương/giây`, `${SAW.dps[v + 1]} damage/s`), price: SAW.prices[v], glyph: '✲', tag: v ? '' : L('MỚI', 'NEW') });
       } else if (k === 'sniperNest') {
         const v = d.sniperLevel || 0;
-        if (v < 2) out.push({ id: 'sniperNest', title: v ? 'Nâng cấp ổ bắn tỉa · cấp 2' : 'Ổ bắn tỉa tự động', desc: 'Súng bắn tỉa gắn ống ngắm nhiệt trên mái nhà. Ưu tiên hạ con to và nguy hiểm nhất, đạn xuyên 3 con.', stats: `ST ${SNIPER_NEST.dmg[v + 1]} · mỗi ${SNIPER_NEST.every[v + 1]} giây`, price: SNIPER_NEST.prices[v], glyph: '⌖', tag: v ? '' : 'MỚI' });
+        if (v < 2) out.push({ id: 'sniperNest', title: v ? L('Nâng cấp ổ bắn tỉa · cấp 2', 'Upgrade sniper nest · level 2') : L('Ổ bắn tỉa tự động', 'Auto sniper nest'), desc: L('Súng bắn tỉa gắn ống ngắm nhiệt trên mái nhà. Ưu tiên hạ con to và nguy hiểm nhất, đạn xuyên 3 con.', 'A thermal-scoped sniper rifle on the wall. Targets the biggest, most dangerous zombie first; rounds pierce 3.'), stats: L(`ST ${SNIPER_NEST.dmg[v + 1]} · mỗi ${SNIPER_NEST.every[v + 1]} giây`, `DMG ${SNIPER_NEST.dmg[v + 1]} · every ${SNIPER_NEST.every[v + 1]}s`), price: SNIPER_NEST.prices[v], glyph: '⌖', tag: v ? '' : L('MỚI', 'NEW') });
       } else if (k === 'gas') {
         const v = d.gasLevel || 0;
-        if (v < 2) out.push({ id: 'gas', title: v ? 'Nâng cấp máy phóng khí độc · cấp 2' : 'Máy phóng khí độc', desc: 'Bắn bình khí độc vào chỗ bầy đàn đông nhất. Đám mây làm chậm và ăn mòn mọi con bên trong vài giây.', stats: `${GAS.dps[v + 1]} sát thương/giây · mỗi ${GAS.every[v + 1]} giây`, price: GAS.prices[v], glyph: '☁', tag: v ? '' : 'MỚI' });
+        if (v < 2) out.push({ id: 'gas', title: v ? L('Nâng cấp máy phóng khí độc · cấp 2', 'Upgrade gas launcher · level 2') : L('Máy phóng khí độc', 'Gas launcher'), desc: L('Bắn bình khí độc vào chỗ bầy đàn đông nhất. Đám mây làm chậm và ăn mòn mọi con bên trong vài giây.', 'Lobs gas canisters into the densest group. The cloud slows and corrodes everything inside for a few seconds.'), stats: L(`${GAS.dps[v + 1]} sát thương/giây · mỗi ${GAS.every[v + 1]} giây`, `${GAS.dps[v + 1]} damage/s · every ${GAS.every[v + 1]}s`), price: GAS.prices[v], glyph: '☁', tag: v ? '' : L('MỚI', 'NEW') });
       } else if (k === 'rocket') {
         const v = d.rocketLevel || 0;
-        if (v < 2) out.push({ id: 'rocket', title: v ? 'Nâng cấp giàn tên lửa · cấp 2' : 'Giàn tên lửa', desc: 'Phóng cả loạt tên lửa nhỏ vào những con ở xa, mỗi quả nổ một vùng nhỏ.', stats: `${ROCKET.salvo[v + 1]} quả × ST ${ROCKET.dmg[v + 1]} · mỗi ${ROCKET.every[v + 1]} giây`, price: ROCKET.prices[v], glyph: '➶', tag: v ? '' : 'MỚI' });
+        if (v < 2) out.push({ id: 'rocket', title: v ? L('Nâng cấp giàn tên lửa · cấp 2', 'Upgrade rocket pod · level 2') : L('Giàn tên lửa', 'Rocket pod'), desc: L('Phóng cả loạt tên lửa nhỏ vào những con ở xa, mỗi quả nổ một vùng nhỏ.', 'Fires a salvo of small rockets at distant zombies, each with a small blast.'), stats: L(`${ROCKET.salvo[v + 1]} quả × ST ${ROCKET.dmg[v + 1]} · mỗi ${ROCKET.every[v + 1]} giây`, `${ROCKET.salvo[v + 1]} × DMG ${ROCKET.dmg[v + 1]} · every ${ROCKET.every[v + 1]}s`), price: ROCKET.prices[v], glyph: '➶', tag: v ? '' : L('MỚI', 'NEW') });
       } else if (k === 'drone') {
-        if ((d.drones || 0) < DRONE.max) out.push({ id: 'drone', title: `Drone chiến đấu #${(d.drones || 0) + 1}`, desc: 'Bay lượn trên chiến trường, bắn con gần nhất. Hết băng thì tự nạp.', stats: `ST ${DRONE.dmg} · băng ${DRONE.mag}`, price: DRONE.price, glyph: '✈', tag: 'MỚI' });
+        if ((d.drones || 0) < DRONE.max) out.push({ id: 'drone', title: L(`Drone chiến đấu #${(d.drones || 0) + 1}`, `Combat drone #${(d.drones || 0) + 1}`), desc: L('Bay lượn trên chiến trường, bắn con gần nhất. Hết băng thì tự nạp.', 'Hovers over the battlefield shooting the nearest zombie. Reloads by itself.'), stats: L(`ST ${DRONE.dmg} · băng ${DRONE.mag}`, `DMG ${DRONE.dmg} · mag ${DRONE.mag}`), price: DRONE.price, glyph: '✈', tag: L('MỚI', 'NEW') });
       }
     }
     if (hasPerk(d, 'son')) for (const it of out) it.price = Math.round(it.price * 0.8);
-    if (!out.length) out.push({ id: 'none', title: 'Đã dựng hết công trình của chương này', desc: 'Sang chương mới sẽ có công trình phòng thủ khác.', price: 0, glyph: '✓', disabled: true });
+    if (!out.length) out.push({ id: 'none', title: L('Đã dựng hết công trình của chương này', 'All defenses for this chapter are built'), desc: L('Sang chương mới sẽ có công trình phòng thủ khác.', 'A new chapter brings different defenses.'), price: 0, glyph: '✓', disabled: true });
     return out;
   }
 
@@ -835,6 +847,15 @@ export class UI {
     this.renderDay();
   }
 
+  // tóm tắt đêm vừa qua
+  recap(info) {
+    const hurt = info.injured?.length ? info.injured.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ') : '';
+    if (getLang() === 'en') {
+      return `Night ${info.night}: killed <b>${info.kills}</b> zombies (${info.headshots} headshots), best streak <b>${info.bestStreak}</b>, earned <b>$${info.earned}</b> + survival bonus <b>$${info.bonus}</b>${info.campIncome ? ` + camp <b>$${info.campIncome}</b>` : ''}${info.eat ? `, the group ate <b>${info.eat}</b> cans` : ''}${info.hungry ? ' <span class="hurt-txt">· OUT OF FOOD, EVERYONE IS HUNGRY</span>' : ''}${info.crates ? `, opened <b>${info.crates}</b> supply crates` : ''}${info.extraGrenade ? ', Hung found 1 extra grenade' : ''}.${hurt ? ` <span class="hurt-txt">${hurt} injured.</span>` : ''}`;
+    }
+    return `Đêm ${info.night}: hạ <b>${info.kills}</b> zombie (${info.headshots} headshot), chuỗi dài nhất <b>${info.bestStreak}</b>, kiếm <b>$${info.earned}</b> + thưởng sống sót <b>$${info.bonus}</b>${info.campIncome ? ` + trại <b>$${info.campIncome}</b>` : ''}${info.eat ? `, cả nhóm ăn <b>${info.eat}</b> hộp` : ''}${info.hungry ? ' <span class="hurt-txt">· HẾT ĐỒ ĂN, CẢ NHÓM ĐANG ĐÓI</span>' : ''}${info.crates ? `, mở <b>${info.crates}</b> thùng tiếp tế` : ''}${info.extraGrenade ? ', Hùng nhặt thêm 1 lựu đạn' : ''}.${hurt ? ` <span class="hurt-txt">${hurt} bị thương.</span>` : ''}`;
+  }
+
   renderDay() {
     const d = this.game.data;
     const max = barricadeMax(d.barricadeLevel);
@@ -850,7 +871,7 @@ export class UI {
     const dots = campaign ? `<div class="night-track">${Array.from({ length: ACT_LENGTH }, (_, i) => {
       const n = actStart + i + 1;
       const cls = n < d.night ? 'done' : n === d.night ? 'next' : '';
-      return `<span class="${cls}${isBossNight(n) ? ' boss' : ''}" title="Đêm ${n}"></span>`;
+      return `<span class="${cls}${isBossNight(n) ? ' boss' : ''}" title="${L('Đêm', 'Night')} ${n}"></span>`;
     }).join('')}<em>${['', '🚁', '🚢', '🏔', '📡', '🚚', '🏥', '🏭', '✈', '🌲', '🗼'][act]}</em></div>` : '';
 
     const radioLines = storyFor(DAWN_LOG[d.night - 1], d.met || []);
@@ -859,29 +880,29 @@ export class UI {
     const mods = modsFor(d.night);
     const modList = Object.keys(MOD_INFO).filter((k) => mods[k]);
     const wv = waveFor(d.night);
-    const graceInfo = wv.grace ? `<div><b>🌱 Khởi động màn mới (đêm ${wv.local}/3)</b> Zombie yếu hơn, ít quái nặng, không có tinh nhuệ. Tiền thưởng ×1,4 để kịp mua súng.</div>` : '';
-    const forecast = modList.length || graceInfo ? `<div class="forecast"><span class="radio-tag">DỰ BÁO ĐÊM NAY</span>${graceInfo}${modList.map((k) => `<div><b>${MOD_INFO[k].icon} ${MOD_INFO[k].name}${k === 'airdrops' ? ` ×${mods.airdrops}` : ''}</b> ${MOD_INFO[k].desc}</div>`).join('')}</div>` : '';
+    const graceInfo = wv.grace ? L(`<div><b>🌱 Khởi động màn mới (đêm ${wv.local}/3)</b> Zombie yếu hơn, ít quái nặng, không có tinh nhuệ. Tiền thưởng ×1,4 để kịp mua súng.</div>`, `<div><b>🌱 New stage warm-up (night ${wv.local}/3)</b> Weaker zombies, fewer heavies, no elites. Rewards ×1.4 so you can afford guns.</div>`) : '';
+    const forecast = modList.length || graceInfo ? `<div class="forecast"><span class="radio-tag">${L('DỰ BÁO ĐÊM NAY', 'TONIGHT\'S FORECAST')}</span>${graceInfo}${modList.map((k) => `<div><b>${MOD_INFO[k].icon} ${MOD_INFO[k].name}${k === 'airdrops' ? ` ×${mods.airdrops}` : ''}</b> ${MOD_INFO[k].desc}</div>`).join('')}</div>` : '';
     const hurtSquad = d.squad.filter((id) => d.mates[id]?.injured > 0);
     const openSlots = MAX_SQUAD - d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length;
     const bench = d.crew.filter((id) => !d.squad.includes(id) && !(d.mates[id]?.injured > 0));
-    const foodWarn = (d.food || 0) < this.eatPerDay() ? `<div class="warn">🥫 Đồ ăn không đủ cho sáng mai (cần ${this.eatPerDay()}, còn ${d.food || 0}). Hãy lục lọi hoặc mua đồ hộp, nếu không cả nhóm sẽ đói.</div>` : '';
+    const foodWarn = (d.food || 0) < this.eatPerDay() ? L(`<div class="warn">🥫 Đồ ăn không đủ cho sáng mai (cần ${this.eatPerDay()}, còn ${d.food || 0}). Hãy lục lọi hoặc mua đồ hộp, nếu không cả nhóm sẽ đói.</div>`, `<div class="warn">🥫 Not enough food for tomorrow morning (need ${this.eatPerDay()}, have ${d.food || 0}). Scavenge or buy canned food, or the group will go hungry.</div>`) : '';
     const th = d.threat || 1;
-    const thInfo = info && info.threat !== undefined ? (info.threat > info.threatBefore ? ` Đêm qua rào chỉ mất ${info.dmgPct}% nên bầy đàn đang mạnh lên.` : info.threat < info.threatBefore ? ` Đêm qua rào mất ${info.dmgPct}%, bầy đàn nới tay một chút.` : '') : '';
-    const threatWarn = th > 1.05 || (info && info.threat !== info.threatBefore) ? `<div class="warn${th >= 1.6 ? '' : ' soft'}">☠ Mức đe doạ <b>${th.toFixed(2)}×</b>: zombie nhiều máu hơn, đông hơn, dồn dập hơn.${thInfo}</div>` : '';
-    const resetWarn = d.upgradeReset ? '<div class="warn soft">⚙ Màn mới, bắt đầu lại tay trắng: chỉ còn súng lục, $300, 2 lựu đạn, 8 hộp đồ ăn. Súng, đạn, nâng cấp, hàng rào, đồng đội và công trình phòng thủ đều phải làm lại.</div>'
-      : d.chapterReset ? `<div class="warn soft">⚙ Chương mới, chỗ ở mới: hàng rào phải dựng lại từ đầu (mất hết cấp gia cố), đồng đội và công trình phòng thủ cũng vậy. Súng, đạn và tiền vẫn giữ nguyên.${d.salvage ? ` Vật liệu tháo từ hàng rào cũ bán được <b>$${d.salvage}</b>.` : ''} Hai đêm đầu bầy đàn sẽ thưa hơn.</div>` : '';
+    const thInfo = info && info.threat !== undefined ? (info.threat > info.threatBefore ? L(` Đêm qua rào chỉ mất ${info.dmgPct}% nên bầy đàn đang mạnh lên.`, ` The barricade only lost ${info.dmgPct}% last night, so the horde is getting stronger.`) : info.threat < info.threatBefore ? L(` Đêm qua rào mất ${info.dmgPct}%, bầy đàn nới tay một chút.`, ` The barricade lost ${info.dmgPct}% last night, so the horde eases off a little.`) : '') : '';
+    const threatWarn = th > 1.05 || (info && info.threat !== info.threatBefore) ? `<div class="warn${th >= 1.6 ? '' : ' soft'}">☠ ${L('Mức đe doạ', 'Threat level')} <b>${th.toFixed(2)}×</b>: ${L('zombie nhiều máu hơn, đông hơn, dồn dập hơn.', 'zombies are tougher, more numerous and more relentless.')}${thInfo}</div>` : '';
+    const resetWarn = d.upgradeReset ? L('<div class="warn soft">⚙ Màn mới, bắt đầu lại tay trắng: chỉ còn súng lục, $300, 2 lựu đạn, 8 hộp đồ ăn. Súng, đạn, nâng cấp, hàng rào, đồng đội và công trình phòng thủ đều phải làm lại.</div>', '<div class="warn soft">⚙ New stage, starting from scratch: just a pistol, $300, 2 grenades and 8 cans of food. Guns, ammo, upgrades, barricade, companions and defenses all start over.</div>')
+      : d.chapterReset ? L(`<div class="warn soft">⚙ Chương mới, chỗ ở mới: hàng rào phải dựng lại từ đầu (mất hết cấp gia cố), đồng đội và công trình phòng thủ cũng vậy. Súng, đạn và tiền vẫn giữ nguyên.${d.salvage ? ` Vật liệu tháo từ hàng rào cũ bán được <b>$${d.salvage}</b>.` : ''} Hai đêm đầu bầy đàn sẽ thưa hơn.</div>`, `<div class="warn soft">⚙ New chapter, new place: the barricade is rebuilt from scratch (all reinforcement levels lost), and so are companions and defenses. Guns, ammo and cash are kept.${d.salvage ? ` Materials salvaged from the old barricade sold for <b>$${d.salvage}</b>.` : ''} The horde is thinner for the first two nights.</div>`) : '';
     const squadWarn = hurtSquad.length && bench.length && openSlots > 0
-      ? `<div class="warn">🩹 ${hurtSquad.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} đang bị thương. Mở tab Đồng đội để đưa người khác lên thay.</div>` : '';
-    const warn = (isBossNight(d.night) ? `<div class="warn">⚠ Đêm nay có trăng máu: ${ZOMBIES[bossTypeFor(d.night)].name} sẽ xuất hiện.</div>` : '')
-      + (newFoe && !d.endless ? `<div class="warn soft">Loại mới đêm nay: ${ZOMBIES[newFoe].name}.</div>` : '');
+      ? `<div class="warn">🩹 ${hurtSquad.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} ${L('đang bị thương. Mở tab Đồng đội để đưa người khác lên thay.', 'injured. Open the Crew tab to swap someone else in.')}</div>` : '';
+    const warn = (isBossNight(d.night) ? L(`<div class="warn">⚠ Đêm nay có trăng máu: ${ZOMBIES[bossTypeFor(d.night)].name} sẽ xuất hiện.</div>`, `<div class="warn">⚠ Blood moon tonight: ${ZOMBIES[bossTypeFor(d.night)].name} will appear.</div>`) : '')
+      + (newFoe && !d.endless ? L(`<div class="warn soft">Loại mới đêm nay: ${ZOMBIES[newFoe].name}.</div>`, `<div class="warn soft">New enemy tonight: ${ZOMBIES[newFoe].name}.</div>`) : '');
 
     const row = (k, label, hint) => `
       <div class="hour-row">
         <div class="hour-label">${label}<small>${hint}</small></div>
         <div class="stepper">
-          <button data-act="hour" data-arg="${k}:-" ${this.dayDone || !this.alloc[k] ? 'disabled' : ''} aria-label="Bớt">−</button>
+          <button data-act="hour" data-arg="${k}:-" ${this.dayDone || !this.alloc[k] ? 'disabled' : ''} aria-label="Less">−</button>
           <span>${this.alloc[k]}<i>h</i></span>
-          <button data-act="hour" data-arg="${k}:+" ${this.dayDone || used >= this.dayHours() ? 'disabled' : ''} aria-label="Thêm">+</button>
+          <button data-act="hour" data-arg="${k}:+" ${this.dayDone || used >= this.dayHours() ? 'disabled' : ''} aria-label="More">+</button>
         </div>
       </div>`;
     const hourDots = Array.from({ length: this.dayHours() }, (_, i) => {
@@ -896,27 +917,27 @@ export class UI {
     if (this.shopTab === 'crew') {
       const onWall = d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length;
       const curAct = actFor(d.night);
-      shopBody = `<div class="squad-head">Trên hàng rào: <b>${onWall}/${MAX_SQUAD}</b> · Người ở trại kiếm thêm ~$${Math.round(CAMP_INCOME * (1 + d.night * 0.04))} mỗi sáng · Khẩu phần ~$${Math.round(UPKEEP * diffOf(d).upkeep * (1 + d.night * 0.03))}/người/ngày · Bị thương phải nghỉ vài đêm</div>`
+      shopBody = L(`<div class="squad-head">Trên hàng rào: <b>${onWall}/${MAX_SQUAD}</b> · Người ở trại kiếm thêm ~$${Math.round(CAMP_INCOME * (1 + d.night * 0.04))} mỗi sáng · Bị thương phải nghỉ vài đêm</div>`, `<div class="squad-head">On the barricade: <b>${onWall}/${MAX_SQUAD}</b> · Each person in camp earns ~$${Math.round(CAMP_INCOME * (1 + d.night * 0.04))} every morning · Injured people rest a few nights</div>`)
       + SURVIVORS.filter((s) => d.crew.includes(s.id) || (!d.endless && s.act === curAct)).map((s) => {
         const has = d.crew.includes(s.id);
         if (!has) {
           return `<div class="crew-card unknown"><div class="crew-unknown">?</div>
-            <div><b>Chưa tìm thấy</b><span>Dành thời gian tìm người sống sót vào ban ngày.</span></div></div>`;
+            <div><b>${L('Chưa tìm thấy', 'Not found yet')}</b><span>${L('Dành thời gian tìm người sống sót vào ban ngày.', 'Spend daytime hours searching for survivors.')}</span></div></div>`;
         }
         const m = d.mates[s.id] || { xp: 0, injured: 0 };
         const lv = mateLevel(m.xp);
         const nextXp = MATE_XP[lv] ?? null;
         const inSquad = d.squad.includes(s.id);
         const hurt = m.injured > 0;
-        const status = hurt ? `<em class="st hurt">Bị thương · nghỉ ${m.injured} đêm</em>` : inSquad ? '<em class="st wall">Trên hàng rào</em>' : '<em class="st camp">Ở trại</em>';
+        const status = hurt ? `<em class="st hurt">${L(`Bị thương · nghỉ ${m.injured} đêm`, `Injured · resting ${m.injured} night${m.injured > 1 ? 's' : ''}`)}</em>` : inSquad ? `<em class="st wall">${L('Trên hàng rào', 'On the barricade')}</em>` : `<em class="st camp">${L('Ở trại', 'In camp')}</em>`;
         return `<div class="crew-card${hurt ? ' hurt' : ''}">
           <img src="${portrait(s)}" alt="">
           <div class="crew-main">
             <b>${s.name} · ${s.role} <i class="stars">${'★'.repeat(lv)}<span class="off">${'★'.repeat(3 - lv)}</span></i></b>
             <span>${s.perk}</span>
-            <small>${status} · ${WEAPONS[s.weapon].name} · ${nextXp ? `${m.xp}/${nextXp} XP` : 'cấp tối đa'}</small>
+            <small>${status} · ${WEAPONS[s.weapon].name} · ${nextXp ? `${m.xp}/${nextXp} XP` : L('cấp tối đa', 'max level')}</small>
           </div>
-          <button class="squad-btn${inSquad ? ' on' : ''}" data-act="squad" data-arg="${s.id}" ${hurt && !inSquad ? 'disabled' : ''}>${inSquad ? 'Về trại' : 'Ra trận'}</button>
+          <button class="squad-btn${inSquad ? ' on' : ''}" data-act="squad" data-arg="${s.id}" ${hurt && !inSquad ? 'disabled' : ''}>${inSquad ? L('Về trại', 'To camp') : L('Ra trận', 'Deploy')}</button>
         </div>`;
       }).join('');
     } else {
@@ -936,45 +957,45 @@ export class UI {
       <div class="screen day ${this.fadeDay === false ? '' : 'fade-in'}">
         <header class="day-header">
           <div class="day-title">
-            <div class="eyebrow">${campaign ? `Màn ${stageFor(d.night)} · Chương ${act} · ${ACT_NAMES[act]} · còn ${act * ACT_LENGTH - d.night + 1} đêm` : 'Ban ngày · chế độ vô tận'}</div>
-            <h2>${campaign ? `Chuẩn bị cho Đêm ${d.night - (stageFor(d.night) - 1) * STAGE_LENGTH}/${STAGE_LENGTH}` : `Chuẩn bị cho Đêm ${d.night}`}</h2>
+            <div class="eyebrow">${campaign ? L(`Màn ${stageFor(d.night)} · Chương ${act} · ${ACT_NAMES[act]} · còn ${act * ACT_LENGTH - d.night + 1} đêm`, `Stage ${stageFor(d.night)} · Chapter ${act} · ${ACT_NAMES[act]} · ${act * ACT_LENGTH - d.night + 1} night${act * ACT_LENGTH - d.night + 1 > 1 ? 's' : ''} left`) : L('Ban ngày · chế độ vô tận', 'Daytime · endless mode')}</div>
+            <h2>${L('Chuẩn bị cho Đêm', 'Prepare for Night')} ${campaign ? `${d.night - (stageFor(d.night) - 1) * STAGE_LENGTH}/${STAGE_LENGTH}` : d.night}</h2>
             ${dots}
           </div>
           <div class="stats">
-            <div class="stat cash"><b>$${d.cash}</b><span>tiền</span></div>
-            <div class="stat${(d.food || 0) < this.eatPerDay() ? ' low' : ''}"><b>🥫 ${d.food || 0}</b><span>đồ hộp · ăn ${this.eatPerDay()}/ngày</span></div>
-            <div class="stat"><b>${Math.ceil(d.hp)}<i>/${max}</i></b><span>hàng rào</span></div>
-            <div class="stat"><b>${d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length}<i>/${MAX_SQUAD}</i></b><span>trên rào · ${d.crew.length} người</span></div>
+            <div class="stat cash"><b>$${d.cash}</b><span>${L('tiền', 'cash')}</span></div>
+            <div class="stat${(d.food || 0) < this.eatPerDay() ? ' low' : ''}"><b>🥫 ${d.food || 0}</b><span>${L(`đồ hộp · ăn ${this.eatPerDay()}/ngày`, `cans · eat ${this.eatPerDay()}/day`)}</span></div>
+            <div class="stat"><b>${Math.ceil(d.hp)}<i>/${max}</i></b><span>${L('hàng rào', 'barricade')}</span></div>
+            <div class="stat"><b>${d.squad.filter((id) => !(d.mates[id]?.injured > 0)).length}<i>/${MAX_SQUAD}</i></b><span>${L(`trên rào · ${d.crew.length} người`, `on wall · ${d.crew.length} crew`)}</span></div>
           </div>
         </header>
         <div class="day-body">
           <section class="panel plan">
-            ${info ? `<div class="recap">Đêm ${info.night}: hạ <b>${info.kills}</b> zombie (${info.headshots} headshot), chuỗi dài nhất <b>${info.bestStreak}</b>, kiếm <b>$${info.earned}</b> + thưởng sống sót <b>$${info.bonus}</b>${info.campIncome ? ` + trại <b>$${info.campIncome}</b>` : ''}${info.eat ? `, cả nhóm ăn <b>${info.eat}</b> hộp` : ''}${info.hungry ? ' <span class="hurt-txt">· HẾT ĐỒ ĂN, CẢ NHÓM ĐANG ĐÓI</span>' : ''}${info.crates ? `, mở <b>${info.crates}</b> thùng tiếp tế` : ''}${info.extraGrenade ? ', Hùng nhặt thêm 1 lựu đạn' : ''}.${info.injured?.length ? ` <span class="hurt-txt">${info.injured.map((id) => SURVIVORS.find((x) => x.id === id).name).join(', ')} bị thương.</span>` : ''}</div>` : ''}
-            ${radio ? `<div class="radio-card"><span class="radio-tag">${radio.who}</span>${esc(radio.text)}</div>` : ''}
+            ${info ? `<div class="recap">${this.recap(info)}</div>` : ''}
+            ${radio ? `<div class="radio-card"><span class="radio-tag">${whoLabel(radio.who)}</span>${esc(radio.text)}</div>` : ''}
             ${resetWarn}${threatWarn}${warn}${foodWarn}${squadWarn}${forecast}
-            <h3>${this.dayDone ? 'Kết quả trong ngày' : 'Kế hoạch ban ngày'} <small>${this.dayDone ? 'Đã hết giờ' : `${this.dayHours() - used} giờ còn lại`}</small></h3>
+            <h3>${this.dayDone ? L('Kết quả trong ngày', 'Today\'s results') : L('Kế hoạch ban ngày', 'Day plan')} <small>${this.dayDone ? L('Đã hết giờ', 'Out of time') : L(`${this.dayHours() - used} giờ còn lại`, `${this.dayHours() - used} hours left`)}</small></h3>
             <div class="hour-dots">${hourDots}</div>
             ${this.dayDone
               ? `<ul class="day-log${this.animateLog ? ' animate' : ''}">${this.dayLog.map((l) => `<li><span>${l.icon}</span>${l.text}</li>`).join('')}</ul>`
-              : `${row('repair', '🔨 Sửa hàng rào', `+${Math.round(this.repairRate() * 100)}% độ bền mỗi giờ`)}
-            ${row('scav', '🎒 Lục lọi', 'Tiền, đạn, lựu đạn, may mắn có súng')}
-            ${row('search', '🔦 Tìm người sống sót', this.availableRecruits().length ? 'Khó tìm, thường mất nhiều ngày' : this.nextRecruitHint())}
-              <button class="primary wide" data-act="doDay" ${used ? '' : 'disabled'}>${used ? `Thực hiện kế hoạch (${used} giờ)` : 'Phân bổ ít nhất 1 giờ'}</button>`}
+              : `${row('repair', L('🔨 Sửa hàng rào', '🔨 Repair barricade'), L(`+${Math.round(this.repairRate() * 100)}% độ bền mỗi giờ`, `+${Math.round(this.repairRate() * 100)}% durability per hour`))}
+            ${row('scav', L('🎒 Lục lọi', '🎒 Scavenge'), L('Tiền, đạn, lựu đạn, may mắn có súng', 'Cash, ammo, grenades, maybe a gun'))}
+            ${row('search', L('🔦 Tìm người sống sót', '🔦 Search for survivors'), this.availableRecruits().length ? L('Khó tìm, thường mất nhiều ngày', 'Hard to find, often takes several days') : this.nextRecruitHint())}
+              <button class="primary wide" data-act="doDay" ${used ? '' : 'disabled'}>${used ? L(`Thực hiện kế hoạch (${used} giờ)`, `Carry out the plan (${used} h)`) : L('Phân bổ ít nhất 1 giờ', 'Assign at least 1 hour')}</button>`}
           </section>
           <section class="panel shop">
             <div class="tabs">
-              <button class="${this.shopTab === 'weapons' ? 'active' : ''}" data-act="tab" data-arg="weapons">Vũ khí</button>
-              <button class="${this.shopTab === 'gear' ? 'active' : ''}" data-act="tab" data-arg="gear">Trang bị</button>
-              <button class="${this.shopTab === 'defense' ? 'active' : ''}" data-act="tab" data-arg="defense">Phòng thủ</button>
-              <button class="${this.shopTab === 'crew' ? 'active' : ''}" data-act="tab" data-arg="crew">Đồng đội ${d.crew.length}${hurtSquad.length ? ' 🩹' : ''}</button>
+              <button class="${this.shopTab === 'weapons' ? 'active' : ''}" data-act="tab" data-arg="weapons">${L('Vũ khí', 'Weapons')}</button>
+              <button class="${this.shopTab === 'gear' ? 'active' : ''}" data-act="tab" data-arg="gear">${L('Trang bị', 'Gear')}</button>
+              <button class="${this.shopTab === 'defense' ? 'active' : ''}" data-act="tab" data-arg="defense">${L('Phòng thủ', 'Defense')}</button>
+              <button class="${this.shopTab === 'crew' ? 'active' : ''}" data-act="tab" data-arg="crew">${L('Đồng đội', 'Crew')} ${d.crew.length}${hurtSquad.length ? ' 🩹' : ''}</button>
             </div>
             <div class="shop-list">${shopBody}</div>
           </section>
         </div>
         <footer class="day-footer">
-          <button class="ghost" data-act="quit">Lưu & về menu</button>
+          <button class="ghost" data-act="quit">${L('Lưu & về menu', 'Save & quit')}</button>
           <button class="primary big" data-act="startNight" ${this.dayDone ? '' : 'disabled'}>
-            ${this.dayDone ? `Bắt đầu Đêm ${d.night} ☾` : 'Hãy dùng thời gian ban ngày trước'}
+            ${this.dayDone ? L(`Bắt đầu Đêm ${d.night} ☾`, `Start Night ${d.night} ☾`) : L('Hãy dùng thời gian ban ngày trước', 'Use your daytime first')}
           </button>
         </footer>
       </div>`;

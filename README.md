@@ -7,6 +7,12 @@ Viết bằng **HTML5 Canvas + JavaScript thuần** (không dùng engine), đón
 và **Capacitor** cho Android. Toàn bộ hình ảnh và âm thanh được vẽ / tổng hợp bằng code nên không
 cần file tài nguyên nào.
 
+## Ngôn ngữ
+
+Game có **tiếng Anh (mặc định)** và **tiếng Việt**. Chọn bằng hai lá cờ ở góc trên bên phải màn hình tiêu đề;
+lựa chọn được lưu lại cho lần sau. Toàn bộ giao diện, cốt truyện (`src/story_en.js`), tên súng, quái, đồng đội
+và chữ hiện trong trận đều được dịch. Phần chuyển ngôn ngữ nằm ở `src/i18n.js`.
+
 ## Cốt truyện
 
 Nhân vật chính là **Hoàn**, kỹ sư IT phụ trách máy chủ và mạng của đài phát thanh thị trấn Bến Sương: tóc đen dựng, luôn đeo

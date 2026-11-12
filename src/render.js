@@ -4,6 +4,7 @@ import { W, H, HORIZON as SCREEN_HZ, BARRICADE_BACK, BARRICADE_X, BARRICADE_TOP,
 const HORIZON = 420;
 const ART_SHIFT = HORIZON - SCREEN_HZ;
 import { roundRect } from './zombie.js';
+import { L } from './i18n.js';
 
 // PRNG cố định để nền giống nhau mỗi lần
 function seeded(seed) {
@@ -305,7 +306,7 @@ function drawDam(g, rnd) {
   g.fillStyle = '#24262c'; g.fillRect(0, 280, 74, 210);
   g.fillStyle = '#1a1b20'; g.fillRect(-4, 272, 84, 12);
   g.fillStyle = 'rgba(255,200,110,0.5)'; g.fillRect(14, 312, 30, 20);
-  g.fillStyle = '#d0b050'; g.font = 'bold 9px sans-serif'; g.fillText('HỒNG SƠN', 10, 300);
+  g.fillStyle = '#d0b050'; g.font = 'bold 9px sans-serif'; g.fillText(L("HỒNG SƠN", "HONG SON"), 10, 300);
 }
 
 function drawBase(g, rnd) {
@@ -383,7 +384,7 @@ function drawHighway(g, rnd) {
   // biển báo xanh
   g.fillStyle = '#1e5a3a'; g.fillRect(520, 248, 120, 40);
   g.strokeStyle = '#d8e8d8'; g.lineWidth = 1.5; g.strokeRect(523, 251, 114, 34);
-  g.fillStyle = '#e8f0e8'; g.font = 'bold 11px sans-serif'; g.fillText('THỦ ĐÔ', 534, 266); g.fillText('112 km  ↑', 534, 280);
+  g.fillStyle = '#e8f0e8'; g.font = 'bold 11px sans-serif'; g.fillText(L("THỦ ĐÔ", "CAPITAL"), 534, 266); g.fillText('112 km  ↑', 534, 280);
   g.fillStyle = '#1b1c26'; g.fillRect(578, 288, 4, 10);
   // xe bỏ hoang trên đường
   const cols = ['#3a2a2a', '#2a3040', '#3a3a30', '#2a2a2e', '#402a1e'];
@@ -438,7 +439,7 @@ function drawFactory(g, rnd) {
   }
   // biển nhà máy
   g.fillStyle = '#2a3a2e'; g.fillRect(560, 290, 140, 26);
-  g.fillStyle = '#d8e8d8'; g.font = 'bold 11px sans-serif'; g.fillText('NHÀ MÁY DƯỢC THÀNH NAM', 566, 307);
+  g.fillStyle = '#d8e8d8'; g.font = 'bold 11px sans-serif'; g.fillText(L("NHÀ MÁY DƯỢC THÀNH NAM", "THANH NAM PHARMA PLANT"), 566, 307);
   groundFill(g, '#2c2d2a', '#141412');
   g.strokeStyle = 'rgba(200,180,60,0.25)'; g.lineWidth = 3;
   for (let x = 260; x < W; x += 60) { g.beginPath(); g.moveTo(x, HORIZON + 50); g.lineTo(x + 30, HORIZON + 50); g.stroke(); }
@@ -514,7 +515,7 @@ function drawLighthouse(g, rnd) {
   g.fillStyle = '#20222a'; g.fillRect(320, HORIZON - 50, 160, 50);
   g.fillStyle = '#0a0b0e'; g.fillRect(370, HORIZON - 36, 60, 36);
   g.fillStyle = '#e8c040'; for (let x = 370; x < 430; x += 12) { g.beginPath(); g.moveTo(x, HORIZON - 40); g.lineTo(x + 6, HORIZON - 40); g.lineTo(x + 12, HORIZON - 36); g.lineTo(x + 6, HORIZON - 36); g.fill(); }
-  g.fillStyle = '#d8d8d0'; g.font = 'bold 10px sans-serif'; g.fillText('TRẠM HẢI ĐĂNG · KHU VỰC CẤM', 330, HORIZON - 56);
+  g.fillStyle = '#d8d8d0'; g.font = 'bold 10px sans-serif'; g.fillText(L("TRẠM HẢI ĐĂNG · KHU VỰC CẤM", "LIGHTHOUSE STATION · RESTRICTED"), 330, HORIZON - 56);
   // tủ máy chủ sau lưng người chơi
   for (let i = 0; i < 3; i++) { g.fillStyle = '#1e2228'; g.fillRect(6 + i * 40, 372, 34, 70); for (let k = 0; k < 6; k++) { g.fillStyle = rnd() < 0.5 ? 'rgba(90,220,140,0.8)' : 'rgba(255,90,60,0.8)'; g.fillRect(12 + i * 40, 380 + k * 10, 3, 3); } }
 }
@@ -935,7 +936,7 @@ export function drawCharacter(ctx, x, foot, ang, weaponId, len, recoil = 0, t = 
   } else if (C.outfit === 'press') { // áo gi-lê báo chí + máy quay
     ctx.fillStyle = C.accent;
     roundRect(ctx, bx - 1, top + 4, bw + 2, 30, 3); ctx.fill();
-    ctx.fillStyle = '#f0f0f0'; ctx.font = 'bold 4.2px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('BÁO CHÍ', x, top + 18);
+    ctx.fillStyle = '#f0f0f0'; ctx.font = 'bold 4.2px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(L("BÁO CHÍ", "PRESS"), x, top + 18);
     ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x - 9, top + 1); ctx.lineTo(x + 9, top + 30); ctx.stroke();
     ctx.fillStyle = '#1e1e22'; roundRect(ctx, x + 5, top + 26, 9, 7, 1.5); ctx.fill();
     ctx.fillStyle = '#5a8ad0'; ctx.beginPath(); ctx.arc(x + 12, top + 29.5, 2, 0, Math.PI * 2); ctx.fill();
