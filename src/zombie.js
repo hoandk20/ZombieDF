@@ -133,6 +133,10 @@ export class Zombie {
     this.hp = this.maxHp;
     this.speed = T.speed * rand(0.85, 1.15);
     this.foot = rand(LANE_MIN, LANE_MAX);
+    // con nhanh nhẹn đi lạng lách đổi làn, con thường thỉnh thoảng loạng choạng sang ngang
+    this.lane = null; // làn gốc, gán ở bước đi đầu tiên (nơi sinh ra có thể đặt lại foot)
+    this.weave = T.boss ? 0 : ['runner', 'dog', 'leaper', 'stalker', 'spawnling'].includes(type) ? rand(16, 30) : Math.random() < 0.35 ? rand(4, 10) : 0;
+    this.weavePh = rand(0, Math.PI * 2);
     this.x = W + 40 + rand(0, 60);
     this.demo = demo;
     this.targetX = T.ranged ? rand(470, 640) : T.screamer ? rand(540, 720) : T.bounty ? rand(360, 470) : BARRICADE_X + this.w / 2 + rand(-2, 10);
@@ -395,6 +399,10 @@ export class Zombie {
     if (this.state === 'walk') {
       // bò lết: mỗi lần tay bấu xuống thì kéo thân giật lên một đoạn
       this.x -= spd * dt * (this.legless ? 0.35 + 1.5 * Math.abs(Math.sin(this.phase)) : 1);
+      if (this.weave && !this.legless) {
+        if (this.lane === null) { this.lane = this.foot; this.weavePh = -this.x * 0.013; }
+        this.foot = Math.max(LANE_MIN, Math.min(LANE_MAX, this.lane + Math.sin(this.weavePh + this.x * 0.013) * this.weave));
+      }
       this.phase += dt * (2 + spd * 0.06);
       if (this.x <= this.targetX) {
         this.x = this.targetX;

@@ -130,6 +130,10 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 - **Mức đe doạ thích nghi:** hàng rào càng ít bị xây xước, đêm sau zombie càng nhiều máu, đông và dồn dập hơn;
   suýt thua thì bầy đàn nới tay. Từ đêm 8 có **zombie tinh nhuệ** (hào quang đỏ, gấp đôi máu, thưởng gấp đôi).
 - **Đẩy lùi theo khối lượng:** zombie càng to càng ít bị đẩy lùi; bị bắn liên tục thì kháng dần.
+- **Giật súng:** giữ cò thì nòng súng trôi dần lên trên và lệch sang hai bên (súng tự động trôi tới ~14°, súng bắn phát một giật mạnh mỗi phát).
+  Vạch đỏ đứt nét trên tâm ngắm chỉ hướng đạn thật: phải kéo tâm xuống để ghìm súng, hoặc nhả cò cho súng hồi lại.
+  Zombie nhanh (runner, chó, leaper, stalker, con non) lạng lách giữa các làn, một số zombie thường cũng đi xiêu vẹo,
+  nên không thể đặt tâm cố định một chỗ rồi xả đạn mà thắng.
 
 ## Đội hình đồng đội
 

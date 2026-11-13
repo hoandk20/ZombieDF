@@ -21,6 +21,8 @@ const MAX_PARTICLES = 700;
 const DISPLAY_FONT = 'Oswald, Impact, "Arial Narrow", sans-serif';
 const MENU_WEATHER = { rain: true, lightning: true, fog: 0.18, bloodMoon: false };
 
+// lực giật mỗi phát (radian)
+const KICK = { pistol: 0.028, shotgun: 0.06, smg: 0.011, rifle: 0.07, lmg: 0.009, flamer: 0.0025, launcher: 0.05, sniper: 0.09, tesla: 0.006, cryo: 0.0025, railgun: 0.1 };
 // sát thương đến từ công trình phòng thủ (để áp kỹ năng của Minh)
 const DEF_SRC = new Set(['turret', 'flame', 'tesla', 'drone', 'shock', 'saw', 'sniperNest', 'gas', 'wire']);
 
@@ -69,6 +71,7 @@ export class Game {
     this.rings = [];
     this.pfx = new PixelFx(); // hiệu ứng pixel art (pixelfx)
     this.lastSpark = 0;
+    this.climb = 0; this.wander = 0;
     this.onLang = () => { this.bgs = {}; this.bgsPix = {}; }; // đổi ngôn ngữ thì vẽ lại biển báo trên nền
     this.tracers = [];
     this.texts = [];
@@ -361,7 +364,7 @@ export class Game {
 
   aimAngle(aim = this.aim) {
     const a = Math.atan2(aim.y - SHOULDER.y, aim.x - SHOULDER.x);
-    return clamp(a, -1.1, 0.95);
+    return clamp(a - (this.climb || 0) + (this.wander || 0), -1.2, 0.95);
   }
 
   fire() {
@@ -374,13 +377,18 @@ export class Game {
     st.mag--;
     this.cooldown = w.rate;
     const ang = this.aimAngle();
-    const bloom = (w.auto && this.firing ? Math.min(this.recoil * 0.004, 0.04) : 0) + (this.data.hungry ? 0.02 : 0);
+    // xả liên tục: đạn toé rộng dần theo độ giật đã dồn
+    const bloom = (w.auto && this.firing ? Math.min(this.recoil * 0.004 + this.climb * 0.25, 0.07) : 0) + (this.data.hungry ? 0.02 : 0);
     if (w.flame) this.flame(ang, w);
     else if (w.explosive) this.launch(ang, w);
     else if (w.chain) this.tesla(ang, w);
     else this.shoot(ang, w, bloom, true);
     this.recoil = Math.min(10, this.recoil + 4 + w.shake);
     this.shake = Math.max(this.shake, w.shake);
+    // giật súng: nòng bị đẩy lên và lệch ngang; người chơi phải kéo tâm xuống để ghìm hoặc nhả cò cho súng hồi
+    const kick = KICK[w.id] ?? (w.auto ? 0.01 : 0.05);
+    this.climb = Math.min(w.auto ? 0.24 : 0.14, (this.climb || 0) + kick);
+    this.wander = clamp((this.wander || 0) + (Math.random() - 0.5) * kick * 1.4, -0.07, 0.07);
     sfx[w.id]();
     if (st.mag === 0) setTimeout(() => { if (this.state === 'night') this.startReload(); }, 150);
   }
@@ -980,6 +988,11 @@ export class Game {
     // vũ khí
     this.cooldown -= dt;
     this.recoil = Math.max(0, this.recoil - dt * 40);
+    { // hồi giật: đang xả súng tự động thì hồi rất chậm, nhả cò thì súng về vị trí nhanh
+      const holding = this.firing && this.weapon && this.weapon.auto && !(this.reloadT > 0);
+      this.climb = Math.max(0, (this.climb || 0) - dt * (holding ? 0.02 : 0.85));
+      this.wander = (this.wander || 0) * Math.max(0, 1 - dt * (holding ? 0.3 : 3));
+    }
     if (this.reloadT > 0) {
       this.reloadT -= dt;
       if (this.reloadT <= 0) { this.reloadT = 0; this.finishReload(); }
@@ -2204,6 +2217,13 @@ export class Game {
     }
     const reloading = this.reloadT > 0;
     const gap = 6 + this.recoil * 0.8 + this.weapon.spread * 60;
+    if ((this.climb || 0) > 0.015 || Math.abs(this.wander || 0) > 0.015) { // chấm đỏ: nơi đạn thực sự bay tới khi súng đang giật
+      const d = Math.hypot(x - SHOULDER.x, y - SHOULDER.y), a = this.aimAngle();
+      const rx = SHOULDER.x + Math.cos(a) * d, ry = SHOULDER.y + Math.sin(a) * d;
+      ctx.strokeStyle = 'rgba(255,90,70,0.55)'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(rx, ry); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#ff5a46'; ctx.fillRect(rx - 2, ry - 2, 4, 4);
+    }
     ctx.strokeStyle = reloading ? 'rgba(255,180,80,0.9)' : 'rgba(255,255,255,0.85)';
     ctx.lineWidth = 2;
     ctx.beginPath();
