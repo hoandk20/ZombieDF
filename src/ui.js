@@ -14,6 +14,7 @@ import {
 } from './story.js';
 import { setMet } from './cine.js';
 import { L, getLang, setLang, whoLabel } from './i18n.js';
+import { pixelState } from './pixel.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
 import { weaponIcon, heroPortrait, characterPortrait } from './render.js';
@@ -100,6 +101,7 @@ export class UI {
     setSoundEnabled(this.settings.sound);
     setMusicEnabled(this.settings.music);
     game.settings = this.settings;
+    pixelState.on = this.settings.pixel !== false;
     game.onState = (s, info) => this.onState(s, info);
     this.shopTab = 'weapons';
     root.addEventListener('click', (e) => {
@@ -179,6 +181,7 @@ export class UI {
         this.settings[arg] = !this.settings[arg];
         if (arg === 'sound') setSoundEnabled(this.settings.sound);
         if (arg === 'music') setMusicEnabled(this.settings.music);
+        if (arg === 'pixel') pixelState.on = this.settings.pixel;
         saveSettings(this.settings);
         if (el) el.outerHTML = this.toggleBtn(arg);
         sfx.click();
@@ -213,7 +216,7 @@ export class UI {
   }
 
   toggleBtn(key) {
-    const labels = { sound: L('Âm thanh', 'Sound'), music: L('Nhạc nền', 'Music'), shake: L('Rung màn hình', 'Screen shake'), hq: L('Đồ hoạ chi tiết', 'Detailed graphics') };
+    const labels = { sound: L('Âm thanh', 'Sound'), music: L('Nhạc nền', 'Music'), shake: L('Rung màn hình', 'Screen shake'), hq: L('Đồ hoạ chi tiết', 'Detailed graphics'), pixel: L('Đồ hoạ pixel', 'Pixel art') };
     const on = this.settings[key];
     return `<button class="toggle ${on ? 'on' : ''}" data-act="toggle" data-arg="${key}"><span>${labels[key]}</span><b>${on ? L('BẬT', 'ON') : L('TẮT', 'OFF')}</b></button>`;
   }
@@ -237,6 +240,7 @@ export class UI {
             <button class="${save ? '' : 'primary'}" data-act="new">${L("Chiến dịch mới", "New campaign")}</button>
             <button data-act="help">${L("Hướng dẫn", "How to play")}</button>
             <div class="menu-row">${this.toggleBtn('sound')}${this.toggleBtn('music')}</div>
+            <div class="menu-row">${this.toggleBtn('pixel')}${this.toggleBtn('shake')}</div>
             ${fs}
           </div>
         </div>
@@ -443,7 +447,7 @@ export class UI {
         <div class="panel small">
           <h2>${L('Tạm dừng', 'Paused')}</h2>
           <button class="primary" data-act="resume">${L('Tiếp tục chiến đấu', 'Resume fighting')}</button>
-          ${this.toggleBtn('sound')}${this.toggleBtn('music')}${this.toggleBtn('shake')}${this.toggleBtn('hq')}
+          ${this.toggleBtn('sound')}${this.toggleBtn('music')}${this.toggleBtn('shake')}${this.toggleBtn('pixel')}${this.toggleBtn('hq')}
           <button class="ghost" data-act="quit">${L("Về menu (đêm này sẽ chơi lại từ đầu)", "Quit to menu (this night restarts)")}</button>
         </div>
       </div>`;

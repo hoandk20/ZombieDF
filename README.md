@@ -7,6 +7,17 @@ Viết bằng **HTML5 Canvas + JavaScript thuần** (không dùng engine), đón
 và **Capacitor** cho Android. Toàn bộ hình ảnh và âm thanh được vẽ / tổng hợp bằng code nên không
 cần file tài nguyên nào.
 
+## Đồ hoạ pixel art
+
+Mặc định cả cảnh được vẽ trên lưới **480×270** rồi phóng ×2 không làm mịn; chữ và bảng thông tin vẫn vẽ sắc nét.
+Tắt/bật bằng nút **Pixel art** ở màn hình tiêu đề hoặc menu tạm dừng (`src/pixel.js`).
+
+- **Zombie, nhân vật chính, đồng đội, hàng rào** là sprite pixel thật: mỗi khung hình được dựng ở độ phân giải pixel
+  từ thiết kế có sẵn rồi làm sạch như pixel art vẽ tay (cạnh cứng, gom về 11–16 màu, viền tối 1 pixel), lưu đệm và
+  dùng lại. Zombie có 8 khung đi, 4 khung tấn công, 5 khung ngã; nhân vật có 28 góc ngắm. Giữ đủ biến thể: zombie nữ,
+  cụt tay chân, bò, đồ bảo hộ, vỏ băng, ăng-ten, túi trứng, trúng đạn chớp trắng, đông cứng.
+- **Nền 10 bản đồ** được gom về bảng ~30 màu của từng bản đồ, pha chấm Bayer.
+
 ## Hiệu ứng pixel art
 
 Vụ nổ (lựu đạn, súng phóng lựu, súng cối, giàn tên lửa, mìn, kẻ trương phình), axit khi kẻ phun axit chết,

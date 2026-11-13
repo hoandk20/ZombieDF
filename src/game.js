@@ -13,6 +13,7 @@ import { saveGame } from './save.js';
 import { drawShot } from './cine.js';
 import { L } from './i18n.js';
 import { PixelFx, PFX_PAL } from './pfx.js';
+import { pixelState, pixelSprite, blit, pixelizeBackground, PX } from './pixel.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -32,6 +33,11 @@ export class Game {
     this.state = 'menu'; // menu | cutscene | night | paused | day | gameover | victory
     this.data = null;
     this.bgs = {};
+    this.bgsPix = {};
+    // lớp cảnh vẽ trên lưới pixel 480×270 rồi phóng to không làm mịn
+    this.wcanvas = document.createElement('canvas');
+    this.wcanvas.width = W / PX; this.wcanvas.height = H / PX;
+    this.wctx = this.wcanvas.getContext('2d');
     this.scene = 'town';
     this.decals = document.createElement('canvas');
     this.decals.width = W; this.decals.height = H;
@@ -63,7 +69,7 @@ export class Game {
     this.rings = [];
     this.pfx = new PixelFx(); // hiệu ứng pixel art (pixelfx)
     this.lastSpark = 0;
-    this.onLang = () => { this.bgs = {}; }; // đổi ngôn ngữ thì vẽ lại biển báo trên nền
+    this.onLang = () => { this.bgs = {}; this.bgsPix = {}; }; // đổi ngôn ngữ thì vẽ lại biển báo trên nền
     this.tracers = [];
     this.texts = [];
     this.lights = [];
@@ -166,6 +172,25 @@ export class Game {
     const key = this.scene + (this.weather.bloodMoon ? '-blood' : '');
     if (!this.bgs[key]) this.bgs[key] = makeBackground(this.weather.bloodMoon, this.scene);
     return this.bgs[key];
+  }
+  // nền đã pixel hoá (gom về bảng màu của bản đồ, pha chấm)
+  bgPixel() {
+    const key = this.scene + (this.weather.bloodMoon ? '-blood' : '');
+    if (!this.bgsPix[key]) this.bgsPix[key] = pixelizeBackground(this.bg(), 30);
+    return this.bgsPix[key];
+  }
+  // nhân vật bằng sprite pixel: góc ngắm 28 nấc, giật súng 3 nấc, 4 khung thở
+  drawCharPixel(ctx, id, x, foot, ang, weapon, recoil, time, hero = false) {
+    const aq = Math.round(((clamp(ang, -1.1, 1.3) + 1.1) / 2.4) * 27);
+    const a = -1.1 + (aq / 27) * 2.4;
+    const rq = Math.min(3, Math.round(recoil / 3));
+    const tq = Math.floor(time * 4) % 4;
+    const key = `ch|${id}|${weapon}|${aq}|${rq}|${tq}`;
+    const spr = pixelSprite(key, [-90, -150, 150, 14], (g) => {
+      if (hero) drawHero(g, 0, 0, a, weapon, WEAPONS[weapon].len, rq * 3, tq / 4);
+      else drawCharacter(g, 0, 0, a, weapon, WEAPONS[weapon].len, rq * 3, tq / 4, CHARACTERS[id]);
+    }, { colors: 13 });
+    ctx.save(); ctx.translate(Math.round(x / PX) * PX, Math.round(foot / PX) * PX); blit(ctx, spr); ctx.restore();
   }
 
   // Cắt cảnh minh hoạ cho phim cốt truyện
@@ -1523,34 +1548,40 @@ export class Game {
 
   // ---------- Render ----------
   render() {
-    const ctx = this.ctx;
-    if (this.cine && drawShot(ctx, this.cine.id, this.cine.t)) { this.drawGrain(ctx, 0.09); return; }
+    const main = this.ctx;
+    if (this.cine && drawShot(main, this.cine.id, this.cine.t)) { this.drawGrain(main, 0.09); return; }
+    const px = pixelState.on;
+    let ctx = main;
+    if (px) { ctx = this.wctx; ctx.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0); ctx.clearRect(0, 0, W, H); }
     const inGame = this.data && (this.state === 'night' || this.state === 'paused' || this.state === 'gameover');
     ctx.save();
     if (this.shake > 0 && this.settings.shake) ctx.translate(rand(-1, 1) * this.shake, rand(-1, 1) * this.shake);
     if (this.state === 'night' && this.settings.shake) ctx.translate(Math.sin(this.time * 0.7) * 1.4, Math.cos(this.time * 0.53) * 1); // máy quay cầm tay
-    ctx.drawImage(this.bg(), 0, 0);
+    if (px) { ctx.imageSmoothingEnabled = false; ctx.drawImage(this.bgPixel(), 0, 0, W, H); ctx.imageSmoothingEnabled = true; }
+    else ctx.drawImage(this.bg(), 0, 0);
     this.drawFog(ctx, 0.6);
     ctx.drawImage(this.decals, 0, 0);
 
     // nhân vật + hàng rào
     for (const s of this.survivorState) {
       if (s.injured) { // ngồi gục sau hàng rào
-        ctx.save(); ctx.translate(0, 16);
-        drawCharacter(ctx, s.x, PLAYER_FOOT - 4, 1.2, s.def.weapon, WEAPONS[s.def.weapon].len, 0, 0, CHARACTERS[s.id]);
-        ctx.restore();
+        if (px) this.drawCharPixel(ctx, s.id, s.x, PLAYER_FOOT + 12, 1.2, s.def.weapon, 0, 0);
+        else { ctx.save(); ctx.translate(0, 16); drawCharacter(ctx, s.x, PLAYER_FOOT - 4, 1.2, s.def.weapon, WEAPONS[s.def.weapon].len, 0, 0, CHARACTERS[s.id]); ctx.restore(); }
         ctx.fillStyle = '#fff'; ctx.fillRect(s.x - 5, PLAYER_FOOT - 116, 12, 12);
         ctx.fillStyle = '#d33'; ctx.fillRect(s.x - 1, PLAYER_FOOT - 114, 4, 8); ctx.fillRect(s.x - 3, PLAYER_FOOT - 112, 8, 4);
         continue;
       }
-      drawCharacter(ctx, s.x, PLAYER_FOOT - 4, s.ang, s.def.weapon, WEAPONS[s.def.weapon].len, s.recoil, this.time, CHARACTERS[s.id]);
+      if (px) this.drawCharPixel(ctx, s.id, s.x, PLAYER_FOOT - 4, s.ang, s.def.weapon, s.recoil, this.time);
+      else drawCharacter(ctx, s.x, PLAYER_FOOT - 4, s.ang, s.def.weapon, WEAPONS[s.def.weapon].len, s.recoil, this.time, CHARACTERS[s.id]);
       if (s.lvl > 1) { ctx.fillStyle = '#ffcf4a'; ctx.font = `600 9px ${DISPLAY_FONT}`; ctx.textAlign = 'center'; ctx.fillText('★'.repeat(s.lvl - 1), s.x + 1, PLAYER_FOOT - 112); }
     }
     const aim = inGame ? this.aim : this.demoAim;
     const wid = inGame ? this.data.current : (this.data ? 'rifle' : 'pistol');
-    drawHero(ctx, PLAYER_X, PLAYER_FOOT, this.aimAngle(aim), wid, WEAPONS[wid].len, this.recoil * 0.6, this.time);
+    if (px) this.drawCharPixel(ctx, 'phong', PLAYER_X, PLAYER_FOOT, this.aimAngle(aim), wid, this.recoil * 0.6, this.time, true);
+    else drawHero(ctx, PLAYER_X, PLAYER_FOOT, this.aimAngle(aim), wid, WEAPONS[wid].len, this.recoil * 0.6, this.time);
     const hpRatio = inGame ? clamp(this.data.hp / barricadeMax(this.data.barricadeLevel), 0, 1) : 1;
-    drawBarricade(ctx, hpRatio, this.scene);
+    if (px) blit(ctx, pixelSprite(`bar|${this.scene}|${Math.round(hpRatio * 20)}`, [130, 300, 270, 550], (g) => drawBarricade(g, Math.round(hpRatio * 20) / 20, this.scene), { colors: 14 }));
+    else drawBarricade(ctx, hpRatio, this.scene);
     if (inGame) { this.drawDefenses(ctx); this.drawDefenses2(ctx); }
 
     // chỉ ~20 con gần hàng rào nhất được vẽ đầy đủ bóng khối
@@ -1765,6 +1796,14 @@ export class Game {
     this.drawFog(ctx, 1);
     if (this.state === 'night' || this.state === 'paused') this.drawBlackout(ctx);
 
+    if (px) { // phóng lớp cảnh pixel lên màn hình, phần chữ vẽ sắc nét phía trên
+      ctx.restore();
+      main.imageSmoothingEnabled = false;
+      main.drawImage(this.wcanvas, 0, 0, W, H);
+      main.imageSmoothingEnabled = true;
+      ctx = main;
+      ctx.save();
+    }
     for (const t of this.texts) {
       ctx.globalAlpha = Math.min(1, (t.life / t.max) * 2.5);
       ctx.font = `600 ${t.size}px ${DISPLAY_FONT}`;

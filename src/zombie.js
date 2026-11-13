@@ -1,5 +1,6 @@
 import { ZOMBIES, BARRICADE_X, LANE_MIN, LANE_MAX, W } from './config.js';
 import { L } from './i18n.js';
+import { pixelState, pixelSprite, blit, snap } from './pixel.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 // ---------- vẽ khối: chi thuôn có viền, vệt sáng trăng và bóng đổ ----------
@@ -86,12 +87,14 @@ const HEAD_X = 0.17, HEAD_Y = 0.86, HEAD_R = 0.105;
 // tư thế nằm sấp khi mất cả hai chân: xoay thân và dịch về sau (theo tỉ lệ chiều cao)
 const LEGLESS = { rot: -1.0, tx: 0.6, ty: 0.1 }; // thân chống lên hai tay, đầu ngóc lên
 
+const TAU_Z = Math.PI * 2;
+
 export class Zombie {
   constructor(type, hpMul = 1, demo = false) {
     const T = ZOMBIES[type];
     this.type = type;
     this.T = T;
-    const sizeVar = rand(0.92, 1.08);
+    const sizeVar = [0.94, 1, 1.06][Math.floor(Math.random() * 3)]; // 3 cỡ cố định để dùng chung sprite pixel
     this.h = T.h * sizeVar;
     this.w = T.w * sizeVar;
     this.maxHp = T.hp * hpMul;
@@ -435,6 +438,7 @@ export class Zombie {
   }
 
   draw(ctx) {
+    if (pixelState.on) { this.drawPixel(ctx); return; }
     ctx.save();
     ctx.translate(this.x, this.foot);
     if (this.state === 'dead') {
@@ -464,6 +468,11 @@ export class Zombie {
     if (this.freezeT > 0 && this.alive) { ctx.fillStyle = 'rgba(170,220,255,0.28)'; ctx.fillRect(-this.w * 0.9, -this.h * 1.02, this.w * 1.8, this.h); }
     LITE = false;
     ctx.restore();
+    this.drawOverlays(ctx);
+  }
+
+  // phần vẽ phủ: hào quang tiếng rú, lửa bám người, dấu tinh nhuệ, thanh máu
+  drawOverlays(ctx) {
     if (this.alive && this.buffT > 0) { // bị kích động bởi tiếng rú
       const b = this.boxes();
       const g = ctx.createRadialGradient(b.hx, b.hy, 0, b.hx, b.hy, b.hr * 2.6);
@@ -499,6 +508,65 @@ export class Zombie {
       ctx.fillStyle = '#d94040';
       ctx.fillRect(this.x - bw / 2, top - 14, bw * Math.max(0, this.hp / this.maxHp), 5);
     }
+  }
+
+  // ---------- Pixel art ----------
+  // khung hình hiện tại (đi 8 khung, tấn công 4 khung, ngã 5 khung) để dùng chung sprite đã dựng
+  pixelFrame() {
+    if (this.state === 'dead') { const k = Math.min(1, this.deadT / 0.45); return ['d', Math.round(k * 4) / 4]; }
+    if (this.state === 'attack') return ['a', Math.round(this.swing * 3) / 3];
+    const ph = ((this.phase % TAU_Z) + TAU_Z) % TAU_Z;
+    return ['w', Math.floor((ph / TAU_Z) * 8)];
+  }
+  pixelKey(frame) {
+    return [this.type, Math.round(this.h), this.female ? 'F' + this.dress + this.hairCol : '', this.skull ? 'S' : '', this.armsLost, this.legsLost,
+      this.legless ? 'L' : '', this.headless ? 'H' : '', this.hitT > 0 ? 'f' : '', this.freezeT > 0 && this.alive ? 'z' : '', this.armorPhase ? 'A' : '', frame[0] + frame[1]].join('|');
+  }
+  drawPixel(ctx) {
+    ctx.save();
+    ctx.translate(snap(this.x), snap(this.foot));
+    if (this.state === 'dead') {
+      if (this.deadT > 4) ctx.globalAlpha = Math.max(0, 1 - (this.deadT - 4) / 1.5);
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(-snap(this.w * 0.8), -2, snap(this.w * 1.6), 4);
+    }
+    if (this.reviveT > 0) ctx.translate(snap(Math.sin(this.reviveT * 40) * 2), 0);
+    if (this.jumpY) ctx.translate(0, snap(this.jumpY));
+    if (this.T.stalker && this.alive && this.hitT <= 0 && this.burnT <= 0) ctx.globalAlpha *= Math.max(0.07, Math.min(1, (560 - this.x) / 220));
+    if (this.elite && this.alive) {
+      const g = ctx.createRadialGradient(0, -this.h * 0.5, this.w * 0.2, 0, -this.h * 0.5, this.h * 0.75);
+      g.addColorStop(0, 'rgba(200,20,20,0.28)'); g.addColorStop(1, 'rgba(200,20,20,0)');
+      ctx.fillStyle = g; ctx.fillRect(-this.h * 0.75, -this.h * 1.25, this.h * 1.5, this.h * 1.5);
+    }
+    const frame = this.pixelFrame();
+    const S = Math.max(this.h, this.w * 1.3);
+    const spr = pixelSprite(this.pixelKey(frame), [-S * 0.95, -S * 1.35, S * 1.15, S * 0.3], (g) => this.bakeFrame(g, frame), { colors: this.T.boss ? 16 : 12 });
+    blit(ctx, spr);
+    ctx.restore();
+    this.drawOverlays(ctx);
+  }
+  // dựng một khung hình: tạm đặt trạng thái theo khung, vẽ thân bằng vector, rồi trả lại trạng thái
+  bakeFrame(g, frame) {
+    const keep = { phase: this.phase, swing: this.swing, deadT: this.deadT, twitching: this.twitching, state: this.state };
+    if (frame[0] === 'w') { this.phase = ((frame[1] + 0.5) / 8) * TAU_Z; this.state = 'walk'; }
+    else if (frame[0] === 'a') { this.swing = frame[1]; this.state = 'attack'; }
+    else { this.deadT = frame[1] * 0.45; this.state = 'dead'; }
+    this.twitching = 0;
+    g.save();
+    if (this.state === 'dead') {
+      const k = Math.min(1, this.deadT / 0.45), ease = 1 - (1 - k) * (1 - k);
+      if (this.T.kind === 'upright' && !this.legless) g.rotate(ease * Math.PI / 2); else g.translate(0, ease * 4);
+    }
+    LITE = false;
+    if (this.legless) { g.translate(this.h * LEGLESS.tx, this.h * LEGLESS.ty); g.rotate(LEGLESS.rot); }
+    if (this.T.kind === 'crawl') this.drawCrawl(g); else if (this.T.kind === 'dog') this.drawDog(g); else this.drawUpright(g);
+    if (this.T.kind === 'upright') this.drawExtras(g);
+    g.restore();
+    if (this.freezeT > 0 && this.alive) { // nhuộm băng chỉ trên thân
+      g.save(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(170,220,255,0.45)'; g.fillRect(-1e4, -1e4, 2e4, 2e4); g.restore();
+    }
+    Object.assign(this, keep);
   }
 
   drawUpright(ctx) {
