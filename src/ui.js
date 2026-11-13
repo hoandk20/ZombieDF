@@ -5,7 +5,7 @@ import {
   modsFor, MOD_INFO, waveFor, mateLevel, MATE_XP, CAMP_INCOME,
   DIFFICULTIES, DIFF_ORDER, diffOf, UPKEEP, TURRET, MINE, WIRE, FLOODLIGHT_PRICE,
   SHOCKER, FLAME_TURRET, MORTAR, TESLA_TOWER, DRONE, SAW, SNIPER_NEST, GAS, ROCKET, DEFENSES_BY_ACT, ALL_DEFENSES, resetDefenses,
-  isStageStartAct,
+  isStageStartAct, weaponUnlockNight,
 } from './config.js';
 import {
   INTRO, DAWN_LOG, ENDING, ENDLESS_NOTE, GAMEOVER_LINES, SURVIVORS, ACT1_END, ACT2_INTRO,
@@ -637,7 +637,7 @@ export class UI {
         log.push({ icon: '💣', text: L('Nhặt được một quả lựu đạn trong đồn cảnh sát cũ.', 'Picked up a grenade at the old police station.') });
       }
       if (Math.random() < 0.035) {
-        const missing = WEAPON_ORDER.filter((id) => !d.weapons[id]);
+        const missing = WEAPON_ORDER.filter((id) => !d.weapons[id] && weaponUnlockNight(id, d.night, d.endless) <= d.night);
         if (missing.length) {
           const id = missing[0];
           d.weapons[id] = { mag: 0, reserve: WEAPONS[id].mag * 2 };
@@ -737,13 +737,16 @@ export class UI {
     const d = this.game.data;
     const max = barricadeMax(d.barricadeLevel);
     if (this.shopTab === 'weapons') {
-      const act = d.endless ? 2 : actFor(d.night);
-      return WEAPON_ORDER.filter((id) => !WEAPONS[id].infinite && ((WEAPONS[id].act || 1) <= act || d.weapons[id])).map((id) => {
+      // súng mở dần theo đêm của màn; hiện trước 2 khẩu sắp mở để người chơi biết mà để dành tiền
+      const open = (id) => weaponUnlockNight(id, d.night, d.endless) <= d.night;
+      const upcoming = WEAPON_ORDER.filter((id) => !WEAPONS[id].infinite && !d.weapons[id] && !open(id) && weaponUnlockNight(id, d.night, d.endless) < Infinity).slice(0, 2);
+      const locked = upcoming.map((id) => ({ id: 'lock:' + id, icon: id, title: WEAPONS[id].name, desc: L(`Chưa có hàng. Kho sẽ bán từ đêm ${weaponUnlockNight(id, d.night) - (stageFor(d.night) - 1) * STAGE_LENGTH} của màn này.`, `Not in stock yet. Available from night ${weaponUnlockNight(id, d.night) - (stageFor(d.night) - 1) * STAGE_LENGTH} of this stage.`), price: WEAPONS[id].price, disabled: true, tag: L('SẮP CÓ', 'SOON') }));
+      return WEAPON_ORDER.filter((id) => !WEAPONS[id].infinite && (open(id) || d.weapons[id])).map((id) => {
         const w = WEAPONS[id];
         const stats = `${L('ST', 'DMG')} ${w.dmg}${w.pellets > 1 ? '×' + w.pellets : ''} · ${L('băng', 'mag')} ${w.mag}${w.auto ? ' · ' + L('tự động', 'auto') : ''}${w.pierce > 1 ? ' · ' + L('xuyên', 'pierce') + ' ' + w.pierce : ''}`;
-        if (!d.weapons[id]) return { id: 'w:' + id, icon: id, title: w.name, desc: w.desc, stats, price: w.price, tag: w.act === 2 ? L('KHO CẢNG', 'PORT ARMORY') : L('MỚI', 'NEW') };
+        if (!d.weapons[id]) return { id: 'w:' + id, icon: id, title: w.name, desc: w.desc, stats, price: w.price, tag: weaponUnlockNight(id, d.night, d.endless) >= d.night - 1 ? L('MỚI VỀ', 'JUST IN') : '' };
         return { id: 'a:' + id, icon: id, title: L(`Đạn ${w.name} +${w.ammoPack}`, `${w.name} ammo +${w.ammoPack}`), desc: L(`Đang có ${d.weapons[id].reserve + d.weapons[id].mag} viên`, `${d.weapons[id].reserve + d.weapons[id].mag} rounds owned`), stats, price: w.ammoPrice, owned: true };
-      });
+      }).concat(locked);
     }
     if (this.shopTab === 'defense') return this.defenseItems();
     const items = [
