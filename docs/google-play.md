@@ -55,16 +55,32 @@ chạy workflow **Deploy web to GitHub Pages**, rồi dùng URL
    Vì bạn đã từng đăng game, hãy xem Dashboard của Play Console có hiện yêu cầu này hay không.
 4. **Testing → Internal testing**: tải `.aab` lên trước để tự cài thử trên điện thoại qua Play Store.
 
+## 5b. Bản đầy đủ (mua trong game)
+
+Game **miễn phí**. Ai cũng chơi được Màn 1 (đêm 1–20). Từ đêm 21 cần **mua một lần** sản phẩm `full_game` để mở khoá đêm 21–100 và chế độ vô tận.
+Tài khoản Google Play ở **Việt Nam** được mở khoá sẵn (danh sách nước trong `FREE_COUNTRIES` ở `src/store.js`). Bản web luôn mở khoá.
+
+Tạo sản phẩm trên Play Console (cần **hồ sơ thanh toán** trước, và cần đã upload ít nhất một bản `.aab` có thư viện Billing):
+
+1. **Kiếm tiền (Monetize with Play) → Sản phẩm → Sản phẩm trong ứng dụng (One-time products) → Tạo sản phẩm**.
+2. **Mã sản phẩm (Product ID): `full_game`** (phải đúng chính xác, không đổi được sau khi tạo).
+3. Tên: `Full game` / `Bản đầy đủ`. Mô tả: `Unlock nights 21–100 and endless mode.`
+4. Đặt giá (vd. 2,99 USD), Google tự quy đổi cho các nước. **Kích hoạt (Activate)** sản phẩm.
+5. Thêm Gmail của người thử vào **Cài đặt → Kiểm thử giấy phép (License testing)** để họ mua thử bằng thẻ thử nghiệm, không mất tiền thật.
+
+Trong game: nút **Mở khoá bản đầy đủ · giá** và **Khôi phục giao dịch** (khi đổi máy hoặc cài lại) hiện ở cuối đêm 20 và khi bấm Tiếp tục với bản lưu từ đêm 21 trở đi.
+
 ## 6. Nội dung khai báo (App content)
 
 | Mục | Trả lời |
 |---|---|
 | Privacy policy | URL ở bước 4 |
 | Ads | **No**, ứng dụng không có quảng cáo |
+| Giá ứng dụng | **Miễn phí** (thu tiền bằng sản phẩm mua trong ứng dụng `full_game`) |
 | App access | Mọi chức năng dùng được không cần đăng nhập |
-| Content rating (IARC) | Danh mục Game. Có bạo lực với nhân vật giả tưởng (zombie) kèm máu; không có nội dung tình dục, cờ bạc, ma tuý, chat hay mua hàng trong ứng dụng. Kết quả thường là **PEGI 16 / ESRB Teen–Mature** tuỳ câu trả lời về máu |
+| Content rating (IARC) | Danh mục Game. Có bạo lực với nhân vật giả tưởng (zombie) kèm máu; không có nội dung tình dục, cờ bạc, ma tuý hay chat. Mục **Giao dịch mua kỹ thuật số: Có** (mua bản đầy đủ). Kết quả thường là **PEGI 16 / ESRB Teen–Mature** tuỳ câu trả lời về máu |
 | Target audience | **18+** (hoặc 16–17 và 18+). Không chọn nhóm dưới 13 tuổi |
-| Data safety | **Không thu thập và không chia sẻ dữ liệu nào**. Bản lưu chỉ nằm trên máy |
+| Data safety | **Không thu thập và không chia sẻ dữ liệu nào**. Bản lưu chỉ nằm trên máy. Thanh toán do Google Play xử lý, game không nhận thông tin thanh toán |
 | News app / Government / Financial / Health | No |
 
 ## 7. Trang cửa hàng (Store listing)
@@ -103,6 +119,7 @@ for survivors who will fight beside you.
 • Build defenses: turrets, mines, electric fences, flame turrets, tesla towers, sniper nests.
 • Dismemberment: shoot the legs and they crawl.
 • Endless mode after the campaign.
+• Play the first 20 nights free. Unlock the full game with a one-time purchase.
 • Fully offline. No ads. No data collected.
 • English and Vietnamese.
 ```
@@ -128,6 +145,7 @@ người sống sót sẽ cùng bạn chiến đấu.
 • Xây phòng thủ: súng máy tự động, mìn, rào điện, súng phun lửa, tháp Tesla, ổ bắn tỉa.
 • Bắn đứt chân là zombie phải bò.
 • Chế độ vô tận sau khi hoàn thành chiến dịch.
+• Chơi miễn phí 20 đêm đầu. Mở khoá bản đầy đủ bằng một lần mua.
 • Chơi offline hoàn toàn. Không quảng cáo. Không thu thập dữ liệu.
 • Tiếng Anh và tiếng Việt.
 ```
@@ -141,4 +159,4 @@ người sống sót sẽ cùng bạn chiến đấu.
 | Package name | `com.zombiedf.barricadenights` (không đổi được sau lần tải lên đầu tiên) |
 | minSdk / targetSdk | 24 / 36 |
 | Hướng màn hình | ngang (sensorLandscape) |
-| Quyền | chỉ INTERNET (mặc định của Capacitor, game không dùng mạng) |
+| Quyền | INTERNET và BILLING (mua bản đầy đủ qua Google Play) |

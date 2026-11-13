@@ -220,6 +220,8 @@ tạo keystore và tải file `.aab` lên Play Console. Đổi `appId` trong `ca
 
 Xem [docs/google-play.md](docs/google-play.md): tạo upload key, thêm 4 secret, chạy workflow **Release build for Google Play** để lấy file `.aab` đã ký, khai báo nội dung và trang cửa hàng (ảnh có sẵn trong `store-assets/`). Bản Android dùng Capacitor 8, target API 36.
 
+Bản Android miễn phí 20 đêm đầu; từ đêm 21 cần mua một lần sản phẩm `full_game` qua Google Play (plugin `BillingPlugin.java`, logic ở `src/store.js`). Tài khoản Google Play ở Việt Nam được mở khoá sẵn; bản web luôn mở khoá.
+
 ## Cấu trúc mã nguồn
 
 ```

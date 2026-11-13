@@ -12,6 +12,7 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(BillingPlugin.class); // mua bản đầy đủ qua Google Play
         super.onCreate(savedInstanceState);
         // Giữ màn hình luôn sáng khi đang chơi
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);

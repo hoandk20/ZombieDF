@@ -15,6 +15,7 @@ import {
 import { setMet } from './cine.js';
 import { L, getLang, setLang, whoLabel } from './i18n.js';
 import { pixelState } from './pixel.js';
+import { store, initStore, buyFullGame, restorePurchase, refreshPrice, needsUnlock, FREE_NIGHTS } from './store.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
 import { weaponIcon, heroPortrait, characterPortrait } from './render.js';
@@ -162,6 +163,7 @@ export class UI {
         if (!d) return;
         g.data = d;
         sfx.click();
+        if (needsUnlock(d.night, d.endless)) { this.showPaywall(() => this.act('continue')); return; }
         if (d.night > CAMPAIGN_NIGHTS && !d.endless) this.showVictory(null);
         else if (actFor(d.night) > (d.seenAct || 1) && !d.endless) this.playActIntro(actFor(d.night), null);
         else this.showDay(null);
@@ -211,6 +213,9 @@ export class UI {
       case 'next': this.advanceCut(); break;
       case 'skip': this.finishCut(); break;
       case 'closeModal': this.closeModal(); break;
+      case 'unlockBuy': this.doUnlock('buy'); break;
+      case 'unlockRestore': this.doUnlock('restore'); break;
+      case 'unlockMenu': this.closeModal(); g.data = null; g.enterMenu(); this.showMenu(); break;
       case 'event': this.resolveEvent(arg); break;
     }
   }
@@ -267,6 +272,51 @@ export class UI {
           <b>${DIFFICULTIES[k].name}${k === 'normal' ? ` <em>${L('ĐỀ XUẤT', 'RECOMMENDED')}</em>` : ''}</b><span>${DIFFICULTIES[k].desc}</span></button>`).join('')}
       </div>
       <div class="modal-actions"><button class="ghost" data-act="closeModal">${L("Huỷ", "Cancel")}</button></div>`);
+  }
+
+  // Màn hình mở khoá bản đầy đủ (sau đêm 20)
+  showPaywall(onUnlock) {
+    this.afterUnlock = onUnlock;
+    this.game.state = 'day';
+    const price = store.price;
+    this.modal(`
+      <h2>${L('Hết bản chơi thử', 'End of the free chapter')}</h2>
+      <p>${L(`Bạn đã sống sót qua ${FREE_NIGHTS} đêm đầu tiên. Mở khoá bản đầy đủ để đi tiếp 80 đêm còn lại: Đập Hồng Sơn, thủ đô, nhà máy, sân bay, rừng tuyết và Trạm Hải Đăng, cùng chế độ vô tận.`, `You survived the first ${FREE_NIGHTS} nights. Unlock the full game to play the remaining 80 nights: Hong Son Dam, the capital, the plant, the airport, the snow forest and Lighthouse Station, plus endless mode.`)}</p>
+      <p class="muted">${L('Mua một lần, chơi mãi. Không quảng cáo. Tiến trình của bạn được giữ nguyên.', 'One-time purchase. No ads. Your progress is kept.')}</p>
+      <p class="paywall-msg" id="paywall-msg"></p>
+      <div class="modal-actions">
+        <button class="ghost" data-act="unlockMenu">${L('Menu chính', 'Main menu')}</button>
+        <button data-act="unlockRestore">${L('Khôi phục giao dịch', 'Restore purchase')}</button>
+        <button class="primary" data-act="unlockBuy">${L('Mở khoá bản đầy đủ', 'Unlock full game')}${price ? ` · ${price}` : ''}</button>
+      </div>`);
+    if (!price) refreshPrice().then((p) => {
+      const b = this.root.querySelector('[data-act="unlockBuy"]');
+      if (p && b) b.textContent = `${L('Mở khoá bản đầy đủ', 'Unlock full game')} · ${p}`;
+    });
+  }
+
+  async doUnlock(kind) {
+    if (this.unlocking) return;
+    this.unlocking = true;
+    sfx.click();
+    const msg = this.root.querySelector('#paywall-msg');
+    if (msg) msg.textContent = L('Đang kết nối Google Play…', 'Connecting to Google Play…');
+    let ok = false, status = '';
+    if (kind === 'buy') { status = await buyFullGame(); ok = status === 'purchased'; }
+    else ok = await restorePurchase();
+    this.unlocking = false;
+    if (ok) {
+      this.closeModal();
+      const go = this.afterUnlock; this.afterUnlock = null;
+      if (go) go();
+      return;
+    }
+    const m = this.root.querySelector('#paywall-msg');
+    if (!m) return;
+    m.textContent = kind === 'restore' ? L('Không tìm thấy giao dịch nào trên tài khoản Google Play này.', 'No purchase found on this Google Play account.')
+      : status === 'pending' ? L('Giao dịch đang chờ xử lý. Game sẽ mở khoá khi thanh toán hoàn tất.', 'Payment is pending. The game unlocks once it completes.')
+      : status === 'canceled' ? ''
+      : L('Không kết nối được Google Play. Hãy kiểm tra mạng rồi thử lại.', 'Could not reach Google Play. Check your connection and try again.');
   }
 
   confirmNew() {
@@ -488,6 +538,8 @@ export class UI {
 
   playActIntro(act, info) {
     const g = this.game;
+    // hết bản chơi thử: từ màn 2 cần mở khoá bản đầy đủ
+    if (needsUnlock((act - 1) * 10 + 1, g.data.endless)) { saveGame(g.data); this.showPaywall(() => this.playActIntro(act, info)); return; }
     g.setScene(SCENES[act]);
     g.state = 'day';
     const lines = { 2: ACT2_INTRO, 3: STAGE2_INTRO, 4: ACT4_INTRO, 5: STAGE3_INTRO, 6: ACT6_INTRO, 7: STAGE4_INTRO, 8: ACT8_INTRO, 9: STAGE5_INTRO, 10: ACT10_INTRO }[act] || [];

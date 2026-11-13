@@ -338,3 +338,7 @@ button.wide { width: 100%; }
 .flag-btn svg { width: 3.1em; height: 2em; display: block; border-radius: 0.15em; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4); }
 .flag-btn:hover { border-color: rgba(233, 180, 90, 0.5); color: var(--text); }
 .flag-btn.active { border-color: var(--amber); color: var(--bone); background: rgba(233, 180, 90, 0.14); }
+
+/* màn hình mở khoá bản đầy đủ */
+.modal .muted { color: var(--muted); font-size: 0.9em; }
+.paywall-msg { min-height: 1.2em; color: #ffb38a; font-size: 0.9em; }

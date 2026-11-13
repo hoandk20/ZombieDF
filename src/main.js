@@ -4,8 +4,10 @@ import { W, H } from './config.js';
 import { Game } from './game.js';
 import { UI } from './ui.js';
 import { initI18n } from './i18n.js';
+import { initStore, store } from './store.js';
 
 initI18n();
+initStore(); // hỏi Google Play xem đã mua bản đầy đủ chưa (bản web luôn mở khoá)
 
 const app = document.getElementById('app');
 const canvas = document.getElementById('game');
@@ -46,3 +48,4 @@ requestAnimationFrame(frame);
 // tiện debug trong console
 window.__game = game;
 window.__ui = ui;
+window.__store = store;
