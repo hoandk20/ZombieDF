@@ -43,6 +43,8 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
   tàu số 3 chờ tàu sơ tán *Bình Minh*. Bản đồ bến cảng với biển đêm, cần cẩu, container và hải đăng.
   Đêm 15 có Kẻ Khổng Lồ thứ hai, đêm 20 có trùm cuối **Quái Vật Cảng** biết gọi đàn.
 - Phim mở đầu, chuyển chương và kết thúc; tin radio và nhật ký mỗi bình minh.
+- Giọng kể u tối: đồng đội ở lại phía sau thường không qua khỏi (Lan và Ông Tư, Hùng và Linh, trạm thu phí km 112, Tuyết trên eo biển băng);
+  Mẫu Thể Số 0 là con trai bác sĩ Khoa; dịch bệnh là vật thử nghiệm của dự án tín hiệu; người đã tiêm cùng mơ một giấc mơ.
 - 4 người sống sót có tên, ngoại hình và kỹ năng riêng: **Lan** (y tá, sửa rào giỏi), **Ông Tư** (thợ săn,
   bắn chính xác), **Bảo** (thợ máy, hàng rào tự hồi phục), **Mai** (sinh viên, lục lọi được nhiều hơn).
 - **Màn 2 · Mật mã Hồng Sơn (đêm 21–40):** trạm nghiên cứu Hồng Sơn có vắc-xin nhưng cần 20 ngày điều chế.
@@ -62,7 +64,8 @@ tai nghe, sơ mi trắng, cà vạt, dây đai đeo súng. Dịch bệnh bùng p
 - **Màn 5 · Tần số cuối cùng (đêm 81–100):** vượt **Chương 9 · Rừng tuyết biên giới** (tuyết rơi, rừng thông, xác máy bay)
   tới **Chương 10 · Trạm Hải Đăng** (ngọn hải đăng, cột ăng-ten khổng lồ, phòng máy chủ). Trùm: **Quỷ Tuyết** tự lành
   khi không bị bắn, miễn tê liệt (90), Quỷ Tuyết + Nữ Hoàng (95), **Kẻ Gọi Bầy** chữa lành cả bầy, gọi kẻ thu sóng,
-  mọc giáp băng (100). Kết thúc: Hoàn viết lại phần mềm máy phát, đảo ngược tần số và ru ngủ bầy đàn khắp cả nước.
+  mọc giáp băng (100). Kết thúc mở (hết Phần 1): Hoàn đảo ngược tần số, bầy đàn ngủ chứ không chết; máy phát tự
+  chuyển quyền điều khiển sang **Trạm 02** bên kia biển, và một giọng nói trên 19 Hz gọi tên Hoàn. Còn sáu trạm phát chưa tìm thấy.
 - **Mỗi chương là một khởi đầu mới:** đồng đội cũ ở lại phía sau (có lý do trong cốt truyện), công trình
   phòng thủ phải dựng lại. Mỗi chương có 2 đồng đội riêng, bộ công trình riêng và loại quái mới riêng.
 

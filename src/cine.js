@@ -691,6 +691,46 @@ const SHOTS = {
     if (metHas('tu')) drawCharacter(ctx, 260, 344, 0.3, 'rifle', 38, 0, t + 2, CHARACTERS.tu);
     ctx.restore();
   },
+  graves(ctx, t) { // hai nấm mộ dưới chân đồi lúc hoàng hôn
+    sky(ctx, DUSK); sun(ctx, 720, 360, 30);
+    mountains(ctx, 131, 360, 80, '#3a2232');
+    ctx.fillStyle = '#20141a'; ctx.beginPath(); ctx.moveTo(0, 430); ctx.quadraticCurveTo(320, 300, 640, 430); ctx.fill();
+    ground(ctx, 425, '#2a1c20', '#0e080a');
+    for (const [x, s] of [[360, 1], [450, 0.9]]) {
+      ctx.fillStyle = '#1a1012'; ctx.beginPath(); ctx.ellipse(x, 436, 44 * s, 12, 0, Math.PI, TAU); ctx.fill();
+      ctx.fillStyle = '#3a2a22'; ctx.fillRect(x - 3, 380 * s + 420 * (1 - s), 6, 56); ctx.fillRect(x - 16, 394 * s + 420 * (1 - s), 32, 6);
+    }
+    ctx.save(); ctx.scale(1.3, 1.3); drawCharacter(ctx, 560, 336, 1.15, 'pistol', 22, 0, t, CHARACTERS.phong); ctx.restore();
+    for (let i = 0; i < 30; i++) { const x = (i * 97 + t * 14) % W, y = 300 + ((i * 53) % 140); ctx.fillStyle = 'rgba(200,180,170,0.25)'; ctx.fillRect(x, y, 2, 2); }
+  },
+  handoffScreen(ctx, t) { // màn hình máy phát tự chuyển quyền sang trạm 02
+    ctx.fillStyle = '#07090c'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1a1c22'; ctx.fillRect(140, 70, 680, 400);
+    ctx.fillStyle = '#100406'; ctx.fillRect(160, 90, 640, 340);
+    ctx.font = 'bold 18px monospace'; ctx.fillStyle = '#5adc8a';
+    const lines = [L('> dao_tan_so --toan_quoc', '> invert_freq --nationwide'), L('  hoàn tất. bầy đàn: NGỦ', '  done. horde status: ASLEEP'), '', L('TRẠM 01 NGỪNG PHÁT.', 'STATION 01 OFFLINE.'), L('CHUYỂN QUYỀN ĐIỀU KHIỂN → TRẠM 02', 'TRANSFERRING CONTROL → STATION 02')];
+    const shown = Math.min(lines.length, Math.floor(t * 1.6) + 1);
+    for (let i = 0; i < shown; i++) { if (i >= 3) ctx.fillStyle = '#ff5a45'; ctx.fillText(lines[i], 190, 140 + i * 34); }
+    const p = Math.min(1, Math.max(0, (t - 3) / 2.5));
+    ctx.strokeStyle = '#ff5a45'; ctx.lineWidth = 2; ctx.strokeRect(190, 330, 580, 26);
+    ctx.fillStyle = '#ff5a45'; ctx.fillRect(194, 334, 572 * p, 18);
+    ctx.fillText(Math.round(p * 100) + '%', 190, 390);
+    if (Math.sin(t * 6) > 0) ctx.fillRect(190 + ctx.measureText(lines[Math.max(0, shown - 1)] || '').width + 6, 126 + (shown - 1) * 34, 12, 18);
+    glow(ctx, 480, 260, 320, '255,60,50', 0.07);
+  },
+  deepSignal(ctx, t) { // ăng-ten đỏ phía bên kia biển, sóng 19 hertz lan tới
+    sky(ctx, NIGHT); stars(ctx, 141, 70, 0.6);
+    sea(ctx, 330, t, '#060a16', 'rgba(255,90,70,');
+    ctx.fillStyle = '#1a1e2c'; ctx.beginPath(); ctx.moveTo(620, 334); ctx.lineTo(690, 318); ctx.lineTo(780, 322); ctx.lineTo(860, 334); ctx.fill();
+    ctx.strokeStyle = '#3a4058'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(740, 322); ctx.lineTo(740, 200); ctx.moveTo(726, 322); ctx.lineTo(740, 220); ctx.lineTo(754, 322); ctx.stroke();
+    const on = Math.sin(t * 2.4) > 0.3;
+    ctx.fillStyle = on ? '#ff3a2a' : '#4a1010'; ctx.beginPath(); ctx.arc(740, 198, 4, 0, TAU); ctx.fill();
+    if (on) glow(ctx, 740, 198, 40, '255,60,40', 0.5);
+    for (let k = 0; k < 4; k++) { const r = ((t * 70) + k * 90) % 360; ctx.strokeStyle = `rgba(255,70,60,${Math.max(0, 0.4 - r / 900)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(740, 200, r, r * 0.3, 0, 0, TAU); ctx.stroke(); }
+    ctx.fillStyle = '#05060a'; ctx.fillRect(0, 420, W, H - 420);
+    ctx.save(); ctx.scale(1.6, 1.6); drawCharacter(ctx, 150, 300, 1.1, 'rifle', 44, 0, t, CHARACTERS.phong); ctx.restore();
+    glow(ctx, 740, 260, 380, '255,40,40', 0.06 + Math.max(0, Math.sin(t * 2.4)) * 0.05);
+  },
   phongHeadphones(ctx, t) {
     sky(ctx, DAWN); sun(ctx, 700, 300, 50 + t);
     ctx.fillStyle = '#2a1e28'; ctx.fillRect(0, 440, W, H - 440);

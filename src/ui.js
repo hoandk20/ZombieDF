@@ -526,7 +526,7 @@ export class UI {
   }
 
   showVictoryStory(info) {
-    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, L('Kết thúc · Bình minh thứ một trăm', 'The end · The hundredth dawn')), 600);
+    setTimeout(() => this.playCutscene(ENDING, () => { this.game.state = 'victory'; this.showVictory(info); }, L('Hết phần 1 · Bình minh thứ một trăm', 'End of Part 1 · The hundredth dawn')), 600);
   }
 
   showVictory() {
@@ -537,7 +537,7 @@ export class UI {
         <div class="panel small victory">
           <div class="eyebrow">${L('Chiến dịch hoàn thành', 'Campaign complete')}</div>
           <h2 class="big-title gold">${L('BẠN ĐÃ SỐNG SÓT', 'YOU SURVIVED')}</h2>
-          <p class="story-line">${L('Một trăm đêm, từ Bến Sương tới Trạm Hải Đăng. Hoàn đã mang vắc-xin tới thủ đô, lần ra tín hiệu điều khiển bầy đàn và đảo ngược nó. Cả đất nước đã được ngủ yên.', 'One hundred nights, from Ben Suong to Lighthouse Station. Hoan carried the vaccine to the capital, traced the signal driving the horde and turned it around. The whole country can finally sleep.')}</p>
+          <p class="story-line">${L('Một trăm đêm, từ Bến Sương tới Trạm Hải Đăng. Hoàn đã mang vắc-xin tới thủ đô và đảo ngược tín hiệu điều khiển bầy đàn. Bầy đàn đã ngủ, nhưng chưa chết, và ở phía bên kia biển, Trạm 02 vừa bắt đầu phát. Còn tiếp ở Phần 2.', 'One hundred nights, from Ben Suong to Lighthouse Station. Hoan carried the vaccine to the capital and turned the signal driving the horde against itself. The horde sleeps, but it is not dead, and across the sea Station 02 has just started broadcasting. To be continued in Part 2.')}</p>
           <div class="stat-row">
             <div><b>${d.totalKills}</b><span>${L('zombie đã hạ', 'zombies killed')}</span></div>
             <div><b>${d.headshots || 0}</b><span>headshot</span></div>
