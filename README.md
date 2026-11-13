@@ -7,6 +7,14 @@ Viết bằng **HTML5 Canvas + JavaScript thuần** (không dùng engine), đón
 và **Capacitor** cho Android. Toàn bộ hình ảnh và âm thanh được vẽ / tổng hợp bằng code nên không
 cần file tài nguyên nào.
 
+## Hiệu ứng pixel art
+
+Vụ nổ (lựu đạn, súng phóng lựu, súng cối, giàn tên lửa, mìn, kẻ trương phình), axit khi kẻ phun axit chết,
+tia lửa khi headshot và vụ nổ bóng tối khi trùm gục dùng thư viện **[pixelfx](https://github.com/patch-gg/pixelfx)**
+(MIT, © Patch; một phần dựa trên hiệu ứng mã nguồn mở của Hugo Duprez / Sprite Fusion). Hiệu ứng được vẽ vào khung
+480×270 rồi phóng ×2 không làm mịn (`src/pfx.js`), nên ra đúng chất pixel. Muốn thêm hiệu ứng khác: import nó trong
+`src/pfx.js`, thêm vào `EFFECTS`, rồi gọi `game.pfx.spawn('tên', x, y, { palette, size })`.
+
 ## Ngôn ngữ
 
 Game có **tiếng Anh (mặc định)** và **tiếng Việt**. Chọn bằng hai lá cờ ở góc trên bên phải màn hình tiêu đề;

@@ -12,6 +12,7 @@ import { sfx, initAudio, setMood, heartbeat, reloadSound, cancelReload } from '.
 import { saveGame } from './save.js';
 import { drawShot } from './cine.js';
 import { L } from './i18n.js';
+import { PixelFx, PFX_PAL } from './pfx.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -60,6 +61,8 @@ export class Game {
     this.particles = [];
     this.gibs = [];
     this.rings = [];
+    this.pfx = new PixelFx(); // hiệu ứng pixel art (pixelfx)
+    this.lastSpark = 0;
     this.onLang = () => { this.bgs = {}; }; // đổi ngôn ngữ thì vẽ lại biển báo trên nền
     this.tracers = [];
     this.texts = [];
@@ -101,6 +104,7 @@ export class Game {
     this.dropTimes = [];
     this.nightT = 0;
     this.mods = {};
+    if (this.pfx) this.pfx.clear();
     this.gibs = [];
     this.rings = [];
     this.dctx.clearRect(0, 0, W, H);
@@ -631,9 +635,10 @@ export class Game {
   onKill(z, head, byPlayer, rewarded = true, src = null) {
     if (head) {
       const b = z.boxes();
+      if (this.time - this.lastSpark > 0.08) { this.lastSpark = this.time; this.pfx.spawn('spark', b.hx - 10, b.hy + 10, { height: 4 }); }
       for (let i = 0; i < 18; i++) this.addParticle({ x: b.hx, y: b.hy, vx: rand(-120, 160), vy: rand(-280, -40), life: rand(0.5, 1.1), color: '#7a0b0b', size: rand(2, 5), g: 600, ground: z.foot + rand(-6, 6), decal: true });
     }
-    if (z.T.ranged) this.splashAcid(z.x, z.foot - z.h * 0.45, 14, z.foot);
+    if (z.T.ranged) { this.splashAcid(z.x, z.foot - z.h * 0.45, 14, z.foot); this.pfx.spawn('acid', z.x, z.foot); }
     if (z.T.bomber && !z.burst) this.bloaterBurst(z, false);
     if (z.T.splitter && this.state === 'night') { // tách thành 2 con non
       for (let k = 0; k < 2; k++) { const c = this.mk('spawnling'); c.x = z.x + (k ? 18 : -6); c.foot = Math.min(LANE_MAX, Math.max(LANE_MIN, z.foot + (k ? 8 : -8))); this.zombies.push(c); this.extraSpawns++; }
@@ -749,10 +754,10 @@ export class Game {
       this.hitZombie(z, base * (0.15 + 0.85 * k) * tough, false, z.x, cy, Math.sign(z.x - x) || 1, byPlayer, { silent: true, kind: 'blast' });
       if (z.alive) z.x += (40 * k * (Math.sign(z.x - x) || 1)) / Math.pow(z.mass(), 1.3); // vụ nổ hất văng, con to ít bị hất
     }
-    const fireCols = opts.toxic ? ['#c8f040', '#7fb020'] : ['#ffb030', '#ff6a10'];
-    for (let i = 0; i < 26; i++) this.addParticle({ x, y: y - 6, vx: rand(-260, 260), vy: rand(-380, -60), life: rand(0.3, 0.7), color: fireCols[i % 2], size: rand(3, 7), g: 400, kind: 'fire' });
-    for (let i = 0; i < 16; i++) this.addParticle({ x: x + rand(-30, 30), y: y - rand(0, 40), vx: rand(-50, 50), vy: rand(-70, -20), life: rand(1.2, 2.2), color: '60,55,55', size: rand(10, 20), kind: 'smoke' });
-    for (let i = 0; i < 14; i++) this.addParticle({ x, y, vx: rand(-200, 200), vy: rand(-320, -120), life: 1.2, color: '#3a3226', size: rand(2, 4), g: 700, ground: y + rand(-8, 8) });
+    // hình ảnh vụ nổ: hiệu ứng pixel art của pixelfx (mìn nổ tung đất, axit của kẻ trương phình màu xanh)
+    const size = clamp(R / 85, 0.7, 1.3);
+    if (opts.mine) this.pfx.spawn('dirt', x, y + 8);
+    else this.pfx.spawn('explosion', x, y, { size, ...(opts.toxic ? { palette: PFX_PAL.toxic } : {}) });
     this.lights.push({ x, y: y - 20, r: 420, life: 0.35, max: 0.35, color: opts.toxic ? '170,255,70' : '255,160,60', a: 0.6 });
     this.texts.push({ x, y: y - 70, text: L("BÙM!", "BOOM!"), life: 0.8, max: 0.8, size: 30, color: opts.toxic ? '#c8f040' : '#ffb030' });
     this.shake = Math.max(this.shake, 13);
@@ -808,6 +813,7 @@ export class Game {
   }
 
   bossDown(z) {
+    this.pfx.spawn('dark', z.x, z.foot);
     this.shake = Math.max(this.shake, 16);
     sfx.explosion();
     for (let i = 0; i < 40; i++) this.addParticle({ x: z.x + rand(-30, 30), y: z.foot - rand(20, 180), vx: rand(-200, 240), vy: rand(-300, -40), life: rand(0.6, 1.3), color: '#6a0a0a', size: rand(3, 7), g: 600, ground: z.foot + rand(-8, 8), decal: true });
@@ -1058,7 +1064,7 @@ export class Game {
         if (!z.alive || z.leaping) continue;
         if (Math.abs(z.x - m.x) < z.w / 2 + 6 && Math.abs(z.foot - m.y) < 18) {
           m.done = true;
-          this.explode(m.x, m.y - 8, { radius: MINE.radius, dmg: MINE.dmg * (hasPerk(this.data, 'quang') ? 1.4 : 1) });
+          this.explode(m.x, m.y - 8, { mine: true, radius: MINE.radius, dmg: MINE.dmg * (hasPerk(this.data, 'quang') ? 1.4 : 1) });
           break;
         }
       }
@@ -1385,6 +1391,7 @@ export class Game {
   }
 
   updateFx(dt) {
+    this.pfx.update(dt);
     this.updateGibs(dt);
     for (const p of this.particles) {
       p.life -= dt;
@@ -1604,6 +1611,7 @@ export class Game {
       }
     }
 
+    this.pfx.draw(ctx);
     for (const g of this.gibs) this.drawGib(ctx, g);
     for (const p of this.particles) {
       const a = Math.min(1, (p.life / p.max) * 2);
