@@ -15,6 +15,7 @@ import {
 import { setMet } from './cine.js';
 import { L, getLang, setLang, whoLabel } from './i18n.js';
 import { pixelState } from './pixel.js';
+export const PRIVACY_URL = 'https://hoandk20.github.io/ZombieDF/privacy.html';
 import { store, initStore, buyFullGame, restorePurchase, refreshPrice, needsUnlock, FREE_NIGHTS } from './store.js';
 import { newSave, saveGame, loadGame, clearSave, loadSettings, saveSettings } from './save.js';
 import { sfx, initAudio, setSoundEnabled, setMusicEnabled, setMood } from './audio.js';
@@ -249,7 +250,7 @@ export class UI {
             ${fs}
           </div>
         </div>
-        <div class="menu-foot">${L("Chạm hoặc click để bắn · Bắn vào đầu để hạ nhanh", "Tap or click to shoot · Aim for the head")}</div>
+        <div class="menu-foot">${L("Chạm hoặc click để bắn · Bắn vào đầu để hạ nhanh", "Tap or click to shoot · Aim for the head")} · <a class="privacy-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">${L('Chính sách quyền riêng tư', 'Privacy policy')}</a></div>
         <div class="lang-flags">${this.flagBtn('en')}${this.flagBtn('vi')}</div>
       </div>`;
   }

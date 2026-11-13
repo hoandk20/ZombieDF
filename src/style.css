@@ -342,3 +342,4 @@ button.wide { width: 100%; }
 /* màn hình mở khoá bản đầy đủ */
 .modal .muted { color: var(--muted); font-size: 0.9em; }
 .paywall-msg { min-height: 1.2em; color: #ffb38a; font-size: 0.9em; }
+.privacy-link { color: inherit; text-decoration: underline; pointer-events: auto; }
