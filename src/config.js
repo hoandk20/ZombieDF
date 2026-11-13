@@ -155,18 +155,18 @@ WEAPONS.railgun = {
 };
 // Mở khoá súng theo tiến độ: [đêm mở ở màn 1, đêm (trong màn) mở ở các màn sau, màn đầu tiên có súng này].
 // Mỗi màn bắt đầu lại tay trắng, nên súng cũng được bán dần trở lại theo từng đêm của màn.
+// [đêm mở lần đầu, (không dùng), màn sớm nhất có bán]
 export const WEAPON_UNLOCK = {
   shotgun: [2, 1, 1], smg: [4, 2, 1], rifle: [7, 3, 1], lmg: [12, 5, 1], flamer: [15, 6, 1], launcher: [17, 8, 1],
   sniper: [24, 9, 2], tesla: [33, 11, 2], cryo: [65, 13, 4], railgun: [74, 15, 4],
 };
-/** Đêm (tuyệt đối) mà súng bắt đầu được bán trong màn chứa đêm n; Infinity nếu chưa có ở màn này. */
+/** Đêm (tuyệt đối) súng được bán lần đầu; Infinity nếu màn chứa đêm n còn chưa tới lượt súng này. */
 export function weaponUnlockNight(id, n, endless = false) {
   const u = WEAPON_UNLOCK[id];
   if (!u || endless || n > CAMPAIGN_NIGHTS) return 1;
-  const st = stageFor(n), start = (st - 1) * STAGE_LENGTH;
-  if (st < u[2]) return Infinity;
-  if (st === u[2]) return Math.max(u[0], start + 1);
-  return start + u[1];
+  // đã mở ở màn trước thì các màn sau bán ngay từ đầu (vẫn phải mua lại vì súng bị reset)
+  if (stageFor(n) < u[2]) return Infinity;
+  return u[0];
 }
 export const WEAPON_ORDER = ['pistol', 'shotgun', 'smg', 'rifle', 'lmg', 'flamer', 'launcher', 'sniper', 'tesla', 'cryo', 'railgun'];
 
