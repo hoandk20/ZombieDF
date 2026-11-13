@@ -1,0 +1,76 @@
+# Build bản phát hành cho Google Play (file .aab đã ký bằng upload key).
+# Cần 4 secret trong Settings → Secrets and variables → Actions:
+#   ANDROID_KEYSTORE_BASE64   nội dung file upload-keystore.jks mã hoá base64
+#   ANDROID_KEYSTORE_PASSWORD mật khẩu keystore
+#   ANDROID_KEY_ALIAS         alias của khoá (vd. upload)
+#   ANDROID_KEY_PASSWORD      mật khẩu khoá
+# Chạy: tab Actions → "Release build for Google Play" → Run workflow.
+name: Release build for Google Play
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Tên phiên bản hiển thị (vd. 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      # mỗi lần chạy workflow là một versionCode mới, luôn tăng
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: ${{ inputs.version_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then echo "::error::Chưa có secret ANDROID_KEYSTORE_BASE64"; exit 1; fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      - name: Build signed AAB and APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease assembleRelease --no-daemon
+
+      - name: Upload AAB (tải file này lên Play Console)
+        uses: actions/upload-artifact@v4
+        with:
+          name: barricade-nights-${{ inputs.version_name }}-vc${{ github.run_number }}-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload signed APK (để cài thử)
+        uses: actions/upload-artifact@v4
+        with:
+          name: barricade-nights-${{ inputs.version_name }}-vc${{ github.run_number }}-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"

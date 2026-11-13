@@ -1,0 +1,19 @@
+// Phông chữ đóng gói sẵn (chạy offline trên Android, không gọi Google Fonts)
+import '@fontsource/oswald/latin-500.css';
+import '@fontsource/oswald/vietnamese-500.css';
+import '@fontsource/oswald/latin-600.css';
+import '@fontsource/oswald/vietnamese-600.css';
+import '@fontsource/oswald/latin-700.css';
+import '@fontsource/oswald/vietnamese-700.css';
+import '@fontsource/be-vietnam-pro/latin-400.css';
+import '@fontsource/be-vietnam-pro/vietnamese-400.css';
+import '@fontsource/be-vietnam-pro/latin-500.css';
+import '@fontsource/be-vietnam-pro/vietnamese-500.css';
+import '@fontsource/be-vietnam-pro/latin-700.css';
+import '@fontsource/be-vietnam-pro/vietnamese-700.css';
+import '@fontsource/be-vietnam-pro/latin-500-italic.css';
+import '@fontsource/be-vietnam-pro/vietnamese-500-italic.css';
+import '@fontsource/roboto-mono/latin-400.css';
+import '@fontsource/roboto-mono/vietnamese-400.css';
+import '@fontsource/roboto-mono/latin-500.css';
+import '@fontsource/roboto-mono/vietnamese-500.css';

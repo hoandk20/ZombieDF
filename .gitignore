@@ -9,3 +9,7 @@ android/local.properties
 android/.idea/
 android/app/src/main/assets/public/
 android/capacitor-cordova-android-plugins/
+
+# khoá ký Android, không bao giờ commit
+*.jks
+*.keystore

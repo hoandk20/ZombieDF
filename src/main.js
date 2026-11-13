@@ -1,3 +1,4 @@
+import './fonts.js';
 import './style.css';
 import { W, H } from './config.js';
 import { Game } from './game.js';

@@ -216,6 +216,10 @@ Mỗi khi sửa code game, chạy lại `npm run android:sync`.
 tạo keystore và tải file `.aab` lên Play Console. Đổi `appId` trong `capacitor.config.json`
 (hiện là `com.zombiedf.barricadenights`) trước khi phát hành lần đầu nếu muốn.
 
+### Đăng lên Google Play
+
+Xem [docs/google-play.md](docs/google-play.md): tạo upload key, thêm 4 secret, chạy workflow **Release build for Google Play** để lấy file `.aab` đã ký, khai báo nội dung và trang cửa hàng (ảnh có sẵn trong `store-assets/`). Bản Android dùng Capacitor 8, target API 36.
+
 ## Cấu trúc mã nguồn
 
 ```
